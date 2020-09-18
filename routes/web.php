@@ -86,7 +86,10 @@ Route::group(['prefix' => 'admin', 'namespace' => 'Admin', 'middleware' => ['aut
      
      /* ORDENES CRITICA */
      Route::get('critica', 'OrdenesmtlasignarController@critica')->name('critica');
+     Route::get('criticaadd', 'OrdenesmtlasignarController@criticaadd')->name('criticaadd');
      Route::get('generar_critica', 'OrdenesmtlasignarController@generarcritica')->name('generar_critica');
+     Route::post('adicionar_critica', 'OrdenesmtlasignarController@adicionarcritica')->name('adicionar_critica');
+     Route::post('eliminar_critica', 'OrdenesmtlasignarController@eliminarcritica')->name('eliminar_critica');
      
 
      /* RUTAS DEL ROL */

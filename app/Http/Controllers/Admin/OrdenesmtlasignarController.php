@@ -95,7 +95,7 @@ class  OrdenesmtlasignarController extends Controller
         if(request()->ajax())
         {    
         
-        if(!empty($request->Periodo) && !empty($request->Ciclo) && !empty($request->Critica)){
+        if(!empty($request->Periodo) && !empty($request->Ciclo) && !empty($request->Critica) && !empty($request->Generado)){
 
             
             $datas=Ordenesmtl::orderBy('id')
@@ -103,20 +103,39 @@ class  OrdenesmtlasignarController extends Controller
             ['Periodo','=',$request->Periodo],
             ['Ciclo','=',$request->Ciclo],
             ['Critica','=',$request->Critica],
-            ['Estado','=', 4]
+            ['Estado','=', 4],
+            ['Coordenada','=', $request->Generado]
             ])
            
             ->get();
         
                     
             
-        }else{      
+        }else if(!empty($request->Periodo) && !empty($request->Ciclo) && !empty($request->Critica)){
+
+            
+          $datas=Ordenesmtl::orderBy('id')
+          ->where([
+          ['Periodo','=',$request->Periodo],
+          ['Ciclo','=',$request->Ciclo],
+          ['Critica','=',$request->Critica],
+          ['Estado','=', 4],
+          ['Coordenada','=', '']
+          ])
+         
+          ->get();
+      
+                  
+          
+      }else{      
           
           $datas=Ordenesmtl::orderBy('id')
           ->where([
           ['Periodo','=',$request->Periodo],
           ['Ciclo','=',$request->Ciclo],
-          ['Estado','=', 4]
+          ['Estado','=', 4],
+          ['Critica','=',$request->Critica],
+          ['Coordenada','=', $request->Generado]
           ])
           ->whereBetween('fecha_de_ejecucion', [$fechaAi,$fechaAf])
           
@@ -135,21 +154,68 @@ class  OrdenesmtlasignarController extends Controller
         return view('admin.ordenes.critica');
     }
 
+// Funcion filtrar criticaadd
+
+  public function criticaadd(Request $request)
+  {   
+
+  $fechaAi=now()->toDateString()." 00:00:01";
+  $fechaAf=now()->toDateString()." 23:59:59";
+          
+      if(request()->ajax())
+      {    
+      
+      if(!empty($request->Periodo) && !empty($request->Ciclo)){
+
+          
+          $datas=Ordenesmtl::orderBy('id')
+          ->where([
+          ['Periodo','=',$request->Periodo],
+          ['Ciclo','=',$request->Ciclo],
+          ['Estado','=', 4],
+          ['Coordenada','=', 'generar']
+          ])
+         
+          ->get();
+      
+                  
+          
+      }else{      
+        
+        $datas=Ordenesmtl::orderBy('id')
+        ->where([
+        ['Periodo','=',$request->Periodo],
+        ['Ciclo','=',$request->Ciclo],
+        ['Estado','=', 4]
+        ])
+        ->whereBetween('fecha_de_ejecucion', [$fechaAi,$fechaAf])
+        
+        ->get();   
+
+        }    
+          return  DataTables()->of($datas)
+          ->make(true);
+      }
+    
+      
+      
+      return view('admin.ordenes.criticaadd');
+  }
 // Funcion Exportar Pdf
 
-public function generarcritica(Request $request)
-{   
+  public function generarcritica(Request $request)
+    {   
     
             
-       if(!empty($request->Periodo) && !empty($request->Ciclo) && !empty($request->Critica)){
+       if(!empty($request->Periodo) && !empty($request->Ciclo)){
         
         
             $datas=Ordenesmtl::orderBy('id')
             ->where([
             ['Periodo','=',$request->Periodo],
             ['Ciclo','=',$request->Ciclo],
-            ['Critica','=',$request->Critica],
-            ['Estado','=', 4]
+            ['Estado','=', 4],
+            ['Coordenada','=', 'generar']
             ])
            
             ->get();
@@ -178,8 +244,68 @@ public function generarcritica(Request $request)
 
   
     
-// Funcion de asignar ordenes a usuarios
-   public function actualizar(Request $request)
+// Funcion Adicionar Orden a Critica
+
+  public function adicionarcritica(Request $request)
+  {   
+
+      
+  if (request()->ajax()) {
+        
+    $id = $request->input('id');
+       
+       
+    foreach ($id as $fila ) {
+
+        DB::table('ordenescu')
+        ->where([
+                 ['id', '=', $fila],
+                 ['Estado', '=', 4],
+                ])
+        ->update(['Coordenada' => 'generar']);           
+           
+     }
+        
+    
+     return response()->json(['mensaje' => 'ok']);
+    }
+
+   
+  }
+  
+ 
+ 
+
+// Funcion Eliminar Orden a Critica
+
+  public function eliminarcritica(Request $request)
+  {   
+
+    
+  if (request()->ajax()) {
+      
+  $id = $request->input('id');
+     
+     
+  foreach ($id as $fila ) {
+
+      DB::table('ordenescu')
+      ->where([
+               ['id', '=', $fila],
+               ['Estado', '=', 4],
+              ])
+      ->update(['Coordenada' => '']);           
+         
+   }
+      
+  
+   return response()->json(['mensaje' => 'ok']);
+  }
+
+ 
+  }
+  // Funcion de asignar ordenes a usuarios
+       public function actualizar(Request $request)
     {   
 
       if (request()->ajax()) {
@@ -228,7 +354,7 @@ public function generarcritica(Request $request)
     }
 
  // Funcion de desasignar ordenes a usuarios
- public function desasignar(Request $request)
+    public function desasignar(Request $request)
     {   
 
       if (request()->ajax()) {

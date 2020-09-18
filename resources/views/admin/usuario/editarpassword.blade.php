@@ -21,7 +21,7 @@
         </a>
         </div>
     </div>
-  <form action="{{route('actualizar_password', ['id' => $data->id])}}" id="form-general" class="form-horizontal" method="POST">
+  <form action="{{route('actualizar_password', ['id' => $data->id])}}" id="form-general-pass1" class="form-horizontal" method="POST">
     @csrf @method('put')
     <div class="card-body">
                       @include('admin.usuario.form-password')

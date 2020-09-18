@@ -105,8 +105,8 @@ $id= Session()->get('usuario_id');
     $('#actualizar').click(function(){
     event.preventDefault();
      
-       var password = $('#password').val();
-       var remenber_token = $('#remenber_token').val();
+       var password = $('#password1').val();
+       var remenber_token = $('#remenber_token1').val();
    
        if(password != remenber_token){
          
@@ -146,8 +146,8 @@ $id= Session()->get('usuario_id');
                   {  
                     if(respuesta.mensaje ='ok') {
                       $('#modal-xl').modal('hide');
-                      $('#password').val('');
-                      $('#remenber_token').val('');
+                      $('#password1').val('');
+                      $('#remenber_token1').val('');
                       Manteliviano.notificaciones('Password actualizado correctamente', 'Sistema Catastro de usuario','success');
                    
                   }else if(respuesta.mensaje ='ng'){

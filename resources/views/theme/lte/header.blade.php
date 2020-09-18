@@ -3,7 +3,7 @@ $iduser = Session()->get('usuario');
 $id= Session()->get('usuario_id');
 @endphp
 
-<script src="{{asset("assets/pages/scripts/admin/usuario/crear.js")}}" type="text/javascript"></script>    
+
 
 <nav class="main-header navbar navbar-expand navbar-white navbar-light">
  <!-- Left navbar links -->
@@ -66,8 +66,7 @@ $id= Session()->get('usuario_id');
         <div class="modal-content">   
         <div class="row">
             <div class="col-lg-12">
-              @include('includes.form-error')
-              @include('includes.form-mensaje') 
+             
                <div class="card card-warning">
                 <div class="card-header">
                   <h3 class="card-title">Editar Contraseña del usuario:{{$iduser ?? ''}}</h3>
@@ -75,7 +74,7 @@ $id= Session()->get('usuario_id');
                     <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
                     </div>
                 </div>
-                <form action="" id="form-general" class="form-horizontal" method="POST">
+                <form action="" id="form-general-pass" class="form-horizontal" method="POST">
                   @csrf @method('put')
                   <div class="card-body">
                                     @include('includes.form-password')

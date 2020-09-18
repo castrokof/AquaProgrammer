@@ -10,7 +10,7 @@
 
 @section('scripts')
 <script src="{{asset("assets/pages/scripts/admin/usuario/index.js")}}" type="text/javascript"></script>
-<script src="{{asset("assets/pages/scripts/admin/usuario/crear.js")}}" type="text/javascript"></script>    
+<script src="{{asset("assets/pages/scripts/admin/usuario/crearuser.js")}}" type="text/javascript"></script>    
 @endsection
 
 @section('contenido')
@@ -26,11 +26,7 @@
             </button>
           </div>
         </div>
-        <!-- /.card-header -->
-      {{-- <a href="{{route('usuario_pdf')}}" class="btn btn-success tooltipsC" title="Generar PDF">
-        GENERAR
-      </a>    --}}
-        <div class="card-body table-responsive p-0">
+      <div class="card-body table-responsive p-0">
         
       <table id="usuarios" class="table table-hover table-bordered text-nowrap">
         <thead>
@@ -93,7 +89,9 @@
         <div class="modal-dialog modal-xl" role="document">
         <div class="modal-content">   
         <div class="row">
-            <div class="col-lg-12">    
+            <div class="col-lg-12">
+              @include('includes.form-error')
+              @include('includes.form-mensaje')    
                <div class="card card-warning">
                 <div class="card-header">
                   <h3 class="card-title">Crear Usuarios</h3>
@@ -111,7 +109,7 @@
                                 
                                   <div class="col-lg-3"></div>
                                   <div class="col-lg-6">
-                                  @include('includes.boton-form-crear')
+                                  @include('includes.boton-form-crear-user')    
                               </div>
                                </div>
                               <!-- /.card-footer -->

@@ -18,13 +18,30 @@
         </select>
 </div>
 <div class="col-md-3">    
-    <label>&nbsp;</label>
-    <div class="form-group row">
-        <button type="button" name="reset" id="reset"  class="btn btn-default btn-xl col-md-4">Limpiar</button>
-        <button type="button" name="buscar" id="buscar" class="btn btn-success btn-xl col-md-4">Buscar</button>
-        <button type="submit" name="generar" id="generar" class="btn btn-warning btn-xl col-md-4">Generar</button>
-        
+    <label for="Generado" class="col-xs-4 control-label requerido">Generado</label>
+    <select name="Generado" id="Generado" class="form-control select2bs4" style="width: 100%;" required>
+        <option value="">---seleccione---</option>
+        <option value="generar">SI</option>
+    </select>
     
-    </div>    
 </div>
+</div> 
+<div class="form-group row">
+    <div class="col-md-2">
+    </div>
+    <div class="col-md-2">
+    </div>
+    <div class="col-md-4">
+    </div>
+    <div class="col-md-4">
+        <label>&nbsp;</label>
+    <div class="form-group row">
+        <button type="button" name="reset" id="reset"  class="btn btn-default btn-xl col-md-3">Limpiar</button>
+        <button type="button" name="buscar" id="buscar" class="btn btn-success btn-xl col-md-3">Buscar</button>
+        <button type="button" name="adicionar" id="adicionar" title="Crear Orden" class="btn btn-warning btn-xl col-md-3 tooltipsC">+Add</button>
+        <button type="button" name="eliminar" id="eliminar" title="Eliminar Orden" class="btn btn-danger btn-xl col-md-3 tooltipsC">-Add</button>
+                  
+    </div>    
+    </div>
+
 </div> 

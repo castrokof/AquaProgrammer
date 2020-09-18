@@ -1,7 +1,7 @@
 @extends("theme.$theme.layout")
 
 @section('titulo')
-   Generar Critica
+   Adicionar Critica
 @endsection
 
 @section("styles")
@@ -33,7 +33,7 @@ height:70%; }
         @include('includes.form-mensaje')
         <div class="card bg-gradient-dark">
         <div class="card-header with-border">
-          <h3 class="card-title">Critica</h3>
+          <h3 class="card-title">Analisis de generación de critica</h3>
         </div>  
            
             <div class="card-body">
@@ -59,6 +59,11 @@ height:70%; }
               <th class="width40"><input name="selectall" id="selectall" type="checkbox" class="select-all" /> Select / Deselect All</th>
               <th>Consecutivo</th>
               <th>Critica</th>
+              <th>Medidor</th>
+              <th>Promedio</th>
+              <th>Consumo</th>
+              <th>Lectura Actual</th>
+              <th>Lectura Anterior</th>
               <th>Usuario</th>
               <th>Funcionario</th>
               <th>Orden</th>
@@ -74,6 +79,7 @@ height:70%; }
     </div>
  </div>
  </div>
+</form>
 @endsection
 
 @section("scriptsPlugins")
@@ -85,7 +91,7 @@ height:70%; }
 
 fill_datatable();
  
- function fill_datatable(Periodo = '', Ciclo = '', Critica = '')
+ function fill_datatable(Periodo = '', Ciclo = '', Critica = '', Generado = '')
 {
  var datatable = $('#criticat').DataTable({
      language: idioma_espanol,
@@ -94,7 +100,7 @@ fill_datatable();
      serverSide: true,
      ajax:{
        url:"{{ route('critica')}}",
-       data:{Periodo:Periodo, Ciclo:Ciclo,  Critica:Critica},
+       data:{Periodo:Periodo, Ciclo:Ciclo,  Critica:Critica, Generado:Generado},
            },
      columns: [
        {
@@ -109,6 +115,21 @@ fill_datatable();
        {
            data:'Critica'
            
+       },
+       {
+           data:'Ref_Medidor'
+       },
+       {
+           data:'Promedio'
+       },
+       {
+           data:'Cons_Act'
+       },
+       {
+           data:'Lect_Actual'
+       },
+       {
+           data:'LA'
        },
        {
            data:'Usuario'
@@ -153,12 +174,13 @@ $('#buscar').click(function(){
 var Periodo = $('#Periodo').val();
 var Ciclo = $('#Ciclo').val();
 var Critica = $('#Critica').val();
+var Generado = $('#Generado').val();
 
 
 if(Periodo != '' && Ciclo != '' && Critica != ''){
 
    $('#criticat').DataTable().destroy();
-   fill_datatable(Periodo, Ciclo, Critica);
+   fill_datatable(Periodo, Ciclo, Critica, Generado);
 
 }else{
 
@@ -177,11 +199,16 @@ $('#reset').click(function(){
 $('#Ciclo').val('');
 $('#Periodo').val('');
 $('#Critica').val('');
+$('#Generado').val('');
 $('#criticat').DataTable().destroy();
 fill_datatable();
+
+
 });
 
-
+// $('#generar').click(function(){
+//   $('#criticat').DataTable().destroy();
+// });
 // Generador de pdf
 
 // $(document).on('click', '#generar', function(){
@@ -228,65 +255,121 @@ fill_datatable();
     
 
 
-// $(document).on('click', '#generar', function(){
+$(document).on('click', '#adicionar', function(){
   
-//           var id = [];
+          var id = [];
           
-//    Swal.fire({
-//         title: "¿Estás seguro?",
-//         text: "Estás por generar ordenes de critica",
-//         icon: "success",
-//         showCancelButton: true,
-//         showCloseButton: true,
-//         confirmButtonText: 'Aceptar',
-//         }).then((result)=>{
-//        if(result.value){  
-//         $('input:checkbox:checked').each(function() {
-//         id.push($(this).val());
+   Swal.fire({
+        title: "¿Estás seguro?",
+        text: "Estás por adicionar ordenes de critica",
+        icon: "success",
+        showCancelButton: true,
+        showCloseButton: true,
+        confirmButtonText: 'Aceptar',
+        }).then((result)=>{
+       if(result.value){  
+        $('input:checkbox:checked').each(function() {
+        id.push($(this).val());
         
-//            });
+           });
         
-//        if(id.length > 0)
-//         { 
+       if(id.length > 0)
+        { 
              
-//           $.ajax({
+          $.ajax({
             
-//                 url:"{{ route('generar_critica')}}",
-//                 method:'get',
-//                 data:{id:id,
+                url:"{{ route('adicionar_critica')}}",
+                method:'post',
+                data:{id:id,
                 
-//                   "_token": $("meta[name='csrf-token']").attr("content")
+                  "_token": $("meta[name='csrf-token']").attr("content")
                 
-//                 },
-//                 success:function(respuesta)
-//                 {  
-//                   if(respuesta.mensaje = 'ok') {
-//                   $('#criticat').DataTable().ajax.reload();
-//                   Manteliviano.notificaciones('Ordenes generadas correctamente', 'Sistema AcuasurRural', 'success');
-//                   }
-//                 }
+                },
+                success:function(respuesta)
+                {  
+                  if(respuesta.mensaje = 'ok') {
+                  $('#criticat').DataTable().ajax.reload();
+                  Manteliviano.notificaciones('Ordenes adicionadas correctamente', 'Sistema AcuasurRural', 'success');
+                  }
+                }
                
                  
-//                  });
+                 });
 
-//           }
-//           else
-//           {
+          }
+          else
+          {
 
-//         Swal.fire({
-//             title: 'Por favor seleccione una orden del checkbox',
-//             icon: 'warning',
-//             buttons:{
-//                 cancel: "Cerrar"
+        Swal.fire({
+            title: 'Por favor seleccione una orden del checkbox',
+            icon: 'warning',
+            buttons:{
+                cancel: "Cerrar"
                 
-//                     }
-//               })
-//             }
-//        }});
+                    }
+              })
+            }
+       }});
          
-//     });
+    });
     
+    $(document).on('click', '#eliminar', function(){
+  
+  var id = [];
+  
+Swal.fire({
+title: "¿Estás seguro?",
+text: "Estás por eliminar ordenes de critica",
+icon: "success",
+showCancelButton: true,
+showCloseButton: true,
+confirmButtonText: 'Aceptar',
+}).then((result)=>{
+if(result.value){  
+$('input:checkbox:checked').each(function() {
+id.push($(this).val());
+
+   });
+
+if(id.length > 0)
+{ 
      
+  $.ajax({
+    
+        url:"{{ route('eliminar_critica')}}",
+        method:'post',
+        data:{id:id,
+        
+          "_token": $("meta[name='csrf-token']").attr("content")
+        
+        },
+        success:function(respuesta)
+        {  
+          if(respuesta.mensaje = 'ok') {
+          $('#criticat').DataTable().ajax.reload();
+          Manteliviano.notificaciones('Ordenes eliminadas correctamente', 'Sistema AcuasurRural', 'success');
+          }
+        }
+       
+         
+         });
+
+  }
+  else
+  {
+
+Swal.fire({
+    title: 'Por favor seleccione una orden del checkbox',
+    icon: 'warning',
+    buttons:{
+        cancel: "Cerrar"
+        
+            }
+      })
+    }
+}});
+ 
+});     
 
    
   

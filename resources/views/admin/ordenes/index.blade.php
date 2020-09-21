@@ -82,9 +82,10 @@ height:70%; }
 <script>
  jQuery(document).ready(function() {
 
+  
 fill_datatable();
  
- function fill_datatable(Periodo = '', Ciclo = '', Estado = '', orden = '', ordenf = '')
+ function fill_datatable(Periodo = '', Ciclo = '', ruta = '', Estado = '', orden = '', ordenf = '')
 {
  var datatable = $('#asignacion').DataTable({
      language: idioma_espanol,
@@ -93,7 +94,7 @@ fill_datatable();
      serverSide: true,
      ajax:{
        url:"{{ route('asignacion')}}",
-       data:{Periodo:Periodo, Ciclo:Ciclo,  Estado:Estado, orden:orden, ordenf:ordenf}
+       data:{Periodo:Periodo, Ciclo:Ciclo, ruta:ruta, Estado:Estado, orden:orden, ordenf:ordenf}
      },
      columns: [
        {
@@ -151,14 +152,15 @@ $('#buscar').click(function(){
 
 var Periodo = $('#Periodo').val();
 var Ciclo = $('#Ciclo').val();
+var ruta = $('#ruta').val();
 var Estado = $('#Estado').val();
 var orden = $('#orden').val();
 var ordenf = $('#ordenf').val();
 
-if((Periodo != '' && Ciclo != '' && Estado != '') || (orden != '' && ordenf != '')){
+if((Periodo != '' && Ciclo != '' && Estado != '') || ruta != '' || (orden != '' && ordenf != '')){
 
    $('#asignacion').DataTable().destroy();
-   fill_datatable(Periodo, Ciclo, Estado, orden, ordenf);
+   fill_datatable(Periodo, Ciclo, ruta, Estado, orden, ordenf);
 
 }else{
 
@@ -176,6 +178,7 @@ if((Periodo != '' && Ciclo != '' && Estado != '') || (orden != '' && ordenf != '
 $('#reset').click(function(){
 $('#Ciclo').val('');
 $('#Periodo').val('');
+$('#ruta').val('');
 $('#Estado').val('');
 $('#orden').val('');
 $('#o rdenf').val('');
@@ -323,10 +326,34 @@ $(document).on('click', '#asignar', function(){
             
     });    
 
-   
+
+$('#Ciclo').on('change', function() {
+
+var P = $('#Periodo').val();
+var C = $('#Ciclo').val();
+
+if(P != '' && C != ''){
+   $.get('idDivision',{P:P, C:C}, function(idDivisions)
+            {   
+                $('#ruta').empty();
+                $('#ruta').append("<option value=''>---seleccione la ruta---</option>")
+                $.each(idDivisions, function(idDiv, value){
+                $('#ruta').append("<option value='" + value + "'>" + value + "</option>")
+                });
+            }); 
+     
+          }
+  }); 
+
+
+  
+    
+
   
   });
-  
+
+
+
 
   
   

@@ -127,7 +127,7 @@ if($rows1==0){
                                        $filaentrada->Periodo=$filaentrada1[6].$filaentrada1[7];
                                        $filaentrada->consecutivoRuta=$filaentrada1[10];
                                        $filaentrada->consecutivo_int=$consecutivo; 
-                                       $filaentrada->Ruta=$filaentrada1[0].'RUTA'; 
+                                       $filaentrada->Ruta=$filaentrada1[10].'_'.$filaentrada1[0].'RUTA'; 
                                        $filaentrada->Tope=$filaentrada1[11];                                     
                    
                                        $filaentrada->save();

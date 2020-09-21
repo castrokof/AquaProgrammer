@@ -16,24 +16,39 @@ use Barryvdh\DomPDF\Facade as PDF;
 class  OrdenesmtlasignarController extends Controller
 {
 
+//selec de idDivision
+  public function idDivisionss(Request $request)
+  {   
+    if(request()->ajax())
+    {    
+      $idDivisions=Ordenesmtl::groupBy('idDivision') ->where([
+        ['Periodo','=',$request->P],
+        ['Ciclo','=',$request->C]])->orderBy('idDivision')->pluck('idDivision');
+
+        return response()->json($idDivisions);
+    }
+      
+  }
 
 // Filtro de ordedescu para asignacion  
   public function index(Request $request)
     {   
-
+      
         $fechaAi=now()->toDateString()." 00:00:01";
         $fechaAf=now()->toDateString()." 23:59:59";
-    
+       
         if(request()->ajax())
         {    
         
-        if(!empty($request->Periodo) && !empty($request->Ciclo) && !empty($request->Estado) && empty($request->orden) && empty($request->ordenf)){
+       
+        if(!empty($request->Periodo) && !empty($request->Ciclo) && !empty($request->ruta) && !empty($request->Estado) && empty($request->orden) && empty($request->ordenf)){
 
             //$datas=DB::table('ordenesmtl')
             $datas=Ordenesmtl::orderBy('id')
             ->where([
             ['Periodo','=',$request->Periodo],
             ['Ciclo','=',$request->Ciclo],
+            ['idDivision','=',$request->ruta],
             ['Estado_des','=',$request->Estado]
             ])
             //->whereBetween('ordenesmtl_id', [$request->orden, $request->ordenf])    
@@ -44,13 +59,14 @@ class  OrdenesmtlasignarController extends Controller
         
         
             
-        }elseif(!empty($request->Periodo) && !empty($request->Ciclo) && !empty($request->Estado) && !empty($request->orden) && !empty($request->ordenf)){  
+        }elseif(!empty($request->Periodo) && !empty($request->Ciclo) && !empty($request->ruta) && !empty($request->Estado) && !empty($request->orden) && !empty($request->ordenf)){  
             
             // $datas=DB::table('ordenesmtl')
             $datas=Ordenesmtl::orderBy('id')
             ->where([
             ['Periodo','=',$request->Periodo],
             ['Ciclo','=',$request->Ciclo],
+            ['idDivision','=',$request->ruta],
             ['Estado_des','=',$request->Estado]
             ])
             ->whereBetween('Consecutivo', [$request->orden, $request->ordenf])    
@@ -66,8 +82,8 @@ class  OrdenesmtlasignarController extends Controller
             ['Estado_des','=',$request->Estado]
             ])
             ->whereBetween('fecha_de_ejecucion', [$fechaAi,$fechaAf])
-            // ->select('ordenesmtl_id', 'Estado', 'usuario', 'suscriptor','direccion','recorrido',
-            //     'Periodo','Ciclo')
+            // // ->select('ordenesmtl_id', 'Estado', 'usuario', 'suscriptor','direccion','recorrido',
+            // //     'Periodo','Ciclo')
             ->get();   
 
             }  
@@ -79,7 +95,8 @@ class  OrdenesmtlasignarController extends Controller
             ->make(true);
         }
       
-        $usuarios=Usuario::orderBy('id')->where('tipodeusuario','movil')->pluck('usuario', 'id');   
+        $usuarios=Usuario::orderBy('id')->where('tipodeusuario','movil')->pluck('usuario', 'id');
+           
         
         return view('admin.ordenes.index', compact('usuarios'));   
     }
@@ -417,7 +434,7 @@ class  OrdenesmtlasignarController extends Controller
 
   
  
-    // Controlador de seguimiento de orden
+// Controlador de seguimiento de orden
      public function seguimiento(Request $request)
       {   
 

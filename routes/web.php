@@ -76,7 +76,7 @@ Route::group(['prefix' => 'admin', 'namespace' => 'Admin', 'middleware' => ['aut
      Route::get('asignacion', 'OrdenesmtlasignarController@index')->name('asignacion');
      Route::post('asignacion_orden', 'OrdenesmtlasignarController@actualizar')->name('actualizar_asignacion');
      Route::post('desasignacion_orden', 'OrdenesmtlasignarController@desasignar')->name('desasignar_asignacion');
-     
+     Route::get('idDivision', 'OrdenesmtlasignarController@idDivisionss')->name('idDivisionsss');
      /* DETALLE DE ORDENES */
      Route::get('seguimiento', 'OrdenesmtlasignarController@seguimiento')->name('seguimiento');
      Route::get('seguimiento/{id}', 'OrdenesmtlasignarController@fotos')->name('fotos');

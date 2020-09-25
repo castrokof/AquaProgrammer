@@ -24,21 +24,21 @@ class ValidacionArchivo extends FormRequest
     public function rules()
     {
         return [
-            'file' => 'mimes:xls,xlsx'
-            /*'zona' => 'required',
-            'poliza' => 'required',
-            'direccion' => 'required',
-            'recorrido' => 'required',
-            'medidor' => 'required',
-            'nombre' => 'required',
-            'year' => 'required',
-            'mes' => 'required',
-            'lote' => 'required',
-            'periodo' => 'required',
-            'consecutivo' => 'required',
-            'consecutivo_int' => 'required',
-            'ruta' => 'required',
-            'tope' => 'required'*/
+            'file' => 'min:1|max:100000|mimes:xls,xlsx',
+            // 'zona' => 'required',
+            // 'poliza' => 'required',
+            // 'direccion' => 'required',
+            // 'recorrido' => 'required',
+            // 'medidor' => 'required',
+            // 'nombre' => 'required',
+            // 'year' => 'required',
+            // 'mes' => 'required',
+            // 'lote' => 'required',
+            // 'periodo' => 'required',
+            // 'consecutivo' => 'required',
+            // 'consecutivo_int' => 'required',
+            // 'ruta' => 'required',
+            // 'tope' => 'required'
             ];
             
  }

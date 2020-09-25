@@ -65,8 +65,8 @@ return array(
         'subject'        => 'Spreadsheet export',
         'keywords'       => 'maatwebsite, excel, export',
         'category'       => 'Excel',
-        'manager'        => 'Maatwebsite',
-        'company'        => 'Maatwebsite',
+        'manager'        => 'Aquaprogrammer',
+        'company'        => 'Aquaprogrammer',
     ],
 
     /*

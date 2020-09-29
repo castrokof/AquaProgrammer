@@ -6,8 +6,18 @@
     <div class="col-md-3">
     <label for="zona" class="col-xs-4 control-label requerido">Ciclo</label>
     <input type="text" name="Ciclo" id="Ciclo" class="form-control col-md-12 " value="" required >
-    </div>
-  
+</div>
+
+<div class="col-md-3">
+        <label for="ruta" class="col-xs-4 control-label requerido">Ruta</label>
+        <select name="ruta" id="ruta" class="form-control select2bs4" style="width: 100%;" required>
+            {{-- <option value="">---seleccione la critica---</option>
+            @foreach ($idDivisions as $id =>$idDivision)
+            <option value="{{$idDivision}}">{{$idDivision}}</option>
+            @endforeach --}}
+        </select>
+</div>
+
 <div class="col-md-3">    
     <label>&nbsp;</label>
     <div class="form-group row">
@@ -18,4 +28,6 @@
     
     </div>    
 </div>
+
+
 </div> 

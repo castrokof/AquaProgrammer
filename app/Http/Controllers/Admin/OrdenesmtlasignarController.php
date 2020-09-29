@@ -108,38 +108,92 @@ class  OrdenesmtlasignarController extends Controller
 
   $fechaAi=now()->toDateString()." 00:00:01";
   $fechaAf=now()->toDateString()." 23:59:59";
-           
+          
         if(request()->ajax())
         {    
-        
-        if(!empty($request->Periodo) && !empty($request->Ciclo) && !empty($request->Critica) && !empty($request->Generado)){
-
             
-            $datas=Ordenesmtl::orderBy('id')
-            ->where([
-            ['Periodo','=',$request->Periodo],
-            ['Ciclo','=',$request->Ciclo],
-            ['Critica','=',$request->Critica],
-            ['Estado','=', 4],
-            ['Coordenada','=', $request->Generado]
-            ])
-           
-            ->get();
+        $all = $request->Critica;
         
-                    
-            
-        }else if(!empty($request->Periodo) && !empty($request->Ciclo) && !empty($request->Critica)){
+        if(!empty($request->Periodo) && !empty($request->Ciclo) && !empty($request->Ruta) && $all == "ALL" && !empty($request->Generado)){
 
             
           $datas=Ordenesmtl::orderBy('id')
           ->where([
           ['Periodo','=',$request->Periodo],
           ['Ciclo','=',$request->Ciclo],
+          ['idDivision','=',$request->Ruta],
+          ['Critica','!=',"NORMAL"],
+          ['Estado','=', 4],
+          ['Coordenada','=', $request->Generado]
+          ])
+        
+          ->get();
+      
+                  
+          
+      }else if(!empty($request->Periodo) && !empty($request->Ciclo) && !empty($request->Ruta) && !empty($request->Critica) && !empty($request->Generado)){
+
+            
+        $datas=Ordenesmtl::orderBy('id')
+        ->where([
+        ['Periodo','=',$request->Periodo],
+        ['Ciclo','=',$request->Ciclo],
+        ['idDivision','=',$request->Ruta],
+        ['Critica','=',$request->Critica],
+        ['Estado','=', 4],
+        ['Coordenada','=', $request->Generado]
+        ])
+      
+        ->get();
+    
+                
+        
+    }else if(!empty($request->Periodo) && !empty($request->Ciclo) && $all == "ALL" && !empty($request->Generado)){
+
+            
+            $datas=Ordenesmtl::orderBy('id')
+            ->where([
+            ['Periodo','=',$request->Periodo],
+            ['Ciclo','=',$request->Ciclo],
+            ['Critica','!=',"NORMAL"],
+            ['Estado','=', 4],
+            ['Coordenada','=', $request->Generado]
+            ])
+          
+            ->get();
+        
+                    
+            
+        }else if(!empty($request->Periodo) && !empty($request->Ciclo)  && !empty($request->Ruta) && $all == "ALL"){
+
+            
+          $datas=Ordenesmtl::orderBy('id')
+          ->where([
+          ['Periodo','=',$request->Periodo],
+          ['Ciclo','=',$request->Ciclo],
+          ['idDivision','=',$request->Ruta],
+          ['Critica','!=', "NORMAL"],
+          ['Estado','=', 4],
+          ['Coordenada','=', '']
+          ])
+        
+          ->get();
+      
+                  
+          
+      }else if(!empty($request->Periodo) && !empty($request->Ciclo) && !empty($request->Ruta) &&  !empty($request->Critica)){
+
+            
+          $datas=Ordenesmtl::orderBy('id')
+          ->where([
+          ['Periodo','=',$request->Periodo],
+          ['Ciclo','=',$request->Ciclo],
+          ['idDivision','=',$request->Ruta],
           ['Critica','=',$request->Critica],
           ['Estado','=', 4],
           ['Coordenada','=', '']
           ])
-         
+        
           ->get();
       
                   
@@ -169,7 +223,7 @@ class  OrdenesmtlasignarController extends Controller
         
         
         return view('admin.ordenes.critica');
-    }
+  }
 
 // Funcion filtrar criticaadd
 
@@ -182,13 +236,14 @@ class  OrdenesmtlasignarController extends Controller
       if(request()->ajax())
       {    
       
-      if(!empty($request->Periodo) && !empty($request->Ciclo)){
+      if(!empty($request->Periodo) && !empty($request->Ciclo) && !empty($request->Ruta)){
 
           
           $datas=Ordenesmtl::orderBy('id')
           ->where([
           ['Periodo','=',$request->Periodo],
           ['Ciclo','=',$request->Ciclo],
+          ['Ciclo','=',$request->Ruta],
           ['Estado','=', 4],
           ['Coordenada','=', 'generar']
           ])
@@ -224,13 +279,14 @@ class  OrdenesmtlasignarController extends Controller
     {   
     
             
-       if(!empty($request->Periodo) && !empty($request->Ciclo)){
+       if(!empty($request->Periodo) && !empty($request->Ciclo) &&  !empty($request->ruta)){
         
         
             $datas=Ordenesmtl::orderBy('id')
             ->where([
             ['Periodo','=',$request->Periodo],
             ['Ciclo','=',$request->Ciclo],
+            ['idDivision','=',$request->ruta],
             ['Estado','=', 4],
             ['Coordenada','=', 'generar']
             ])
@@ -239,6 +295,7 @@ class  OrdenesmtlasignarController extends Controller
            
 
          
+
         }
         
        
@@ -673,28 +730,41 @@ class  OrdenesmtlasignarController extends Controller
     
       if($request->ajax()){
     
-      if (!empty($request->Periodo) & !empty($request->Ciclo)) { 
-
-        
-     
-       $datas=Ordenesmtl::orderBy('id')
-            ->where
-            ([
-            ['Periodo','=',$request->Periodo],
-            ['Ciclo','=',$request->Ciclo],
-            ['Estado','=',4],
-            ])
-           ->get();
-          
-           
-           return response()->json(['dato' => $datas]); 
-           
-     
-      }
-    
-      } 
+        if (!empty($request->Periodo) && !empty($request->Ciclo) && !empty($request->ruta)) { 
        
-         return view('admin.ordenes.posicionamiento', compact('datas'));
+               
+            
+              $markers1=Ordenesmtl::orderBy('id')
+                   ->where
+                   ([
+                   ['Periodo','=',$request->Periodo],
+                   ['Ciclo','=',$request->Ciclo],
+                   ['idDivision','=',$request->ruta],
+                   ['Estado','=',4]
+                   ])
+                  ->get();
+          
+         
+            
+           }else if (!empty($request->Periodo) && !empty($request->Ciclo)){
+               
+                 $markers1=Ordenesmtl::orderBy('id')
+                   ->where
+                   ([
+                   ['Periodo','=',$request->Periodo],
+                   ['Ciclo','=',$request->Ciclo],
+                   ['Estado','=',4]
+                   ])
+                  ->get();
+               
+           }
+           
+           return response()->json($markers1);
+           }
+             
+          return view('admin.ordenes.posicionamiento');
+           
+                    
     }  
 //Exportar excel 
      public function exportarExcel(Request $request)

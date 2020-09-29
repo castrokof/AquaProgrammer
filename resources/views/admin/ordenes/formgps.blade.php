@@ -7,6 +7,10 @@
     <label for="zona" class="col-xs-4 control-label requerido">Ciclo</label>
     <input type="text" name="Ciclo" id="Ciclo" class="form-control col-md-12 " value="{{old('Ciclo')}}" required >
     </div>
+    <div class="col-md-3">
+        <label for="zona" class="col-xs-4 control-label requerido">Ruta</label>
+        <input type="text" name="ruta" id="ruta" class="form-control col-md-12 " value="{{old('ruta')}}" required >
+    </div>
 
 <div class="col-md-3">    
     <label>&nbsp;</label>

@@ -89,9 +89,9 @@ height:70%; }
 <script>
  jQuery(document).ready(function() {
 
-fill_datatable();
+  fill_datatable();
  
- function fill_datatable(Periodo = '', Ciclo = '', Critica = '', Generado = '')
+ function fill_datatable(Periodo = '', Ciclo = '', Ruta = '', Critica = '', Generado = '')
 {
  var datatable = $('#criticat').DataTable({
      language: idioma_espanol,
@@ -100,7 +100,7 @@ fill_datatable();
      serverSide: true,
      ajax:{
        url:"{{ route('critica')}}",
-       data:{Periodo:Periodo, Ciclo:Ciclo,  Critica:Critica, Generado:Generado},
+       data:{Periodo:Periodo, Ciclo:Ciclo, Ruta:Ruta, Critica:Critica, Generado:Generado},
            },
      columns: [
        {
@@ -173,19 +173,20 @@ $('#buscar').click(function(){
 
 var Periodo = $('#Periodo').val();
 var Ciclo = $('#Ciclo').val();
+var Ruta = $('#ruta').val();
 var Critica = $('#Critica').val();
 var Generado = $('#Generado').val();
 
 
-if(Periodo != '' && Ciclo != '' && Critica != ''){
+if(Periodo != '' && Ciclo != '' && Critica != '' || Ruta != ''){
 
    $('#criticat').DataTable().destroy();
-   fill_datatable(Periodo, Ciclo, Critica, Generado);
+   fill_datatable(Periodo, Ciclo, Ruta, Critica, Generado);
 
 }else{
 
   swal({
-            title: 'Debes digitar el periodo, Ciclo y Critica',
+            title: 'Debes digitar el periodo, Ciclo, Ruta y Critica',
             icon: 'warning',
             buttons:{
                 cancel: "Cerrar"
@@ -198,6 +199,7 @@ if(Periodo != '' && Ciclo != '' && Critica != ''){
 $('#reset').click(function(){
 $('#Ciclo').val('');
 $('#Periodo').val('');
+$('#ruta').val('');
 $('#Critica').val('');
 $('#Generado').val('');
 $('#criticat').DataTable().destroy();
@@ -371,6 +373,24 @@ Swal.fire({
  
 });     
 
+
+$('#Ciclo').on('change', function() {
+
+var P = $('#Periodo').val();
+var C = $('#Ciclo').val();
+
+if(P != '' && C != ''){
+   $.get('idDivision',{P:P, C:C}, function(idDivisions)
+            {   
+                $('#ruta').empty();
+                $('#ruta').append("<option value=''>---seleccione la ruta---</option>")
+                $.each(idDivisions, function(idDiv, value){
+                $('#ruta').append("<option value='" + value + "'>" + value + "</option>")
+                });
+            }); 
+     
+          }
+  }); 
    
   
   });
@@ -407,7 +427,6 @@ Swal.fire({
                     "colvis": "Visibilidad"
                 }
                 }   
-
   </script>
   
 

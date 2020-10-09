@@ -1,30 +1,26 @@
 <?php
 
-namespace App\Http\Controllers\Admin;
+namespace App\Http\Controllers\admin;
 
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
-use App\Models\Admin\Archivo;
-use App\Http\Requests\ValidacionArchivo;
+use App\Models\Admin\Permiso;
+use App\Models\Admin\Rol;
 
-use Maatwebsite\Excel\Facades\Excel;
-
-class ArchivoController extends Controller
+class PermisoRolController extends Controller
 {
     /**
      * Display a listing of the resource.
      *
      * @return \Illuminate\Http\Response
      */
-    public function index(Request $request)
+    public function index()
     {
-        if($request->ajax()){
+        $rols = Rol::orderBy('id')->pluck('nombre','id')->toArray();
+        $permiso= Permiso::get();
+        $permisoRols= Permiso::with('roles')->get()->pluck('roles','id')->toArray();
 
-        $datas = Archivo::orderBy('id')->get();
-        return  DataTables()->of($datas)
-        ->make(true);
-        }
-        return view('admin.archivos.index');
+        return view('admin.permiso-rol.index', compact('rols','permiso','permisoRols'));
     }
 
     /**
@@ -45,11 +41,20 @@ class ArchivoController extends Controller
      */
     public function guardar(Request $request)
     {
-      
-
+        if ($request->ajax()) {
+            $permisos = new Permiso();
+            if ($request->input('estado') == 1) {
+                $permisos->find($request->input('permiso_id'))->roles()->attach($request->input('rol_id'));
+                return response()->json(['respuesta' => 'El rol se asigno correctamente']);
+            } else {
+                $permisos->find($request->input('permiso_id'))->roles()->detach($request->input('rol_id'));
+                return response()->json(['respuesta' => 'El rol se elimino correctamente']);
+            }
+        } else {
+            abort(404);
+        }
     }
 
-    
     /**
      * Display the specified resource.
      *

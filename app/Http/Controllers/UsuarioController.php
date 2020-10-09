@@ -1,6 +1,7 @@
 <?php
 
-namespace App\Http\Controllers\Admin;
+namespace App\Http\Controllers;
+
 
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
@@ -10,6 +11,7 @@ use App\Models\Seguridad\Usuario;
 use Barryvdh\DomPDF\Facade as PDF;
 use PHPUnit\TextUI\ResultPrinter;
 
+
 class UsuarioController extends Controller
 {
     /**
@@ -18,7 +20,9 @@ class UsuarioController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function index()
-    {   $Rols1 = Rol::orderBy('id')->pluck('nombre', 'id')->toArray();
+    {  
+    
+        $Rols1 = Rol::orderBy('id')->pluck('nombre', 'id')->toArray();
         $datas = Usuario::with('roles1:id,nombre')->orderBy('id')->get();
         return view('admin.usuario.index', compact('datas','Rols1'));
     }
@@ -44,7 +48,7 @@ class UsuarioController extends Controller
         $usuario = Usuario::create($request->all());
         $usuario->roles1()->attach($request->rol_id);
 
-        return redirect('admin/usuario')->with('mensaje', 'Usuario creado con exito');
+        return redirect('usuario')->with('mensaje', 'Usuario creado con exito');
     }
 
     /**
@@ -89,14 +93,14 @@ class UsuarioController extends Controller
         $usuario = Usuario::findOrFail($id);
         $usuario->update($request->all());
         $usuario->roles1()->sync($request->rol_id);
-        return redirect('admin/usuario')->with('mensaje', 'Usuario actualizado con exito!!');
+        return redirect('usuario')->with('mensaje', 'Usuario actualizado con exito!!');
     }
 
     public function actualizarpassword(Request $request, $id)
     {
        Usuario::findOrFail($id)->update($request->all());
             
-        return redirect('admin/usuario')->with('mensaje', 'Password actualizado con exito!!');
+        return redirect('usuario')->with('mensaje', 'Password actualizado con exito!!');
     }
     public function actualizarpassword1(Request $request, $id)
     {                                 

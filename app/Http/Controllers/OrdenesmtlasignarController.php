@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Admin;
+namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
@@ -628,12 +628,12 @@ class  OrdenesmtlasignarController extends Controller
         }  
             
             return  DataTables()->of($datas)
-            ->addColumn('foto','<a target="_blank" href="{{url("admin/seguimiento/$id")}}" class="tooltipsC" title="Foto"><i class="fa fa-camera"></i>
+            ->addColumn('foto','<a target="_blank" href="{{url("seguimiento/$id")}}" class="tooltipsC" title="Foto"><i class="fa fa-camera"></i>
             </a>')
-            ->addColumn('foto_Url','{{url("admin/seguimiento/$id")}}')
-            ->addColumn('detalle','<a target="_blank" href="{{url("admin/seguimientodetalle/$id")}}" class="btn btn-xs btn-warning tooltipsC" title="detalle"
+            ->addColumn('foto_Url','{{url("seguimiento/$id")}}')
+            ->addColumn('detalle','<a target="_blank" href="{{url("seguimientodetalle/$id")}}" class="btn btn-xs btn-warning tooltipsC" title="detalle"
             >Orden detalle</a>')
-            ->addColumn('detalle_Url','{{url("admin/seguimientodetalle/$id")}}')
+            ->addColumn('detalle_Url','{{url("seguimientodetalle/$id")}}')
             ->rawColumns(['detalle','foto','foto_Url','detalle_Url' ])
             ->make(true);
         }

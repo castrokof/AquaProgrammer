@@ -24,7 +24,7 @@ Route::get('seguridad/login', 'Seguridad\LoginController@index')->name('login');
 Route::post('seguridad/login', 'Seguridad\LoginController@login')->name('login_post');
 Route::get('seguridad/logout', 'Seguridad\LoginController@logout')->name('logout');
 Route::group(['prefix' => 'admin', 'namespace' => 'Admin', 'middleware' => ['auth', 'superadmin']], function () {
-     Route::get('', 'AdminController@index')->name('tablero');
+     
      
      /* RUTAS DEL MENU */
      Route::get('menu', 'MenuController@index')->name('menu');
@@ -55,53 +55,65 @@ Route::group(['prefix' => 'admin', 'namespace' => 'Admin', 'middleware' => ['aut
      Route::put('permiso/{id}', 'PermisoController@actualizar')->name('actualizar_permiso');
      Route::delete('permiso/{id}', 'PermisoController@eliminar')->name('eliminar_permiso');
      
-     /* RUTAS DEL USUARIO */
-     Route::get('usuario', 'UsuarioController@index')->name('usuario');
-     Route::get('usuario/crear', 'UsuarioController@crear')->name('crear_usuario');
-     Route::post('usuario', 'UsuarioController@guardar')->name('guardar_usuario');
-     Route::get('usuario/{id}/editar', 'UsuarioController@editar')->name('editar_usuario');
-     Route::get('usuario/{id}/password', 'UsuarioController@editarpassword')->name('editar_password');
-     Route::put('usuario/{id}', 'UsuarioController@actualizar')->name('actualizar_usuario');
-     Route::put('password/{id}', 'UsuarioController@actualizarpassword')->name('actualizar_password');
-     Route::get('usuario_pdf', 'UsuarioController@pdf')->name('usuario_pdf');
-    
-     /* RUTAS DEL USUARIO NO ADMIN PARA CONTRASEÑA */
-     Route::put('password1/{id}', 'UsuarioController@actualizarpassword1')->name('actualizar_password1');
-    
-     /* RUTAS DEL ARCHIVO y ENTRADA */
-     Route::get('archivo', 'ArchivoController@index')->name('archivo');
-     Route::post('guardar', 'EntradaController@guardar')->name('subir_archivo');
-     
-     /* RUTAS DE ASIGNACION */
-     Route::get('asignacion', 'OrdenesmtlasignarController@index')->name('asignacion');
-     Route::post('asignacion_orden', 'OrdenesmtlasignarController@actualizar')->name('actualizar_asignacion');
-     Route::post('desasignacion_orden', 'OrdenesmtlasignarController@desasignar')->name('desasignar_asignacion');
-     Route::get('idDivision', 'OrdenesmtlasignarController@idDivisionss')->name('idDivisionsss');
-     /* DETALLE DE ORDENES */
-     Route::get('seguimiento', 'OrdenesmtlasignarController@seguimiento')->name('seguimiento');
-     Route::get('seguimiento/{id}', 'OrdenesmtlasignarController@fotos')->name('fotos');
-     Route::get('seguimientodetalle/{id}', 'OrdenesmtlasignarController@detalle')->name('detalle_de_orden');
-     Route::get('posicionamiento', 'OrdenesmtlasignarController@posicionamiento')->name('posicionamiento');
-     //Route::get('seguimientoExportar', 'OrdenesmtlasignarController@exportarExcel')->name('exportarxlsx');
-     
-     /* ORDENES CRITICA */
-     Route::get('critica', 'OrdenesmtlasignarController@critica')->name('critica');
-     Route::get('criticaadd', 'OrdenesmtlasignarController@criticaadd')->name('criticaadd');
-     Route::get('generar_critica', 'OrdenesmtlasignarController@generarcritica')->name('generar_critica');
-     Route::post('adicionar_critica', 'OrdenesmtlasignarController@adicionarcritica')->name('adicionar_critica');
-     Route::post('eliminar_critica', 'OrdenesmtlasignarController@eliminarcritica')->name('eliminar_critica');
-     
+     /* RUTAS DEL PERMISOROL */
+     Route::get('permiso-rol', 'PermisoRolController@index')->name('permiso_rol');
+     Route::post('permiso-rol', 'PermisoRolController@guardar')->name('guardar_permiso_rol');
 
-     /* RUTAS DEL ROL */
-     Route::get('marca', 'MarcasController@index')->name('marca');
-     Route::get('marca/crear', 'MarcasController@crear')->name('crear_marca');
-     Route::post('marca', 'MarcasController@guardar')->name('guardar_marca');
-     Route::get('marca/{id}/editar', 'MarcasController@editar')->name('editar_marca');
-     Route::put('marca/{id}', 'MarcasController@actualizar')->name('actualizar_marca');
-     
-    
+
+   
 });
 
 
+Route::group(['middleware' => ['auth']], function () {
+
+Route::get('/tablero', 'AdminController@index')->name('tablero');
+
+/* RUTAS DEL USUARIO */
+Route::get('usuario', 'UsuarioController@index')->name('usuario')->middleware('superConsultor');
+Route::get('usuario/crear', 'UsuarioController@crear')->name('crear_usuario')->middleware('superEditor');
+Route::post('usuario', 'UsuarioController@guardar')->name('guardar_usuario')->middleware('superEditor');
+Route::get('usuario/{id}/editar', 'UsuarioController@editar')->name('editar_usuario')->middleware('superEditor');
+Route::get('usuario/{id}/password', 'UsuarioController@editarpassword')->name('editar_password')->middleware('superEditor');
+Route::put('usuario/{id}', 'UsuarioController@actualizar')->name('actualizar_usuario')->middleware('superEditor');
+Route::put('password/{id}', 'UsuarioController@actualizarpassword')->name('actualizar_password')->middleware('superEditor');
+Route::get('usuario_pdf', 'UsuarioController@pdf')->name('usuario_pdf')->middleware('superConsultor')->middleware('superEditor');
+
+/* RUTAS DEL USUARIO NO ADMIN PARA CONTRASEÑA */
+Route::put('password1/{id}', 'UsuarioController@actualizarpassword1')->name('actualizar_password1');
+
+/* RUTAS DEL ARCHIVO y ENTRADA */
+Route::get('archivo', 'ArchivoController@index')->name('archivo')->middleware('superConsultor');
+Route::post('guardar', 'EntradaController@guardar')->name('subir_archivo')->middleware('superEditor');
+
+/* RUTAS DE ASIGNACION */
+Route::get('asignacion', 'OrdenesmtlasignarController@index')->name('asignacion')->middleware('superEditor');
+Route::post('asignacion_orden', 'OrdenesmtlasignarController@actualizar')->name('actualizar_asignacion')->middleware('superEditor');
+Route::post('desasignacion_orden', 'OrdenesmtlasignarController@desasignar')->name('desasignar_asignacion')->middleware('superEditor');
+Route::get('idDivision', 'OrdenesmtlasignarController@idDivisionss')->name('idDivisionsss')->middleware('superEditor');
+/* DETALLE DE ORDENES */
+Route::get('seguimiento', 'OrdenesmtlasignarController@seguimiento')->name('seguimiento')->middleware('superConsultor');
+Route::get('seguimiento/{id}', 'OrdenesmtlasignarController@fotos')->name('fotos')->middleware('superConsultor');
+Route::get('seguimientodetalle/{id}', 'OrdenesmtlasignarController@detalle')->name('detalle_de_orden')->middleware('superConsultor');
+Route::get('posicionamiento', 'OrdenesmtlasignarController@posicionamiento')->name('posicionamiento')->middleware('superConsultor');
+//Route::get('seguimientoExportar', 'OrdenesmtlasignarController@exportarExcel')->name('exportarxlsx');
 
 
+/* RUTAS DE MARCA */
+Route::get('marca', 'MarcasController@index')->name('marca')->middleware('superConsultor');
+Route::get('marca/crear', 'MarcasController@crear')->name('crear_marca')->middleware('superEditor');
+Route::post('marca', 'MarcasController@guardar')->name('guardar_marca')->middleware('superEditor');
+Route::get('marca/{id}/editar', 'MarcasController@editar')->name('editar_marca')->middleware('superEditor');
+Route::put('marca/{id}', 'MarcasController@actualizar')->name('actualizar_marca')->middleware('superEditor');
+    
+   
+});
+
+Route::group(['middleware' => ['auth','superEditor']], function () {
+
+/* ORDENES CRITICA */
+Route::get('critica', 'OrdenesmtlasignarController@critica')->name('critica');
+Route::get('criticaadd', 'OrdenesmtlasignarController@criticaadd')->name('criticaadd');
+Route::get('generar_critica', 'OrdenesmtlasignarController@generarcritica')->name('generar_critica');
+Route::post('adicionar_critica', 'OrdenesmtlasignarController@adicionarcritica')->name('adicionar_critica');
+Route::post('eliminar_critica', 'OrdenesmtlasignarController@eliminarcritica')->name('eliminar_critica');
+});

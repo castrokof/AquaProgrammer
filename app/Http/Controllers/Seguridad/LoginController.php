@@ -12,7 +12,7 @@ class LoginController extends Controller
     //use Notifiable;
     use AuthenticatesUsers;
     
-    protected $redirectTo = '/admin';
+    protected $redirectTo = '/tablero';
 
     public function __construct()
     {

@@ -1,5 +1,8 @@
 <?php
 
+use App\Models\Admin\Permiso;
+
+
 if(!function_exists('getMenuActivo')){
     function getMenuActivo($ruta){
 
@@ -14,3 +17,9 @@ if(!function_exists('getMenuActivo')){
 
 
 }
+
+
+
+
+
+

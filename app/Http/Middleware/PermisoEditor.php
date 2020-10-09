@@ -4,7 +4,7 @@ namespace App\Http\Middleware;
 
 use Closure;
 
-class PermisoAdministrador
+class PermisoEditor
 {
     /**
      * Handle an incoming request.
@@ -15,14 +15,9 @@ class PermisoAdministrador
      */
     public function handle($request, Closure $next)
     {
-
-        if ((session()->get('rol_nombre') == ('administrador')))
+        if ((session()->get('rol_nombre') == ('administrador')) || (session()->get('rol_nombre') == ('supervisor')))
         return $next($request);
         
-        abort(403, "No tienes autorización para ingresar.");
-        //return redirect('/tablero')->with('mensaje', 'No tiene permiso para entrar aqui');
-
+        return redirect('/tablero')->with('mensaje', 'No tienes autorización para realizar esta acción.');
     }
-
-   
 }

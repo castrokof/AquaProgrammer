@@ -49,12 +49,12 @@
             @foreach ($datas as $data1)
             <tr>
                  <td>
-                <a href="{{url("admin/usuario/$data1->id/editar")}}" class="btn-accion-tabla tooltipsC" title="Editar este registro">
+                <a href="{{route('editar_usuario', ['id' => $data1->id])}}" class="btn-accion-tabla tooltipsC" title="Editar este registro">
                   <i class="fa fa-fw fa-pencil-alt"></i>
                 </a>
                 </td>
                 <td>
-                <a href="{{url("admin/usuario/$data1->id/password")}}" class="btn-accion-tabla tooltipsC" title="Editar password">
+                <a href="{{url("usuario/$data1->id/password")}}" class="btn-accion-tabla tooltipsC" title="Editar password">
                   <i class="fas fa-key"></i>
                 </a>
                 </td>

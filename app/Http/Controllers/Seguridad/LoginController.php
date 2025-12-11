@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Foundation\Auth\AuthenticatesUsers;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 
 class LoginController extends Controller
 {
@@ -51,29 +52,44 @@ class LoginController extends Controller
     {
         return 'usuario';
     }
-    public function loginMovil(Request $request)
-    {   
-       
-         if(Auth::attempt($request->only('usuario','password'))){
-
-            $user = Auth::user();
-            
-            return Response()->json([
-            'user' => $user
-        ], 200);
-
-
-
-         }else{
-
-
-
-            return response()->json(['error'=> 'Unauthorised'], 401);
-
-         }
-
+            public function loginMovil(Request $request)
+    {
+        // Validar las credenciales
+        $credentials = $request->only('usuario', 'password');
         
+        if (Auth::attempt($credentials)) {
+            $user = Auth::user();
 
+            if ($user->estado == "activo") {
+                // Genera un token aleatorio
+                $token = Str::random(60);
+                
+                // ⭐ Guarda el hash del token en la BD
+                $user->api_token = hash('sha256', $token);
+                $user->save();
+
+              // ⭐ Devolver como ARRAY con un solo elemento
+                return response()->json([
+                    [
+                        'id' => $user->id,
+                        'usuario' => $user->usuario,
+                        'nombre' => $user->nombre,
+                        'tipodeusuario' => $user->tipodeusuario,
+                        'email' => $user->email,
+                        'empresa' => $user->empresa,
+                        'remenber_token' => $user->remember_token,
+                        'estado' => $user->estado,
+                        'api_token' => $token, // Token SIN hashear
+                        'created_at' => $user->created_at,
+                        'updated_at' => $user->updated_at,
+                    ]
+                ], 200);
+            } else {
+                return response()->json(['error' => 'Usuario no activo'], 403);
+            }
+        } else {
+            return response()->json(['error' => 'Credenciales incorrectas'], 401);
+        }
     }
 
 

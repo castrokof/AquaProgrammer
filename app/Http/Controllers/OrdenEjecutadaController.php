@@ -1,469 +1,260 @@
 <?php
 
-namespace App\Http\Controllers\Admin;
+namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\DB;
 use Intervention\Image\ImageManagerStatic as Image;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
+use App\Models\Admin\Photos;
+use App\Models\Admin\Orden_ejecutada;
+use Illuminate\Support\Facades\Storage;
 
 class OrdenEjecutadaController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-  public function medidorejecutado(Request $request)
-  {   
-    
-    
-    $url1=null;   
-    $id_orden=$request->Id_Orden;
-    $id_orden_lec=$request->id_Orden_lectura;
-    $Estado=$request->Estado;
-    $urlfoto1=$request->UrlFoto;
-    $critica1=$request->Desviacion;
-    $causa=$request->causa_desc;
-    $consumo=$request->Consumo;
-    $Lec=$request->Lectura;
-    /*$VEOCU = DB::table('ordenescu')
-   ->where([
-    ['Estado','=',2],
-    ['id','=',$id_orden],
-    ])            
-    ->count();*/
-    /*$VEOEJE = DB::table('orden_ejecutada')
-    ->where([
-    ['estado_id','=',4],
-    ['ordenejecutada_id','=',$id_orden],
-    ])            
-    ->count();*/
-    
-    if($causa != null ){
-
-      $critica = 'CAUSADO';
-
-    }else if($critica1 < 0){
-
-      $critica = 'NEGATIVO';
-
-    }else if($consumo == 0){
-
-      $critica = 'CONSUMO CERO';
-
-    }else if($critica1 >= 1.65 ){
-
-      $critica = 'ALTO CONSUMO';
-
-    }else if($critica1 > 0 && $critica1 < 0.65){
-
-      $critica = 'BAJO CONSUMO';
-
-    }else if($critica1 > 0.64 && $critica1 < 1.65){
-
-      $critica = 'NORMAL';
-
-    }
-    
-    
-  if($id_orden > 0 && $Estado == 4 && $urlfoto1 != null && $critica != 'NORMAL' && $critica != 'CAUSADO'){
-    
-    // Subimos la foto 1
-  
-    
-    $imagen1 = base64_decode($urlfoto1);
-    $imagen_name1 = $id_orden.'_1.jpg';
-    $path1 = public_path('/imageneslectura/'.$imagen_name1);
-    file_put_contents($path1, $imagen1);
-    $img1 = Image::make(public_path('imageneslectura/'.$imagen_name1)); 
-    $textimage = $request->Fechar_Gestion;
-    $img1->resize(640, 480);
-    $img1->text($textimage, 10, 35,
-     function($font){ 
-       $font->size(24);
-       $font->file(public_path('font/OpenSans-Regular.ttf'));
-       $font->color('#f1f505'); 
-       $font->align('left'); 
-       $font->valign('bottom'); 
-       $font->angle(0); }); 
-    $img1->save(public_path('imageneslectura/'.$imagen_name1)); 
-    
-    $url1='imageneslectura/'.$imagen_name1;
-     
-   
-   
-   $ORDEN = DB::table('orden_ejecutada')
-          ->insert([
-          'id' => $id_orden,
-          'ordenejecutada_id' => $id_orden_lec,
-          'suscriptor' => null,
-          'usuario' => $request->Usuario,
-          'tipo_usuario' => null,
-          'fecha_de_ejecucion' => $request->Fechar_Gestion,
-          'new_medidor' => $request->nuevo_medidor,
-          'Lect_Actual' => $Lec,
-          'Cons_Act' => $request->Consumo,
-          'Comentario' => $request->Comentario,
-          'Critica' => $critica,
-          'Desviacion' => $request->Desviacion,
-          'coordenada' => null,
-          'latitud' => $request->Latitud,
-          'longitud' => $request->Longitud,
-          'estado' => 'EJECUTADO',
-          'estado_id' => $request->Estado,
-          'foto1' => $url1,
-          'foto2' => null,
-          'futuro1' => $request->causa_desc,
-          'futuro2' => 0,
-          'futuro3' => $request->Observacion,
-          'futuro4' => 0,
-          'futuro5' => $request->Causa,
-          'futuro6' => null,
-          'created_at'=>now()
-                                   
-            ]);
-
-         
-        DB::table('ordenescu')
-                ->where('id','=',$id_orden)
-                ->update([
-                  'Usuario' => $request->Usuario,
-                  'Lect_Actual' => $Lec,
-                  'Cons_Act' => $request->Consumo,
-                  'Critica' => $critica,
-                  'fecha_de_ejecucion' => $request->Fechar_Gestion,
-                  'foto1' => $url1,
-                  'foto2' => null,  
-                  'Coordenada' => $request->Comentario,
-                  'Latitud' => $request->Latitud,
-                  'Longitud' => $request->Longitud,
-                  'Estado_des' => 'EJECUTADO',
-                  'Estado' => $request->Estado,
-                  'Causa_id' => 0,
-                  'Observacion_id' => 0,
-                  'Causa_des' => $request->causa_desc,
-                  'Observacion_des' => $request->Observacion,
-                  'new_medidor' => $request->nuevo_medidor,
-                  'updated_at'=>now()
-                 
-                ]); 
-               
-
-        return response()->json(0);
-    
-    } else if($id_orden > 0 && $Estado == 4 && $critica == 'NORMAL'){
-    
-    
-   
-   $ORDEN = DB::table('orden_ejecutada')
-          ->insert([
-          'id' => $id_orden,
-          'ordenejecutada_id' => $id_orden_lec,
-          'suscriptor' => null,
-          'usuario' => $request->Usuario,
-          'tipo_usuario' => null,
-          'fecha_de_ejecucion' => $request->Fechar_Gestion,
-          'new_medidor' => $request->nuevo_medidor,
-          'Lect_Actual' => $Lec,
-          'Cons_Act' => $request->Consumo,
-          'Comentario' => $request->Comentario,
-          'Critica' => $critica,
-          'Desviacion' => $request->Desviacion,
-          'coordenada' => null,
-          'latitud' => $request->Latitud,
-          'longitud' => $request->Longitud,
-          'estado' => 'EJECUTADO',
-          'estado_id' => $request->Estado,
-          'foto1' => $url1,
-          'foto2' => null,
-          'futuro1' => $request->causa_desc,
-          'futuro2' => 0,
-          'futuro3' => $request->Observacion,
-          'futuro4' => 0,
-          'futuro5' => $request->Causa,
-          'futuro6' => null,
-          'created_at'=>now()
-                                   
-            ]);
-
-         
-        DB::table('ordenescu')
-                ->where('id','=',$id_orden)
-                ->update([
-                  'Usuario' => $request->Usuario,
-                  'Lect_Actual' => $Lec,
-                  'Cons_Act' => $request->Consumo,
-                  'Critica' => $critica,
-                  'fecha_de_ejecucion' => $request->Fechar_Gestion,
-                  'foto1' => $url1,
-                  'foto2' => null,  
-                  'Coordenada' => $request->Comentario,
-                  'Latitud' => $request->Latitud,
-                  'Longitud' => $request->Longitud,
-                  'Estado_des' => 'EJECUTADO',
-                  'Estado' => $request->Estado,
-                  'Causa_id' => 0,
-                  'Observacion_id' => 0,
-                  'Causa_des' => $request->causa_desc,
-                  'Observacion_des' => $request->Observacion,
-                  'new_medidor' => $request->nuevo_medidor,
-                  'updated_at'=>now()
-                 
-                ]);
-                
-                
-                 return response()->json(0);
-                
-                /*else if($id_orden > 0 && $Estado == 4 &&  $urlfoto1 != null ){
-
-      // Subimos la foto 1
-    $imagen1 = base64_decode($urlfoto1);
-
-    if(!empty($imagen1)){
-
-    $imagen_name1 = $id_orden.'_1.jpg';
-    $path1 = public_path('/imageneslectura/'.$imagen_name1);
-    file_put_contents($path1, $imagen1);
-    $img1 = Image::make(public_path('imageneslectura/'.$imagen_name1)); 
-    $textimage = $request->fecha_de_ejecucion;
-    $img1->resize(640, 480);
-    $img1->text($textimage, 10, 35,
-     function($font){ 
-       $font->size(24);
-       $font->file(public_path('font/OpenSans-Regular.ttf'));
-       $font->color('#f1f505'); 
-       $font->align('left'); 
-       $font->valign('bottom'); 
-       $font->angle(0); }); 
-    $img1->save(public_path('imageneslectura/'.$imagen_name1)); 
-    
-    $url1='imageneslectura/'.$imagen_name1;
-     }
-      
-
-        DB::table('orden_ejecutada')
-        ->where('id','=',$id_orden)
-        ->update([
-          
-          'suscriptor' => null,
-          'usuario' => $request->Usuario,
-          'tipo_usuario' => null,
-          'fecha_de_ejecucion' => $request->Fechar_Gestion,
-          'new_medidor' => $request->nuevo_medidor,
-          'new_marca' => $request->new_marca,
-          'Lect_Actual' => $request->Lectura,
-          'Cons_Act' => $request->Consumo,
-          'Comentario' => $request->Comentario,
-          'Critica' => $critica,
-          'Desviacion' => $request->Desviacion,
-          'coordenada' => null,
-          'latitud' => $request->Latitud,
-          'longitud' => $request->Longitud,
-          'estado' => 'EJECUTADO',
-          'estado_id' => $request->Estado,
-          'foto1' => $url1,
-          'foto2' => null,
-          'futuro1' => $request->Causa,
-          'futuro2' => $request->Observacion,
-          'futuro3' => null,
-          'futuro4' => null,
-          'futuro5' => null,
-          'futuro6' => null,
-             
-            ]);
-
-            DB::table('ordenescu')
-            ->where('id','=',$id_orden)
-            ->update([
-             
-              'Usuario' => $request->Usuario,
-              'Lect_Actual' => $request->Lectura,
-              'Cons_Act' => $request->Consumo,
-              'Critica' => $critica,
-              'fecha_de_ejecucion' => $request->Fechar_Gestion,
-              'foto1' => $url1,
-              'foto2' => null,  
-              'Coordenada' => null,
-              'Latitud' => $request->Latitud,
-              'Longitud' => $request->Longitud,
-              'Estado_des' => 'EJECUTADO',
-              'Estado' => $request->Estado,
-              'Causa_id' => $request->Causa,
-              'Observacion_id' => $request->Observacion,
-              'Causa_des' => null,
-              'Observacion_des' => null,
-              'new_medidor' => $request->nuevo_medidor,
-              'updated_at'=>now()
-              
-            ]); 
-           
-
-
-        return response()->json(0);*/
-       
-      }else if($id_orden > 0 && $Estado == 4 && $urlfoto1 != null && $critica = 'CAUSADO'){
-          
-          
-    
-    // Subimos la foto 1
-  
-    
-    $imagen1 = base64_decode($urlfoto1);
-    $imagen_name1 = $id_orden.'_1.jpg';
-    $path1 = public_path('/imageneslectura/'.$imagen_name1);
-    file_put_contents($path1, $imagen1);
-    $img1 = Image::make(public_path('imageneslectura/'.$imagen_name1)); 
-    $textimage = $request->Fechar_Gestion;
-    $img1->resize(640, 480);
-    $img1->text($textimage, 10, 35,
-     function($font){ 
-       $font->size(24);
-       $font->file(public_path('font/OpenSans-Regular.ttf'));
-       $font->color('#f1f505'); 
-       $font->align('left'); 
-       $font->valign('bottom'); 
-       $font->angle(0); }); 
-    $img1->save(public_path('imageneslectura/'.$imagen_name1)); 
-    
-    $url1='imageneslectura/'.$imagen_name1;
-     
-   
-   
-   $ORDEN = DB::table('orden_ejecutada')
-          ->insert([
-          'id' => $id_orden,
-          'ordenejecutada_id' => $id_orden_lec,
-          'suscriptor' => null,
-          'usuario' => $request->Usuario,
-          'tipo_usuario' => null,
-          'fecha_de_ejecucion' => $request->Fechar_Gestion,
-          'new_medidor' => $request->nuevo_medidor,
-          'Lect_Actual' => null,
-          'Cons_Act' => null,
-          'Comentario' => $request->Comentario,
-          'Critica' => $critica,
-          'Desviacion' => $request->Desviacion,
-          'coordenada' => null,
-          'latitud' => $request->Latitud,
-          'longitud' => $request->Longitud,
-          'estado' => 'EJECUTADO',
-          'estado_id' => $request->Estado,
-          'foto1' => $url1,
-          'foto2' => null,
-          'futuro1' => $request->causa_desc,
-          'futuro2' => 0,
-          'futuro3' => $request->Observacion,
-          'futuro4' => 0,
-          'futuro5' => $request->Causa,
-          'futuro6' => null,
-          'created_at'=>now()
-                                   
-            ]);
-
-         
-        DB::table('ordenescu')
-                ->where('id','=',$id_orden)
-                ->update([
-                  'Usuario' => $request->Usuario,
-                  'Lect_Actual' => null,
-                  'Cons_Act' => null,
-                  'Critica' => $critica,
-                  'fecha_de_ejecucion' => $request->Fechar_Gestion,
-                  'foto1' => $url1,
-                  'foto2' => null,  
-                  'Coordenada' => $request->Comentario,
-                  'Latitud' => $request->Latitud,
-                  'Longitud' => $request->Longitud,
-                  'Estado_des' => 'EJECUTADO',
-                  'Estado' => $request->Estado,
-                  'Causa_id' => 0,
-                  'Observacion_id' => 0,
-                  'Causa_des' => $request->causa_desc,
-                  'Observacion_des' => $request->Observacion,
-                  'new_medidor' => $request->nuevo_medidor,
-                  'updated_at'=>now()
-                 
-                ]); 
-               
-
-        return response()->json(0);
-          
-          
-          
-
-        }return response()->json(1);
+    public function medidorejecutado(Request $request)
+    {   
+        // ⭐ El usuario ya está autenticado por el middleware
+        $user = $request->user();
         
-    
-      
-      
-  }
-      
-  
-    
-    
-
-
-    /**
-     * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    
-
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
-    public function store(Request $request)
-    {
-        //
+        Log::info('Usuario autenticado: ' . $user->usuario);
+        
+        // Variables enviadas desde móvil
+        $id_orden = $request->id;
+        $Estado = $request->tipo;
+        $urlfoto1 = $request->campoFoto;
+        $critica1 = $request->critica;
+        $causa = $request->causal;
+        $causades = $request->texcausa;
+        $observacion = $request->observ;
+        $observaciondes = $request->texobser;
+        $Lec = $request->lectact;
+        $latitud = $request->latitud;
+        $longitud = $request->longitud;
+        $dateejec = Carbon::createFromFormat('d/m/Y H:i:s', $request->ffinlec);
+        $dateejemplo = $request->ffinlec;
+        
+        DB::beginTransaction();
+        
+        $lectura_ejecutada = DB::table('orden_ejecutada')->where('id', $id_orden)->count();
+        
+        try {
+            $url1 = "";
+            
+            if ($lectura_ejecutada <= 0 || $lectura_ejecutada == '' || $lectura_ejecutada == null) {
+                
+                if ($urlfoto1 != null && $urlfoto1 != "") { 
+                    $imagen1 = base64_decode($urlfoto1);
+                    $imagen_name1 = $id_orden.'_1.jpg';
+                    $path1 = public_path('/imageneslectura/'.$imagen_name1);
+                    file_put_contents($path1, $imagen1);
+                    $img1 = Image::make(public_path('imageneslectura/'.$imagen_name1)); 
+                    $textimage = $dateejec;
+                    $img1->resize(640, 480);
+                    $img1->text($textimage, 10, 35,
+                        function($font){ 
+                            $font->size(24);
+                            $font->file(public_path('font/OpenSans-Regular.ttf'));
+                            $font->color('#f1f505'); 
+                            $font->align('left'); 
+                            $font->valign('bottom'); 
+                            $font->angle(0); 
+                        }
+                    ); 
+                    $img1->save(public_path('imageneslectura/'.$imagen_name1)); 
+                    $url1 = 'imageneslectura/'.$imagen_name1;
+                }      
+                
+                $orden = DB::table('orden_ejecutada')
+                    ->insert([
+                        'id' => $id_orden,
+                        'ordenejecutada_id' => $id_orden,
+                        'suscriptor' => $request->suscriptor ?? 'sinsus',
+                        'usuario' => $user->usuario, // ⭐ Usar el usuario autenticado
+                        'tipo_usuario' => 'movil',
+                        'fecha_de_ejecucion' => $dateejec,
+                        'new_medidor' => null,
+                        'Lect_Actual' => $Lec,
+                        'Cons_Act' => $request->consumo,
+                        'Comentario' => $request->observg,
+                        'Critica' => $critica1,
+                        'Desviacion' => null,
+                        'coordenada' => null,
+                        'latitud' => $latitud,
+                        'longitud' => $longitud,
+                        'estado' => 'EJECUTADO',
+                        'estado_id' => $Estado,
+                        'foto1' => $url1,
+                        'foto2' => null,
+                        'futuro1' => null,
+                        'futuro2' => 0,
+                        'futuro3' => $causa,
+                        'futuro4' => 0,
+                        'futuro5' => $observacion,
+                        'futuro6' => $dateejemplo,
+                        'created_at' => now()
+                    ]);
+                
+                Log::info("Registro recibido: " . json_encode($request->all()) . ' Orden: ' . $id_orden);
+                
+                if ($orden) {
+                    DB::table('ordenescu')
+                        ->where('id', $id_orden)
+                        ->update([
+                            'Lect_Actual' => $Lec,
+                            'Cons_Act' => $request->consumo,
+                            'Critica' => $critica1,
+                            'fecha_de_ejecucion' => $dateejec,
+                            'foto1' => $url1,
+                            'foto2' => null,  
+                            'Coordenada' => null,
+                            'Latitud' => $latitud,
+                            'Longitud' => $longitud,
+                            'Estado_des' => 'EJECUTADO',
+                            'Estado' => $Estado,
+                            'Causa_id' => $causa,
+                            'Observacion_id' => $observacion,
+                            'Causa_des' => $causades,
+                            'Observacion_des' => $observaciondes,
+                            'new_medidor' => $request->observg,
+                            'updated_at' => now()
+                        ]);
+                    
+                    DB::commit();         
+                    Log::info("Registro recibido en cu y commit ok: " . json_encode($request->all()));
+                    
+                    return response()->json([
+                        'success' => true,
+                        'message' => 'Lectura cargada en servidor'
+                    ], 200);
+                }
+                
+            } else {
+                // Actualización de registro existente
+                $this->guardarFotoEnTabla($id_orden);        
+                
+                if ($urlfoto1 != null && $urlfoto1 != "") { 
+                    $imagen1 = base64_decode($urlfoto1);
+                    $imagen_name1 = $id_orden.'_1.jpg';
+                    $path1 = public_path('/imageneslectura/'.$imagen_name1);
+                    file_put_contents($path1, $imagen1);
+                    $img1 = Image::make(public_path('imageneslectura/'.$imagen_name1)); 
+                    $textimage = $dateejec;
+                    $img1->resize(640, 480);
+                    $img1->text($textimage, 10, 35,
+                        function($font){ 
+                            $font->size(24);
+                            $font->file(public_path('font/OpenSans-Regular.ttf'));
+                            $font->color('#f1f505'); 
+                            $font->align('left'); 
+                            $font->valign('bottom'); 
+                            $font->angle(0); 
+                        }
+                    ); 
+                    $img1->save(public_path('imageneslectura/'.$imagen_name1)); 
+                    $url1 = 'imageneslectura/'.$imagen_name1;
+                }      
+                
+                $ordenupdate = DB::table('orden_ejecutada')
+                    ->where('id', $id_orden)
+                    ->update([
+                        'suscriptor' => $request->suscriptor ?? 'sinsus',
+                        'usuario' => $user->usuario, // ⭐ Usar el usuario autenticado
+                        'tipo_usuario' => 'movil',
+                        'fecha_de_ejecucion' => $dateejec,
+                        'new_medidor' => null,
+                        'Lect_Actual' => $Lec,
+                        'Cons_Act' => $request->consumo,
+                        'Comentario' => $request->observg,
+                        'Critica' => $critica1,
+                        'Desviacion' => null,
+                        'coordenada' => null,
+                        'latitud' => $latitud,
+                        'longitud' => $longitud,
+                        'estado' => 'EJECUTADO',
+                        'estado_id' => $Estado,
+                        'foto1' => $url1,
+                        'foto2' => null,
+                        'futuro1' => "update",
+                        'futuro2' => 0,
+                        'futuro3' => $causa,
+                        'futuro4' => 0,
+                        'futuro5' => $observacion,
+                        'futuro6' => $dateejemplo,
+                        'updated_at' => now()
+                    ]);
+                
+                Log::info("Registro recibido UPDATE: " . json_encode($request->all()) . ' Orden: ' . $id_orden);
+                
+                if ($ordenupdate) {
+                    DB::table('ordenescu')
+                        ->where('id', $id_orden)
+                        ->update([
+                            'Lect_Actual' => $Lec,
+                            'Cons_Act' => $request->consumo,
+                            'Critica' => $critica1,
+                            'fecha_de_ejecucion' => $dateejec,
+                            'foto1' => $url1,
+                            'foto2' => "update",  
+                            'Coordenada' => null,
+                            'Latitud' => $latitud,
+                            'Longitud' => $longitud,
+                            'Estado_des' => 'EJECUTADO',
+                            'Estado' => $Estado,
+                            'Causa_id' => $causa,
+                            'Observacion_id' => $observacion,
+                            'Causa_des' => $causades,
+                            'Observacion_des' => $observaciondes,
+                            'new_medidor' => $request->observg,
+                            'updated_at' => now()
+                        ]);
+                    
+                    DB::commit();        
+                    Log::info("Registro actualizado con commit: " . json_encode($request->all()));
+                    
+                    return response()->json([
+                        'success' => true,
+                        'message' => 'Lectura actualizada en servidor'
+                    ], 200);
+                }
+            }
+            
+        } catch (\Exception $e) {
+            DB::rollback();
+            
+            $logMessage = "Registro con errores: " . $e->getMessage();
+            Log::error($logMessage);
+            
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 500);
+        }            
     }
-
-    /**
-     * Display the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function show($id)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function edit($id)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function update(Request $request, $id)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function destroy($id)
-    {
-        //
+    
+    public function guardarFotoEnTabla($id) {
+        $orden = Orden_ejecutada::findOrFail($id);
+        $nombreFoto = $orden->foto1; 
+        
+        if ($nombreFoto) {
+            $rutaFoto = public_path($nombreFoto);
+            
+            if (file_exists($rutaFoto)) {
+                $contenidoImagen = file_get_contents($rutaFoto);
+                
+                $photo = new Photos;
+                $photo->photo_data = $contenidoImagen;
+                $photo->id_orden_ejecutada = $id;
+                $photo->save();
+                
+                Log::info("Registro actualizado en fotos " . $id);
+            } else {
+                Log::info('La foto no existe en la ruta especificada.' . $id . $nombreFoto);
+            }
+        } else {
+            Log::info('No se encontró la foto.' . $id);
+        }
     }
 }

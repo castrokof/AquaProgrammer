@@ -34,6 +34,7 @@ class CreateEntradaTable extends Migration
             $table->integer('consecutivo_int');
             $table->string('Ruta',128)->nullable();
             $table->integer('Tope')->nullable();
+            $table->string('id_lectura');
             $table->timestamps();
         });
     }

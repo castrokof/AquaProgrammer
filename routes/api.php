@@ -13,11 +13,14 @@ use Illuminate\Http\Request;
 |
 */
 
-Route::middleware('auth:api')->get('/user', function (Request $request) {
-return $request->user();
+Route::middleware('auth.api.token')->group(function () {
+    Route::post('medidoresout','OrdenesmtlasignarController@medidorall');
+    Route::post('medidores','OrdenEjecutadaController@medidorejecutado');
+    Route::post('marcas','MarcasController@marcasall');
+    Route::post('medidorejecutado','OrdenesmtlasignarController@medidorejecutadosync');
 });
 
-Route::post('medidoresout','Admin\OrdenesmtlasignarController@medidorall');
-Route::post('medidores','Admin\OrdenEjecutadaController@medidorejecutado');
-Route::post('marcas','Admin\MarcasController@marcasall');
+// Ruta pública para login
 Route::post('loginMovil1','Seguridad\LoginController@loginMovil');
+
+

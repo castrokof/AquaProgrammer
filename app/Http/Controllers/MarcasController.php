@@ -39,7 +39,7 @@ class MarcasController extends Controller
     public function guardar(Request $request)
     {
         Marcas::create($request->all());
-        return redirect('admin/marca')->with('mensaje', 'Motivo creado con exito');
+        return redirect('marca')->with('mensaje', 'Motivo creado con exito');
     }
 
     /**
@@ -75,29 +75,26 @@ class MarcasController extends Controller
     public function actualizar(Request $request, $id)
     {
         Marcas::findOrFail($id)->update($request->all());
-        return redirect('admin/marca')->with('mensaje', 'Motivo actualizado con exito!!');
+        return redirect('marca')->with('mensaje', 'Registro actualizado con exito!!');
     }
     
     public function marcasall(Request $request)
     {   
-     
-       $Usuario=$request->usuario;
-       $Orden_id=$request->estado_id;
-       
-        $medidor = DB::table('ordenescu')
-        ->where([
-            ['Usuario','=',$Usuario],
-            ['Estado','=',$Orden_id]
-            ])
-        ->count();
+        // El usuario ya está autenticado por el middleware
+        $usuario = $request->user();
         
-    if($medidor>0){    
-        $marcasapi = DB::table('marcas')
-        ->select('marca_id', 'codigo', 'descripcion')
-        ->get();
-
-        return response()->json($marcasapi);
         
-        }    
-    }    
+        // Verificar si el usuario tiene órdenes pendientes
+        $tieneOrdenes = DB::table('ordenescu')
+            ->where('Usuario', $usuario->usuario)
+            ->where('Estado', '2') // O el estado que necesites
+            ->exists();
+        
+        if ($tieneOrdenes) {    
+            $marcas = Marcas::all();
+            return response()->json($marcas, 200);
+        } else {
+            return response()->json(['error' => 'No puede sincronizar listas'], 403);
+        }  
+    }
 }

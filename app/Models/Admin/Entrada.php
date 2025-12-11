@@ -7,6 +7,5 @@ use Illuminate\Database\Eloquent\Model;
 class Entrada extends Model
 {
     protected $table = 'entrada';
-    protected $fillable = ['Ciclo', 'Suscriptor', 'Nombre', 'Apell', 'Direccion', 'Ref_Medidor', 'LA', 'Promedio', 'recorrido', 'uso', 'estrato', 'Año', 'Mes', 'id_Ruta', 'Periodo', 'consecutivoRuta', 'consecutivo_int', 'Ruta', 'Tope'
-        ];
+    protected $fillable = ['Ciclo', 'Suscriptor', 'Nombre', 'Apell', 'Direccion', 'Ref_Medidor', 'LA', 'Promedio', 'recorrido', 'uso', 'estrato', 'Año', 'Mes', 'id_Ruta', 'Periodo', 'consecutivoRuta', 'consecutivo_int', 'Ruta', 'Tope', 'id_lectura', 'servicio' ];
 }

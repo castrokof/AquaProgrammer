@@ -44,6 +44,8 @@ return [
         'api' => [
             'driver' => 'token',
             'provider' => 'users',
+            'hash' => true, // ⭐ IMPORTANTE: para hashear el token
+            'storage_key' => 'api_token', // ⭐ El campo en la BD
         ],
     ],
 

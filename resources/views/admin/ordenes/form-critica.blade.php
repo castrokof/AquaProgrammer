@@ -20,18 +20,18 @@
         <label for="estado" class="col-xs-4 control-label requerido">Critica</label>
         <select name="Critica" id="Critica" class="form-control select2bs4" style="width: 100%;" required>
             <option value="">---seleccione---</option>
-            <option value="ALTO CONSUMO">ALTO CONSUMO</option>
-            <option value="BAJO CONSUMO">BAJO CONSUMO</option>
-            <option value="CAUSADO">CAUSADO</option>
-            <option value="CONSUMO CERO">CONSUMO CERO</option>
-            <option value="NEGATIVO">NEGATIVO</option>
+            <option value="51-ALTO CONSUMO">ALTO CONSUMO</option>
+            <option value="52-BAJO CONSUMO">BAJO CONSUMO</option>
+            <option value="55-CAUSADO">CAUSADO</option>
+            <option value="53-LECTURAS_IGUALES">CONSUMO CERO</option>
+            <option value="50-CONSUMO NEGATIVO">NEGATIVO</option>
             <option value="ALL">TODOS</option>
         </select>
 </div>
 <div class="col-md-3">    
     <label for="Generado" class="col-xs-4 control-label requerido">Generado</label>
     <select name="Generado" id="Generado" class="form-control select2bs4" style="width: 100%;" required>
-        <option value="">---seleccione---</option>
+        <option value="1">---seleccione---</option>
         <option value="generar">SI</option>
     </select>
     

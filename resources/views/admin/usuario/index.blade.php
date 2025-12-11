@@ -26,60 +26,29 @@
             </button>
           </div>
         </div>
-      <div class="card-body table-responsive p-0">
+      <div class="card-body table-responsive p-2">
         
-      <table id="usuarios" class="table table-hover table-bordered text-nowrap">
+      <table id="usuarios" class="table table-hover p-2 table-bordered text-nowrap">
         <thead>
         <tr>
-               <th class="btn-accion-tabla tooltipsC" title="Editar este registro"><i class="fa fa-fw fa-pencil-alt"></i></th>
-              <th class="btn-accion-tabla tooltipsC" title="Editar password"><i class="fas fa-key"></i></th>    
+              <th>action</th>
               <th>Id</th>
               <th>Usuario</th>
               <th>Nombre</th>
               <th>Tipo de Usuario</th>
               <th>Email</th>
               <th>Empresa</th>
-              <th>Password</th>
               <th>Estado</th>
               <th>Rol</th>
              
         </tr>
         </thead>
         <tbody>
-            @foreach ($datas as $data1)
-            <tr>
-                 <td>
-                <a href="{{route('editar_usuario', ['id' => $data1->id])}}" class="btn-accion-tabla tooltipsC" title="Editar este registro">
-                  <i class="fa fa-fw fa-pencil-alt"></i>
-                </a>
-                </td>
-                <td>
-                <a href="{{url("usuario/$data1->id/password")}}" class="btn-accion-tabla tooltipsC" title="Editar password">
-                  <i class="fas fa-key"></i>
-                </a>
-                </td>
-                <td>{{$data1->id}}</td>
-                <td>{{$data1->usuario}}</td>
-                <td>{{$data1->nombre}}</td>
-                <td>{{$data1->tipodeusuario}}</td>
-                <td>{{$data1->email}}</td>
-                <td>{{$data1->empresa}}</td>
-                <td>{{$data1->password}}</td>
-                <td>{{$data1->estado}}</td>
-                <td>
-                    @foreach($data1->roles1 as $rol)
-                    
-                    {{$rol->nombre}}    
-                        
-                    @endforeach
-                    
-                </td>
-            </tr>
-        @endforeach          
+           
         </tbody>
       </table>
     </div>
-  </form>
+ 
     <!-- /.card-body -->
 </div>
 </div>
@@ -125,6 +94,8 @@
 </div>
 
 
+@include('admin.usuario.formpass')
+
 @endsection
 
 
@@ -144,15 +115,57 @@
 
 <script>
  
- jQuery(function($) {
-        //initiate dataTables plugin
-
+    $(document).ready(function() {
+   
         var myTable = 
-        $('#usuarios')
-        //.wrap("<div class='dataTables_borderWrap' />")   //if you are applying horizontal scrolling (sScrollX)
-        .DataTable({
-        language: idioma_espanol,
-        processing: true,
+       $('#usuarios').DataTable({
+                        language: idioma_espanol,
+                        processing: true,
+                        lengthMenu: [
+                            [25, 50, 100, 500, -1],
+                            [25, 50, 100, 500, "Mostrar Todo"]
+                        ],
+                        processing: true,
+                        serverSide: true,
+                        aaSorting: [
+                            [1, "asc"]
+                        ],
+
+                        ajax: {
+                            url: "{{ route('usuario') }}",
+                        },
+                columns: [
+                    {
+                        data: 'action',
+                        orderable: false
+                    },
+                    {
+                        data: 'id'
+                    },
+                    {
+                        data: 'usuario'
+                    },
+                    {
+                        data: 'nombre'
+                    },
+                    {
+                        data: 'tipodeusuario'
+                    },
+                    {
+                        data: 'email'
+                    },
+                    {
+                        data: 'empresa'
+                    },
+                    {
+                        data: 'estado'
+                    },
+                    {
+                        data: 'roles1[0].nombre'
+                    }
+                ],
+
+        
 
          //Botones----------------------------------------------------------------------
      
@@ -197,8 +210,130 @@
         
     
         });
+    
+    
+    
+        $(document).on('click', '.epassword', function() {
+            var id = $(this).attr('id');
+            var usuario = $(this).attr('usuario1');
 
-       });
+            $('#usuario_id1').val(usuario);
+            $('#idpassu').val(id);
+            $('#modal-xlpass').modal('show');
+
+
+        });
+    
+   $('#actualizarpass').click(function(){
+    event.preventDefault();
+       var id = $('#idpassu').val();
+       var passwordu = $('#passwordu').val();
+       var remenber_tokenu = $('#remenber_tokenu').val();
+   
+       if(passwordu != remenber_tokenu){
+         
+        $('button[type="button"]').attr('enable','disabled'); 
+
+       }else if(passwordu == '' || remenber_tokenu == ''){
+  
+        Swal.fire({
+              title: 'Los campos no pueden estar vacios',
+              type: 'warning',
+              showCloseButton: true,
+              confirmButtonText: 'Aceptar',
+                }) 
+        
+     
+       }else{
+  
+        Swal.fire({
+          title: "¿Estás seguro?",
+          text: "Estás por actualizar el password del usuario",
+          type: "success",
+          showCancelButton: true,
+          showCloseButton: true,
+          confirmButtonText: 'Aceptar',
+          }).then((result)=>{
+         if(result.value){  
+         
+            $.ajax({
+                  url:"password1/" + id + "",
+                  method:'put',
+                  data:{password:passwordu, remenber_token:remenber_tokenu,
+                  
+                    "_token": $("meta[name='csrf-token']").attr("content")
+                  
+                  },
+                  success:function(respuesta)
+                  {  
+                    if(respuesta.mensaje ='ok') {
+                      $('#modal-xlpass').modal('hide');
+                      $('#passwordu').val('');
+                      $('#remenber_tokenu').val('');
+                      Manteliviano.notificaciones('Password usuario actualizado correctamente', 'Sistema System App','success');
+                   
+                  }else if(respuesta.mensaje ='ng'){
+
+
+                    Manteliviano.notificaciones('Las contraseñas deben coincidir', 'Sistema System App','error');
+                  }
+                  }
+                   });
+  
+                }
+           
+              
+            });
+           
+         }     
+      });
+      
+      
+        $(document).on('click', '.edit', function() {
+            var id = $(this).attr('id');
+
+            $.ajax({
+                url: "usuario/" + id + "/editar",
+                dataType: "json",
+                success: function(data) {
+                    $('#usuario').val(data.result.usuario);
+                    $('#nombre').val(data.result.nombre);
+                    $('#tipodeusuario').val(data.result.tipodeusuario);
+                    $('#email').val(data.result.email);
+                    $('#empresa').val(data.result.empresa);
+                    $('#estado').val(data.result.estado);
+                    $('#password').val(data.result.password).prop('disabled', true).prop(
+                        'required', false);
+                    $('#remenber_token').val(data.result.remenber_token).prop('disabled',
+                        true).prop('required', false);
+                    $('#rol_id').val(data.result.rol_id);
+                    $('#hidden_id').val(id)
+                    $('.card-title').text('Editar usuario');
+                    $('#action_button').val('Edit');
+                    $('#action').val('Edit');
+                    $('#modal-u').modal('show');
+
+                },
+               
+
+
+            }).fail(function(jqXHR, textStatus, errorThrown) {
+
+                if (jqXHR.status === 403) {
+
+                    Manteliviano.notificaciones('No tienes permisos para realizar esta accion',
+                        'Sistema Ventas', 'warning');
+
+                }
+            });
+
+        });
+
+  
+      });  
+  
+
+
        
 
    var idioma_espanol =

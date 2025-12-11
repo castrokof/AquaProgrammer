@@ -149,6 +149,8 @@ $.get('posicionamiento',{Periodo:Periodo, Ciclo:Ciclo, ruta:ruta},function(marke
   { 
     $.each(markers1,function(index, datos){
       
+      //marker = new L.marker([datos.Latitud,datos.Longitud]);
+      
       marker = new L.marker([datos.Latitud,datos.Longitud])
           .bindPopup("Suscriptor:"+datos.Suscriptor+'<br>'+"Nombre:"+datos.Nombre+'<br>'+"Direccion:"+datos.Direccion)
           .openPopup()

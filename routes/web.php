@@ -83,8 +83,8 @@ Route::put('password1/{id}', 'UsuarioController@actualizarpassword1')->name('act
 
 /* RUTAS DEL ARCHIVO y ENTRADA */
 Route::get('archivo', 'ArchivoController@index')->name('archivo')->middleware('superConsultor');
-Route::post('guardar', 'EntradaController@guardar')->name('subir_archivo')->middleware('superEditor');
-
+Route::post('guardar', 'Admin\EntradaController@guardar')->name('subir_archivo')->middleware('superEditor');
+Route::get('sincronizar-entradas', 'Admin\EntradaController@sincronizarApi')->name('sincronizar.entradas')->middleware('superConsultor');
 /* RUTAS DE ASIGNACION */
 Route::get('asignacion', 'OrdenesmtlasignarController@index')->name('asignacion')->middleware('superEditor');
 Route::post('asignacion_orden', 'OrdenesmtlasignarController@actualizar')->name('actualizar_asignacion')->middleware('superEditor');
@@ -92,10 +92,18 @@ Route::post('desasignacion_orden', 'OrdenesmtlasignarController@desasignar')->na
 Route::get('idDivision', 'OrdenesmtlasignarController@idDivisionss')->name('idDivisionsss')->middleware('superEditor');
 /* DETALLE DE ORDENES */
 Route::get('seguimiento', 'OrdenesmtlasignarController@seguimiento')->name('seguimiento')->middleware('superConsultor');
+Route::post('seguimiento1', 'OrdenesmtlasignarController@seguimiento1')->name('seguimiento1')->middleware('superConsultor');
+Route::get('orden-foto-url/{id}', 'OrdenesmtlasignarController@getFotoUrl')->name('fotos.url')->middleware('superConsultor');
 Route::get('seguimiento/{id}', 'OrdenesmtlasignarController@fotos')->name('fotos')->middleware('superConsultor');
 Route::get('seguimientodetalle/{id}', 'OrdenesmtlasignarController@detalle')->name('detalle_de_orden')->middleware('superConsultor');
 Route::get('posicionamiento', 'OrdenesmtlasignarController@posicionamiento')->name('posicionamiento')->middleware('superConsultor');
-//Route::get('seguimientoExportar', 'OrdenesmtlasignarController@exportarExcel')->name('exportarxlsx');
+Route::post('updateestado', 'OrdenesmtlasignarController@updateEstado')->name('updateestado');
+Route::post('/actualizar-lectura', 'OrdenesmtlasignarController@actualizarLectura')->name('actualizar.lectura')->middleware('superConsultor');
+
+
+Route::get('exportarciclo', 'OrdenesmtlasignarController@exportarCiclo')->name('exportarCiclo');
+Route::post('exportarcicloe', 'OrdenesmtlasignarController@exportarExcel')->name('exportarCicloExcel');
+Route::get('download-excel', 'OrdenesmtlasignarController@downloadExcel')->name('downloadExcel');
 
 
 /* RUTAS DE MARCA */
@@ -116,4 +124,9 @@ Route::get('criticaadd', 'OrdenesmtlasignarController@criticaadd')->name('critic
 Route::get('generar_critica', 'OrdenesmtlasignarController@generarcritica')->name('generar_critica');
 Route::post('adicionar_critica', 'OrdenesmtlasignarController@adicionarcritica')->name('adicionar_critica');
 Route::post('eliminar_critica', 'OrdenesmtlasignarController@eliminarcritica')->name('eliminar_critica');
+
+Route::get('export_factura', 'OrdenesmtlasignarController@factura')->name('export_factura');
+Route::post('export_facturap', 'OrdenesmtlasignarController@facturap')->name('export_facturap');
+Route::get('generar_factura', 'OrdenesmtlasignarController@generarfactura')->name('generar_factura');
+
 });

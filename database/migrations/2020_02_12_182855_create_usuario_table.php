@@ -21,6 +21,7 @@ class CreateUsuarioTable extends Migration
             $table->string('email',100)->unique();
             $table->string('empresa',50);
             $table->string('password',100);
+            $table->string('api_token', 191)->unique()->nullable();
             $table->string('remenber_token',100);
             $table->string('estado',50);
             $table->timestamps();

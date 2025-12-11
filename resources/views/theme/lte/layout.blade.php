@@ -5,7 +5,12 @@
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   
-  <title>@yield("titulo",'AcuasurRural')</title>
+  <title>@yield("titulo",'SystemApp')</title>
+  
+  <!-- Favicons -->
+    <link href="{{asset("assets/img/iconapp.png")}}" rel="icon">
+    <link href="{{asset("assets/img/iconapp.png")}}" rel="fidem_icon">
+  <!-- Tell the browser to be responsive to screen width -->
   <!-- Tell the browser to be responsive to screen width -->
   <meta name="viewport" content="width=device-width, initial-scale=1">  
   
@@ -24,7 +29,7 @@
   <!-- Theme Toastr -->
   
   <!-- Theme Toastr -->
-  <link href="//cdn.jsdelivr.net/npm/@sweetalert2/theme-bootstrap-4/bootstrap-4.css" rel="stylesheet">
+  <link rel="stylesheet" href="{{asset("assets/$theme/plugins/sweetalert2/sweetalert2.min.css")}}">
   
   
   <!--<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">-->
@@ -84,11 +89,8 @@ $id= Session()->get('usuario_id');
 
 @yield("scriptsPlugins")
 
-<script src="//cdn.jsdelivr.net/npm/sweetalert2@9/dist/sweetalert2.min.js"></script>
-<!-- Jq Sweet alert cdn -->
-<script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
-<!-- Jq Toastr cdn -->
-<!--<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>-->
+<script src="{{asset("assets/$theme/plugins/sweetalert2/sweetalert2.all.min.js")}}"></script>
+
 <script src="{{asset("assets/$theme/plugins/toastr/toastr.min.js")}}"></script>
 <!-- Jq Validate -->
 <script src="{{asset("assets/js/jquery-validation/jquery.validate.min.js")}}"></script>
@@ -116,7 +118,7 @@ $id= Session()->get('usuario_id');
   
         Swal.fire({
               title: 'Los campos no pueden estar vacios',
-              icon: 'warning',
+              type: 'warning',
               showCloseButton: true,
               confirmButtonText: 'Aceptar',
                 }) 
@@ -127,7 +129,7 @@ $id= Session()->get('usuario_id');
         Swal.fire({
           title: "¿Estás seguro?",
           text: "Estás por actualizar el password",
-          icon: "success",
+          type: "success",
           showCancelButton: true,
           showCloseButton: true,
           confirmButtonText: 'Aceptar',

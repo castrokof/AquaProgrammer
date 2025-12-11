@@ -2,11 +2,11 @@
   <aside class="main-sidebar  sidebar-light-info elevation-4 ">
     <!-- Brand Logo -->
     <a href="#" class="brand-link">
-      <img src="{{asset("assets/$theme/dist/img/AdminLTELogo copy.gif")}}"
-           alt="Sinteco"
+      <img src="{{asset("assets/img/turbine.png")}}"
+           alt="SystemApp"
            class="brand-image img-circle elevation-2"
            style="opacity: .8">
-      <span class="brand-text font-weight-light">AcuasurRural</span>
+      <span class="brand-text font-weight-light">System App</span>
     </a>
 
     <!-- Sidebar -->

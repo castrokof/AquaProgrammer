@@ -4,6 +4,7 @@ namespace App\Exceptions;
 
 use Exception;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
+use Illuminate\Auth\AuthenticationException;
 
 class Handler extends ExceptionHandler
 {
@@ -49,5 +50,20 @@ class Handler extends ExceptionHandler
     public function render($request, Exception $exception)
     {
         return parent::render($request, $exception);
+    }
+
+      // ⭐ AGREGAR ESTE MÉTODO
+    protected function unauthenticated($request, AuthenticationException $exception)
+    {
+        // Si la petición espera JSON (viene de la API), devolver JSON
+        if ($request->expectsJson() || $request->is('api/*')) {
+            return response()->json([
+                'error' => 'No autenticado',
+                'message' => 'Token inválido o no proporcionado'
+            ], 401);
+        }
+
+        // Si es una petición web, redirigir al login
+        return redirect()->guest(route('login'));
     }
 }

@@ -51,19 +51,22 @@ height:70%; }
               </div>
         
                         
-<div class="card-body table-responsive p-0" style="height: 600px;">
+<div class="card-body table-responsive p-2" style="height: 600px;">
     <div class="loader"> <img src="{{asset("assets/$theme/dist/img/loader6.gif")}}" class="" /> </div> 
-      <table id="criticat"  class="table text-nowrap table-head-fixed table-hover table-bordered">
+      <table id="criticat"  class="table p-2 text-nowrap table-head-fixed table-hover table-bordered">
         <thead>
         <tr> 
               <th class="width40"><input name="selectall" id="selectall" type="checkbox" class="select-all" /> Select / Deselect All</th>
+              <th>Detalle</th>
               <th>Consecutivo</th>
               <th>Critica</th>
               <th>Medidor</th>
               <th>Promedio</th>
               <th>Consumo</th>
               <th>Lectura Actual</th>
-              <th>Lectura Anterior</th>
+              <th>Foto</th>
+              <th>Lectura Ant.</th>
+              <th>Causa</th>
               <th>Usuario</th>
               <th>Funcionario</th>
               <th>Orden</th>
@@ -107,6 +110,10 @@ height:70%; }
            data:'checkbox', orderable: false, searchable: false
            
        },
+       {
+           data:'detalle', orderable: false, searchable: false
+           
+       },
      
        {
            data:'Consecutivo'
@@ -129,7 +136,13 @@ height:70%; }
            data:'Lect_Actual'
        },
        {
+           data:'foto'
+       },
+       {
            data:'LA'
+       },
+       {
+           data:'Causa_des'
        },
        {
            data:'Usuario'
@@ -264,7 +277,7 @@ $(document).on('click', '#adicionar', function(){
    Swal.fire({
         title: "¿Estás seguro?",
         text: "Estás por adicionar ordenes de critica",
-        icon: "success",
+        type: "success",
         showCancelButton: true,
         showCloseButton: true,
         confirmButtonText: 'Aceptar',
@@ -304,7 +317,7 @@ $(document).on('click', '#adicionar', function(){
 
         Swal.fire({
             title: 'Por favor seleccione una orden del checkbox',
-            icon: 'warning',
+            type: 'warning',
             buttons:{
                 cancel: "Cerrar"
                 
@@ -322,7 +335,7 @@ $(document).on('click', '#adicionar', function(){
 Swal.fire({
 title: "¿Estás seguro?",
 text: "Estás por eliminar ordenes de critica",
-icon: "success",
+type: "success",
 showCancelButton: true,
 showCloseButton: true,
 confirmButtonText: 'Aceptar',
@@ -362,7 +375,7 @@ if(id.length > 0)
 
 Swal.fire({
     title: 'Por favor seleccione una orden del checkbox',
-    icon: 'warning',
+    type: 'warning',
     buttons:{
         cancel: "Cerrar"
         

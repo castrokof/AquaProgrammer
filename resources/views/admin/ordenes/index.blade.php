@@ -50,9 +50,9 @@ height:70%; }
               </div>
         
                         
-<div class="card-body table-responsive p-0" style="height: 600px;">
+<div class="card-body table-responsive p-2" style="height: 600px;">
     <div class="loader"> <img src="{{asset("assets/$theme/dist/img/loader6.gif")}}" class="" /> </div> 
-      <table id="asignacion"  class="table text-nowrap table-head-fixed table-hover table-bordered">
+      <table id="asignacion"  class="table text-nowrap table-head-fixed table-hover p-2  table-bordered">
         <thead>
         <tr> 
               <th class="width40"><input name="selectall" id="selectall" type="checkbox" class="select-all" /> Select / Deselect All</th>
@@ -76,8 +76,11 @@ height:70%; }
 @endsection
 
 @section("scriptsPlugins")
-<script src="{{asset("assets/$theme/plugins/datatables/jquery.dataTables.js")}}" type="text/javascript"></script>
-<script src="{{asset("assets/$theme/plugins/datatables-bs4/js/dataTables.bootstrap4.js")}}" type="text/javascript"></script>
+<script src="{{ asset("assets/$theme/plugins/datatables/jquery.dataTables.js") }}" type="text/javascript"></script>
+    <script src="{{ asset("assets/$theme/plugins/datatables-bs4/js/dataTables.bootstrap4.js") }}" type="text/javascript">
+    </script>
+    <script src="{{ asset("assets/$theme/plugins/datatables-responsive/js/dataTables.responsive.min.js") }}"
+        type="text/javascript"></script>
 
 <script>
  jQuery(document).ready(function() {
@@ -196,7 +199,7 @@ $(document).on('click', '#asignar', function(){
 
            Swal.fire({
             title: 'Debe seleccionar un usuario',
-            icon: 'warning',
+            type: 'warning',
             buttons:{
                 cancel: "Cerrar"
                 
@@ -208,7 +211,7 @@ $(document).on('click', '#asignar', function(){
    Swal.fire({
         title: "¿Estás seguro?",
         text: "Estás por asignar ordenes",
-        icon: "success",
+        type: "success",
         showCancelButton: true,
         showCloseButton: true,
         confirmButtonText: 'Aceptar',
@@ -253,7 +256,7 @@ $(document).on('click', '#asignar', function(){
 
         Swal.fire({
             title: 'Por favor seleccione una orden del checkbox',
-            icon: 'warning',
+            type: 'warning',
             buttons:{
                 cancel: "Cerrar"
                 
@@ -271,7 +274,7 @@ $(document).on('click', '#asignar', function(){
    Swal.fire({
         title: "¿Estás seguro?",
         text: "Estás por desasignar ordenes",
-        icon: "warning",
+        type: "warning",
         showCancelButton: true,
         showCloseButton: true,
         confirmButtonText: 'Aceptar',
@@ -315,7 +318,7 @@ $(document).on('click', '#asignar', function(){
 
       Swal.fire({
             title: 'Por favor seleccione una orden del checkbox',
-            icon: 'warning',
+            type: 'warning',
             buttons:{
                 cancel: "Cerrar"
                 

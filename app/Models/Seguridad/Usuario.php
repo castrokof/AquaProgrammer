@@ -6,6 +6,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use App\Models\Admin\Rol;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Notifications\Notifiable;
 
 class Usuario extends Authenticatable
 {
@@ -14,17 +15,21 @@ class Usuario extends Authenticatable
     //protected $guarded = ['id'];
     protected $fillable = [
         
-        'usuario', 'nombre', 'tipodeusuario', 'email', 'empresa',  'password', 'remember_token', 'estado'
+        'usuario', 'nombre', 'tipodeusuario', 'email', 'empresa',  'password', 'remember_token', 'estado', 'api_token'
     ];
 
 
 
 
     protected $hidden = [
-        'password'
+        'password', 'api_token'
     ];
 
-    
+     // ⭐ NUEVO: Especificar el campo de autenticación principal
+    public function getAuthIdentifierName()
+    {
+        return 'id';
+    }
 
     public function roles1(){
         return $this->belongsToMany(Rol::class, 'usuario_rol');

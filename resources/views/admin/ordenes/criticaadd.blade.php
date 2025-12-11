@@ -51,9 +51,9 @@ height:70%; }
               </div>
         
                         
-<div class="card-body table-responsive p-0" style="height: 600px;">
+<div class="card-body table-responsive p-2" style="height: 600px;">
     <div class="loader"> <img src="{{asset("assets/$theme/dist/img/loader6.gif")}}" class="" /> </div> 
-      <table id="criticat"  class="table text-nowrap table-head-fixed table-hover table-bordered">
+      <table id="criticat"  class="table p-2 text-nowrap table-head-fixed table-hover table-bordered">
         <thead>
         <tr> 
               <th>Consecutivo</th>

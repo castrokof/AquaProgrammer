@@ -5,7 +5,14 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <!-- CSRF Token -->
     <meta name="csrf-token" content="{{ csrf_token() }}">
-  <title>Lectura-AcuasurR | Log in</title>
+  <title>Lectura-SystemApp | Log in</title>
+  
+   <!-- Favicons -->
+    <link href="{{asset("assets/img/iconapp.png")}}" rel="icon">
+    <link href="{{asset("assets/img/iconapp.png")}}" rel="fidem_icon">
+  <!-- Tell the browser to be responsive to screen width -->
+
+  
   <!-- Tell the browser to be responsive to screen width -->
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
@@ -32,8 +39,8 @@
   <!-- /.login-logo -->
   <div class="card">
     <div class="card-body login-card-body">
-        <img src="{{asset("assets/img/logo_acuasur.jpeg")}}") alt="User Avatar" class="col-xs-12 col-sm-12 col-md-12 m-t-10 text-center img-size-500 mr-12 " >
-       <p class="login-box-msg"> <b>Lecturas Acuasur Rural</b></p>
+        <img src="{{asset("assets/img/logo_login.png")}}") alt="User Avatar" class="col-xs-12 col-sm-12 col-md-12 m-t-10 text-center img-size-500 mr-12 " >
+       <p class="login-box-msg"> <b>Lecturas System App</b></p>
        <div class="card"></div><hr />
       <p class="login-box-msg">Inicie Sesion</p>
       @if ($errors->any())

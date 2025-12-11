@@ -24,13 +24,13 @@
           </div>
         </div>
         <!-- /.card-header -->
-        <div class="card-body table-responsive p-0">
+        <div class="card-body table-responsive p-2">
       <table id="tabla-data" class="table table-head-fixed text-nowrap table-hover table-bordered">
         <thead>
         <tr>
-              <th class="width70">Codigo</th>
+              <th class="width70">Grupo</th>
+              <th>Codigo</th>
               <th>Nombre</th>
-              <th>Descripcion</th>
               <th class="width80">Acciones</th>
         </tr>
         </thead>
@@ -41,7 +41,7 @@
                 <td>{{$data->codigo}}</td>
                 <td>{{$data->descripcion}}</td>
                 <td>
-                <a href="{{url("admin/marca/$data->id/editar")}}" class="btn-accion-tabla tooltipsC" title="Editar este registro">
+                <a href="{{url("marca/$data->id/editar")}}" class="btn-accion-tabla tooltipsC" title="Editar este registro">
                   <i class="fa fa-fw fa-pencil-alt"></i>
                 </a>
                 </td>

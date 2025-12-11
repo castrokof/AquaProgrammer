@@ -32,7 +32,20 @@ height:100%; }
 <div class="col-lg-12">
   @include('includes.form-error')
   @include('includes.form-mensaje')  
-<div class="card card-primary">
+
+  <ul class="nav nav-tabs" id="custom-tabs" role="tablist">
+  <li class="nav-item">
+    <a class="nav-link active" id="archivos-tab" data-toggle="tab" href="#archivos" role="tab">Archivos</a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" id="api-tab" data-toggle="tab" href="#api" role="tab">Sincronizar API</a>
+  </li>
+</ul>
+
+<div class="tab-content">
+  <!-- TAB 1 -->
+  <div class="tab-pane fade show active" id="archivos" role="tabpanel">
+    <div class="card card-primary">
     <div class="card-header">
       <h3 class="card-title">Archivos</h3>
       <div class="card-tools pull-right">
@@ -41,7 +54,7 @@ height:100%; }
       </div>
     </div>
     <!-- /.card-header -->
-    <div class="card-body table-responsive p-0">
+    <div class="card-body table-responsive p-2">
       <table id="tarchivos" class="table table-hover table-bordered text-nowrap">
             <thead>
             <tr>
@@ -58,25 +71,47 @@ height:100%; }
             </tr>
             </thead>
             <tbody>
-                    {{-- @foreach ($datas as $data)
-                        <tr>
-                            <td>{{$data->id}}</td>
-                            <td>{{$data->nombre}}</td>
-                            <td>{{$data->fecha}}</td>
-                            <td>{{$data->registros}}</td>
-                            <td>{{$data->estado}}</td>
-                            <td>{{$data->usuario}}</td>
-                            <td>{{$data->periodo}}</td>
-                            <td>{{$data->zona}}</td>
-                            <td>{{$data->cantidad}}</td>
-                            
-                        </tr>
-                    @endforeach --}}
+                    
             </tbody>
       </table>
     </div>
     
   </div>
+  </div>
+
+  <!-- TAB 2 -->
+  <div class="tab-pane fade" id="api" role="tabpanel">
+    <div class="card card-primary mt-3">
+      <div class="card-header d-flex justify-content-between">
+        <h3 class="card-title">Lecturas desde API</h3>
+        <button id="btnSincronizar" class="btn btn-success">
+          <i class="fa fa-sync"></i> Sincronizar
+        </button>
+      </div>
+      <div class="card-body">
+        <table id="tentradas" class="table table-hover table-bordered text-nowrap">
+          <thead>
+            <tr>
+              <th>ID Lectura</th>
+              <th>Suscriptor</th>
+              <th>Usuario</th>
+              <th>Dirección</th>
+              <th>Medidor</th>
+              <th>Uso</th>
+              <th>Servicio</th>
+              <th>Año</th>
+              <th>Mes</th>
+              <th>Ciclo</th>
+              <th>Ruta</th>
+              <th>Consecutivo</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
 </div>
 </div>
 <!--Modal-->
@@ -284,6 +319,45 @@ $.ajax({
 
           
 }); 
+
+var tableEntradas = $('#tentradas').DataTable({
+        language: idioma_espanol,
+        columns: [
+            { data: 'id_lectura' },
+            { data: 'suscriptor' },
+            { data: 'usuario' },
+            { data: 'direccion' },
+            { data: 'medidor' },
+            { data: 'uso' },
+            { data: 'servicio' },
+            { data: 'year' },
+            { data: 'mes' },
+            { data: 'ciclo' },
+            { data: 'ruta' },
+            { data: 'consecutivo' }
+        ]
+    });
+
+    $('#btnSincronizar').click(function() {
+        $.ajax({
+            url: "{{ route('sincronizar.entradas') }}",
+            method: 'GET',
+            beforeSend: function() {
+                Manteliviano.notificaciones('Sincronizando...', 'Sistema AcuasurRural', 'info');
+            },
+            success: function(res) {
+                if (res.status === 'success') {
+                    Manteliviano.notificaciones(res.message, 'Sistema AcuasurRural', 'success');
+                    tableEntradas.clear().rows.add(res.data).draw();
+                } else {
+                    Manteliviano.notificaciones(res.message, 'Sistema AcuasurRural', 'warning');
+                }
+            },
+            error: function() {
+                Manteliviano.notificaciones('Error al sincronizar con la API', 'Sistema AcuasurRural', 'danger');
+            }
+        });
+    });
 
 
       });

@@ -62,6 +62,15 @@ return [
             'region' => env('AWS_DEFAULT_REGION'),
             'bucket' => env('AWS_BUCKET'),
         ],
+        
+         // otros discos...
+
+        'public_html' => [
+            'driver' => 'local',
+            'root' => public_path('acuasur/export'),
+            'url' => env('APP_URL') . '/acuasur/export',
+            'visibility' => 'public',
+        ],
 
     ],
 

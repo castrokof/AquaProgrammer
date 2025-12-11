@@ -10,6 +10,11 @@ use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
 use Intervention\Image\ImageManagerStatic as Image;
 use Barryvdh\DomPDF\Facade as PDF;
+use App\Models\Admin\Photos;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Storage;
+use App\Exports\OrdenesExport;
+use Carbon\Carbon;
 
 
 
@@ -95,7 +100,7 @@ class  OrdenesmtlasignarController extends Controller
             ->make(true);
         }
       
-        $usuarios=Usuario::orderBy('id')->where('tipodeusuario','movil')->pluck('usuario', 'id');
+        $usuarios=Usuario::orderBy('id')->where([['tipodeusuario','movil'],['estado','activo']])->pluck('usuario', 'id');
            
         
         return view('admin.ordenes.index', compact('usuarios'));   
@@ -114,93 +119,52 @@ class  OrdenesmtlasignarController extends Controller
             
         $all = $request->Critica;
         
-        if(!empty($request->Periodo) && !empty($request->Ciclo) && !empty($request->Ruta) && $all == "ALL" && !empty($request->Generado)){
+        if($request->Periodo != '' && $request->Ciclo != '' && $request->Ruta != ''){
 
             
-          $datas=Ordenesmtl::orderBy('id')
-          ->where([
+        $datas=Ordenesmtl::orderBy('Cons_Act','DESC');
+          
+          
+       if($request->Periodo != '' && $request->Ciclo != '' && $request->Ruta != ''){
+       $datas->where([
           ['Periodo','=',$request->Periodo],
           ['Ciclo','=',$request->Ciclo],
           ['idDivision','=',$request->Ruta],
-          ['Critica','!=',"NORMAL"],
           ['Estado','=', 4],
-          ['Coordenada','=', $request->Generado]
-          ])
-        
-          ->get();
-      
-                  
+          ['Critica','!=', '54-NORMAL']
+          ]);
+        }
           
-      }else if(!empty($request->Periodo) && !empty($request->Ciclo) && !empty($request->Ruta) && !empty($request->Critica) && !empty($request->Generado)){
-
-            
-        $datas=Ordenesmtl::orderBy('id')
-        ->where([
-        ['Periodo','=',$request->Periodo],
-        ['Ciclo','=',$request->Ciclo],
-        ['idDivision','=',$request->Ruta],
-        ['Critica','=',$request->Critica],
-        ['Estado','=', 4],
-        ['Coordenada','=', $request->Generado]
-        ])
-      
-        ->get();
-    
-                
         
-    }else if(!empty($request->Periodo) && !empty($request->Ciclo) && $all == "ALL" && !empty($request->Generado)){
-
-            
-            $datas=Ordenesmtl::orderBy('id')
-            ->where([
-            ['Periodo','=',$request->Periodo],
-            ['Ciclo','=',$request->Ciclo],
-            ['Critica','!=',"NORMAL"],
-            ['Estado','=', 4],
-            ['Coordenada','=', $request->Generado]
-            ])
-          
-            ->get();
+      if(!empty($all)){
+        $datas->where('Critica','=',$all);
+        }
         
-                    
-            
-        }else if(!empty($request->Periodo) && !empty($request->Ciclo)  && !empty($request->Ruta) && $all == "ALL"){
-
-            
-          $datas=Ordenesmtl::orderBy('id')
-          ->where([
-          ['Periodo','=',$request->Periodo],
-          ['Ciclo','=',$request->Ciclo],
-          ['idDivision','=',$request->Ruta],
-          ['Critica','!=', "NORMAL"],
-          ['Estado','=', 4],
-          ['Coordenada','=', '']
-          ])
+     if($request->Generado == 'generar'){
+        $datas->where('Coordenada','=', 'generar');
+        }
         
-          ->get();
-      
-                  
-          
-      }else if(!empty($request->Periodo) && !empty($request->Ciclo) && !empty($request->Ruta) &&  !empty($request->Critica)){
-
-            
-          $datas=Ordenesmtl::orderBy('id')
-          ->where([
-          ['Periodo','=',$request->Periodo],
-          ['Ciclo','=',$request->Ciclo],
-          ['idDivision','=',$request->Ruta],
-          ['Critica','=',$request->Critica],
-          ['Estado','=', 4],
-          ['Coordenada','=', '']
-          ])
+     if($request->Generado == '1'){
+       $datas->whereNull('Coordenada');
+        }
+     
+        $datas->get();
+     
+            return  DataTables()->of($datas)
+            ->addColumn('checkbox','<input type="checkbox" name="case[]"  value="{{$id}}" class="case" title="Selecciona Orden"
+            />')
+            ->addColumn('foto','<a target="_blank" href="{{url("seguimiento/$id")}}" class="tooltipsC" title="Foto"><i class="fa fa-camera"></i>
+            </a>')
+            ->addColumn('foto_Url','{{url("seguimiento/$id")}}')
+            ->addColumn('detalle','<a target="_blank" href="{{url("seguimientodetalle/$id")}}" class="btn btn-xs btn-warning tooltipsC" title="detalle">Orden detalle</a>')
+            ->addColumn('detalle_Url','{{url("seguimientodetalle/$id")}}')
+            ->rawColumns(['checkbox','detalle','foto','foto_Url','detalle_Url' ])
+            ->make(true);
         
-          ->get();
-      
-                  
           
       }else{      
           
-          $datas=Ordenesmtl::orderBy('id')
+          $datas1=Ordenesmtl::orderBy('id')
           ->where([
           ['Periodo','=',$request->Periodo],
           ['Ciclo','=',$request->Ciclo],
@@ -209,15 +173,24 @@ class  OrdenesmtlasignarController extends Controller
           ['Coordenada','=', $request->Generado]
           ])
           ->whereBetween('fecha_de_ejecucion', [$fechaAi,$fechaAf])
+          ->get();
           
-          ->get();   
-
-          }    
-            return  DataTables()->of($datas)
+            return  DataTables()->of($datas1)
             ->addColumn('checkbox','<input type="checkbox" name="case[]"  value="{{$id}}" class="case" title="Selecciona Orden"
             />')
-            ->rawColumns(['checkbox'])
-            ->make(true);
+            ->addColumn('foto','<a target="_blank" href="{{url("seguimiento/$id")}}" class="tooltipsC" title="Foto"><i class="fa fa-camera"></i>
+            </a>')
+            
+            ->addColumn('foto_Url','{{url("seguimiento/$id")}}')
+            ->addColumn('detalle','<a target="_blank" href="{{url("seguimientodetalle/$id")}}" class="btn btn-xs btn-warning tooltipsC" title="detalle"
+            >Orden detalle</a>')
+            ->addColumn('detalle_Url','{{url("seguimientodetalle/$id")}}')
+            ->rawColumns(['checkbox','detalle','foto','foto_Url','detalle_Url' ])
+            ->make(true); 
+
+          }    
+          
+        
         }
       
         
@@ -243,14 +216,14 @@ class  OrdenesmtlasignarController extends Controller
           ->where([
           ['Periodo','=',$request->Periodo],
           ['Ciclo','=',$request->Ciclo],
-          ['Ciclo','=',$request->Ruta],
+          ['id_Ruta','=',$request->Ruta],
           ['Estado','=', 4],
           ['Coordenada','=', 'generar']
           ])
          
           ->get();
       
-                  
+              
           
       }else{      
         
@@ -293,8 +266,17 @@ class  OrdenesmtlasignarController extends Controller
            
             ->get();
            
-
-         
+            $datasn=Ordenesmtl::orderBy('id')
+            ->where([
+            ['Periodo','=',$request->Periodo],
+            ['Ciclo','=',$request->Ciclo],
+            ['idDivision','=',$request->ruta],
+            ['Estado','=', 4],
+            ['Coordenada','=', 'generar']
+            ])
+           
+            ->first();
+            
 
         }
         
@@ -303,12 +285,61 @@ class  OrdenesmtlasignarController extends Controller
 
         $pdf = PDF::loadView('admin.ordenes.pdfcritica', compact('datas'));
            
-        return $pdf->stream(); 
+        return $pdf->download($datasn->Periodo.'--'.$datasn->Ciclo.'--Ruta--'.$datasn->idDivision.'--'.$datasn->Usuario."--".'.pdf'); 
         
       } 
        
-          
+       
     
+    public function generarfactura(Request $request)
+    {   
+    
+            
+       if(!empty($request->Periodo) && !empty($request->Ciclo) &&  !empty($request->ruta)){
+        
+        
+            $datas=Ordenesmtl::orderBy('id')
+            ->where([
+            ['Periodo','=',$request->Periodo],
+            ['Ciclo','=',$request->Ciclo],
+            ['idDivision','=',$request->ruta],
+            ['Estado','=', 4],
+            ['Coordenada','=', 'generar']
+            ])
+           
+            ->get();
+           
+            $datasn=Ordenesmtl::orderBy('id')
+            ->where([
+            ['Periodo','=',$request->Periodo],
+            ['Ciclo','=',$request->Ciclo],
+            ['idDivision','=',$request->ruta],
+            ['Estado','=', 4],
+            ['Coordenada','=', 'generar']
+            ])
+           
+            ->first();
+            
+
+        }
+        
+       
+       
+
+        $pdf = PDF::loadView('admin.ordenes.facturas.factura1', compact('datas'));
+           
+        return $pdf->download($datasn->Periodo.'--'.$datasn->Ciclo.'--Ruta--'.$datasn->idDivision.'--'.$datasn->Usuario."--".'.pdf'); 
+        
+      } 
+       
+       
+       
+          
+     public function factura(Request $request)
+  {   
+
+       return view('admin.ordenes.facturas.index');
+  }
      
         
      
@@ -368,7 +399,7 @@ class  OrdenesmtlasignarController extends Controller
                ['id', '=', $fila],
                ['Estado', '=', 4],
               ])
-      ->update(['Coordenada' => '']);           
+      ->update(['Coordenada' => NULL]);           
          
    }
       
@@ -471,33 +502,163 @@ class  OrdenesmtlasignarController extends Controller
     }   
     
 //Api de sincronizacion de ordenes a ejecutar
- public function medidorall(Request $request)
+   public function medidorall(Request $request)
     {   
-     
-       $Usuario=$request->Usuario;
-       $Estado=$request->Estado;
+        // El usuario ya está autenticado por el middleware
+        $usuario = $request->user();
+        $estado = '2'; // Estado por defecto o desde un parámetro
         
-        $medidorapi = DB::table('ordenescu')
-        ->where([
-            ['Estado','=',$Estado],
-            ['Usuario','=',$Usuario], 
-            ])
-      ->select('id', 'Ciclo', 'Periodo', 'Ref_Medidor', 'Direccion', 'Nombre', 'Apell', 'LA', 'Promedio', 'Año', 'id_Ruta', 'Ruta', 'consecutivoRuta', 'Usuario', 'Estado', 'Tope', 'Suscriptor')
-      ->get();
+        $medidores = DB::table('ordenescu')
+            ->where('Usuario', $usuario->usuario)
+            ->where('Estado', $estado)
+            ->select(
+                'id', 'Ciclo', 'Periodo', 'Ref_Medidor', 'Direccion', 
+                'Nombre', 'Apell', 'LA', 'Promedio', 'Año', 'id_Ruta', 
+                'Ruta', 'consecutivoRuta', 'Usuario', 'Estado', 'Tope', 'Suscriptor'
+            )
+            ->get();
 
-        return response()->json($medidorapi);
+        if ($medidores->count() > 0) {
+            return response()->json($medidores, 200);
+        } else {
+            return response()->json(['error' => 'Sin medidores asignados'], 200);
+        }
+    }  
+
+    
+    // Controlador de actualizar lectura
+public function actualizarLectura(Request $request)
+{
+    $usuario = $request->user()->usuario;
+
+    $orden = Ordenesmtl::find($request->orden_id);
+    
+    if($orden) {
+        $orden->Lect_Actual = $request->lectura_nueva;
+        $orden->new_medidor = 'Lectura actualizada en analisis usuario: ' . $usuario;
+        $orden->save();
+        // El trigger se ejecutará automáticamente
         
-    }    
+        return response()->json(['success' => true]);
+    }
+    
+    return response()->json(['success' => false], 400);
+}
 
-  
+// Nueva función para obtener solo la URL de la foto (para el modal)
+public function getFotoUrl($id)
+{
+    try {
+        $orden = Ordenesmtl::where('id', $id)->first();
+        
+        if (!$orden) {
+            return response()->json([
+                'foto_url' => null,
+                'tiene_foto' => false,
+                'success' => false,
+                'error' => 'Orden no encontrada'
+            ], 404);
+        }
+        
+        $foto1 = $orden->foto1;
+        $fotoUrl = null;
+        $tieneFoto = false;
+        
+        if ($foto1 != null && $foto1 != '') {
+            // Verificar si ya existe la foto procesada en /tmp/
+            $tmpFotoPath = public_path('/tmp/' . $foto1);
+            
+            // Si no existe en /tmp/, procesarla
+            if (!file_exists($tmpFotoPath)) {
+                // Procesar la imagen con marca de agua
+                $suscriptor = $orden->Suscriptor;
+                $medidor = $orden->Ref_Medidor;
+                $lectura = $orden->Lect_Actual;
+                
+                // Verificar que la foto original exista
+                if (file_exists(public_path($foto1))) {
+                    $img1 = Image::make(public_path($foto1));
+                    
+                    // Agregar texto del suscriptor
+                    $textimage = 'Suscriptor: ' . $suscriptor;
+                    $img1->text($textimage, 10, 450, function($font) { 
+                        $font->size(24);
+                        $font->file(public_path('font/OpenSans-Regular.ttf'));
+                        $font->color('#f1f505'); 
+                        $font->align('left'); 
+                        $font->valign('bottom'); 
+                        $font->angle(0); 
+                    });
+                    
+                    // Agregar texto del medidor
+                    $textimage1 = 'Med: ' . $medidor;  
+                    $img1->text($textimage1, 10, 60, function($font) { 
+                        $font->size(24);
+                        $font->file(public_path('font/OpenSans-Regular.ttf'));
+                        $font->color('#f1f505'); 
+                        $font->align('left'); 
+                        $font->valign('bottom'); 
+                        $font->angle(0); 
+                    });
+                    
+                    // Agregar texto de la lectura
+                    $textimage2 = 'L: ' . $lectura;  
+                    $img1->text($textimage2, 10, 95, function($font) { 
+                        $font->size(32);
+                        $font->file(public_path('font/OpenSans-Regular.ttf'));
+                        $font->color('#f1f505'); 
+                        $font->align('left'); 
+                        $font->valign('bottom'); 
+                        $font->angle(0); 
+                    });
+                    
+                    // Guardar en tmp
+                    $img1->save($tmpFotoPath);
+                    $img1->destroy();
+                }
+            }
+            
+            // Construir la URL de la foto procesada
+            if (file_exists($tmpFotoPath)) {
+                $fotoUrl = url('/tmp/' . $foto1);
+                $tieneFoto = true;
+            }
+        }
+        
+        return response()->json([
+            'foto_url' => $fotoUrl,
+            'tiene_foto' => $tieneFoto,
+            'success' => true
+        ]);
+        
+    } catch (\Exception $e) {
+        return response()->json([
+            'foto_url' => null,
+            'tiene_foto' => false,
+            'success' => false,
+            'error' => $e->getMessage()
+        ], 500);
+    }
+}
  
 // Controlador de seguimiento de orden
-     public function seguimiento(Request $request)
+public function seguimiento()
+      { 
+           $usuarios=Usuario::orderBy('id')->where('tipodeusuario','movil')->pluck('nombre', 'usuario', 'id');
+        
+        $criticas=Ordenesmtl::groupBy('Critica')->orderBy('Critica')->pluck('Critica');
+        
+        return view('admin.ordenes.seguimiento', compact('usuarios','criticas')); 
+     }
+          
+          
+     public function seguimiento1(Request $request)
       {   
 
         $fechaAi=now()->toDateString()." 00:00:01";
         $fechaAf=now()->toDateString()." 23:59:59";
-        
+        $rol_id = $request->session()->get('rol_id');
+        $user_id = $request->session()->get('usuario');
     
 
         if(request()->ajax())
@@ -506,136 +667,294 @@ class  OrdenesmtlasignarController extends Controller
         $usuario = $request->usuario;
         $cri = $request->critica;
         $med = $request->medidor;
+         
+      
+      if($rol_id == 1 || $user_id == 'dfsalas'){
+          $usuario = $request->usuario;
+      
+      if(empty($usuario) && empty($request->periodo) && empty($request->zona) && empty($request->estado) && empty($cri) && empty($med) && empty($request->suscriptor) && empty($request->fechaini) && empty($request->fechafin))
+      
+       {  
+           $data1=Ordenesmtl::orderBy('id')
+            ->whereBetween('fecha_de_ejecucion', [$fechaAi,$fechaAf]);
+            
+            $data1->get();
+         
+         
            
-        if(!empty($request->periodo) && !empty($request->zona) && !empty($usuario) && empty($request->estado)){
-            $datas=Ordenesmtl::orderBy('id')
-            ->where
+            return  DataTables()->of($data1)
+            ->addColumn('foto','<a target="_blank" href="{{url("seguimiento/$id")}}" class="tooltipsC" title="Foto"><i class="fa fa-camera"></i>
+            </a>')
+            ->addColumn('foto_Url','{{url("seguimiento/$id")}}')
+            ->addColumn('detalle','<a target="_blank" href="{{url("seguimientodetalle/$id")}}" class="btn btn-outline-warning btn-block btn-flat tooltipsC" title="detalle"
+            ><i class="fa fa-book"></i> Orden detalle</a>')
+            ->addColumn('detalle_Url','{{url("seguimientodetalle/$id")}}')
+            ->addColumn('edit_lectura', function ($orden) {
+                        $button = '<button type="button" class="edit_lectura btn btn-sm btn-info tooltipsC" 
+                            data-id="' . $orden->id . '" 
+                            data-lectura="' . $orden->Lect_Actual . '" 
+                            data-suscriptor="' . $orden->Suscriptor . '" 
+                            title="Editar Lectura">
+                            <i class="fa fa-edit"></i>
+                        </button>';
+                        return $button;
+                    })
+            ->addColumn('action', function ($orden) {
+                $button = '<button type="button" name="show_detail" id="' . $orden->id . '
+                    " class="update_orden btn btn-app bg-warning tooltipsC" title="Devolver Orden"  >
+                    <span class="badge bg-teal">' . $orden->id . '</span><i class="fas fa-edit"></i> </button>';
+                    return $button;
+                })
+                ->rawColumns(['detalle','foto','foto_Url','detalle_Url', 'edit_lectura', 'action' ])
+            ->make(true);
+      //  btn btn-xs btn-warning 
+        
+        
+       }else{
+           
+        
+       $datas = Ordenesmtl::orderBy('id');
+            
+            
+            //Se filtra por usuario  
+        if($request->usuario != ''){
+            
+            $datas->where
             ([
-            ['Periodo','=',$request->periodo],
-            ['Ciclo','=',$request->zona],
-            ['Usuario','=',$usuario]
-            ])
-           ->get();
-                    
-        }else  if(!empty($request->periodo) && !empty($request->zona) && !empty($usuario) && !empty($request->estado) && !empty($cri)){
-            $datas=Ordenesmtl::orderBy('id')
-            ->where
-            ([
-            ['Periodo','=',$request->periodo],
-            ['Ciclo','=',$request->zona],
-            ['Usuario','=',$usuario],
-            ['Estado_des','=',$request->estado],
-            ['Critica','=',$cri]
-            ])
-           ->get(); 
+             ['Usuario','=',$usuario]
+            ]);
+              
+        }
         
-        
-        
-        
-        
-        }else  if(!empty($request->periodo) && !empty($request->zona) && !empty($usuario) && !empty($request->estado)){
-            $datas=Ordenesmtl::orderBy('id')
-            ->where
-            ([
-            ['Periodo','=',$request->periodo],
-            ['Ciclo','=',$request->zona],
-            ['Usuario','=',$usuario],
-            ['Estado_des','=',$request->estado]
-            ])
-           ->get(); 
-        
-        
-        
-        
-        
-        }else  if(!empty($request->periodo) && !empty($request->zona) && !empty($request->estado)){
-            $datas=Ordenesmtl::orderBy('id')
-            ->where
-            ([
-            ['Periodo','=',$request->periodo],
-            ['Ciclo','=',$request->zona],
-            ['Estado_des','=',$request->estado]
-            ])
-           ->get(); 
-        
-        
-        
-        
-        
-        }else  if(!empty($request->periodo) && !empty($request->zona) && !empty($cri)){
-            $datas=Ordenesmtl::orderBy('id')
-            ->where
-            ([
-            ['Periodo','=',$request->periodo],
-            ['Ciclo','=',$request->zona],
-            ['Critica','=',$cri]
-            ])
-           ->get(); 
-        
-        
-        
-        
-        
-        }else if(!empty($request->periodo) && !empty($request->zona)){
-            $datas=Ordenesmtl::orderBy('id')
-            ->where
+       
+        //Se filtra por periodo 
+         if($request->periodo != '' && $request->zona != ''){
+            $datas->where
             ([
             ['Periodo','=',$request->periodo],
             ['Ciclo','=',$request->zona]
-            ])
-            ->get();
+            ]);
+         } 
         
        
-            }elseif(!empty($med) || !empty($request->estado) || (!empty($request->medidor) && !empty($request->fechaini) && !empty($request->fechafin))){
+        
+        //Se filtra por estado 
+        
+        if($request->estado != ''){
+            $datas->where
+            ([
+            ['Estado_des','=',$request->estado]
+            ]); 
+        
+        }
+        
+        //Se filtra por critica 
+        
+        if($cri != ''){
+            $datas->where
+            ([
+            ['Critica','=',$cri]
+            ]); 
+        
+        }
+        
+       
+       //Se filtra por medidor 
+        if($med != ''){
             
-            $datas=Ordenesmtl::orderBy('id')
-            ->where([
+            $datas->where([
             ['Ref_Medidor','=',$med],
-            ])
-            ->orwhere([
-                ['Ref_Medidor','=',$med],
-                ['Estado_des','=',$request->estado],
-              ])
-            ->orwhere([
-                ['Ref_Medidor','=',$med],
-              ])
-            ->whereBetween('fecha_de_ejecucion', [$request->fechaini." 00:00:01",$request->fechafin." 23:59:59"])
-            ->get();
-        }elseif(!empty($request->suscriptor) || (!empty($request->suscriptor) && !empty($request->estado)) || (!empty($request->suscriptor) && !empty($request->fechaini) && !empty($request->fechafin))){      
-            $datas=Ordenesmtl::orderBy('id')
-            ->where([
+            ]);
+        }
+        
+        //Se filtra por suscriptor
+        if($request->suscriptor != ''){      
+            $datas->where([
               ['Suscriptor','=',$request->suscriptor],
-              ])
-            ->orwhere([
-                ['Suscriptor','=',$request->suscriptor],
-                ['Estado_des','=',$request->estado],
-              ])
-            ->orwhere([
-                ['suscriptor','=',$request->suscriptor],
-              ])
-            ->whereBetween('fecha_de_ejecucion', [$request->fechaini." 00:00:01",$request->fechafin." 23:59:59"])
-            ->get();   
+              ]);   
 
-        }elseif(!empty($request->fechaini) && !empty($request->fechafin)){      
-            $datas=Ordenesmtl::orderBy('id')
-            ->whereBetween('fecha_de_ejecucion', [$request->fechaini." 00:00:01",$request->fechafin." 23:59:59"])
-            ->get();   
-            }else{
-
-            $datas=Ordenesmtl::orderBy('id')
-            ->whereBetween('fecha_de_ejecucion', [$fechaAi,$fechaAf])
-            ->get();   
-        }  
-            
+        }
+        
+         //Se filtra por fecha de ejecución
+        if($request->fechaini != '' && $request->fechafin != ''){      
+            $datas->whereBetween('fecha_de_ejecucion', [$request->fechaini." 00:00:01",$request->fechafin." 23:59:59"]);
+            }   
+        
+         $datas->get();
+         
+         
+           
             return  DataTables()->of($datas)
             ->addColumn('foto','<a target="_blank" href="{{url("seguimiento/$id")}}" class="tooltipsC" title="Foto"><i class="fa fa-camera"></i>
             </a>')
             ->addColumn('foto_Url','{{url("seguimiento/$id")}}')
-            ->addColumn('detalle','<a target="_blank" href="{{url("seguimientodetalle/$id")}}" class="btn btn-xs btn-warning tooltipsC" title="detalle"
-            >Orden detalle</a>')
+            ->addColumn('detalle','<a target="_blank" href="{{url("seguimientodetalle/$id")}}" class="btn btn-outline-warning btn-block btn-flat tooltipsC" title="detalle"
+            ><i class="fa fa-book"></i> Orden detalle</a>')
             ->addColumn('detalle_Url','{{url("seguimientodetalle/$id")}}')
-            ->rawColumns(['detalle','foto','foto_Url','detalle_Url' ])
+            ->addColumn('edit_lectura', function ($orden) {
+                        $button = '<button type="button" class="edit_lectura btn btn-sm btn-info tooltipsC" 
+                            data-id="' . $orden->id . '" 
+                            data-lectura="' . $orden->Lect_Actual . '" 
+                            data-suscriptor="' . $orden->Suscriptor . '" 
+                            title="Editar Lectura">
+                            <i class="fa fa-edit"></i>
+                        </button>';
+                        return $button;
+                    })
+            ->addColumn('action', function ($orden) {
+                $button = '<button type="button" name="show_detail" id="' . $orden->id . '
+                    " class="update_orden btn btn-app bg-warning tooltipsC" title="Devolver Orden"  >
+                    <span class="badge bg-teal">' . $orden->id . '</span><i class="fas fa-edit"></i> </button>';
+                    return $button;
+                })
+                ->rawColumns(['detalle','foto','foto_Url','detalle_Url','edit_lectura', 'action'])
+            
             ->make(true);
+            
+       }
+      }else{
+          
+           if(empty($usuario) && empty($request->periodo) && empty($request->zona) && empty($request->estado) && empty($cri) && empty($med) && empty($request->suscriptor) && empty($request->fechaini) && empty($request->fechafin))
+      
+       {  
+           $data1=Ordenesmtl::orderBy('id')
+            ->whereBetween('fecha_de_ejecucion', [$fechaAi,$fechaAf]);
+            
+            $data1->get();
+         
+         
+           
+            return  DataTables()->of($data1)
+            ->addColumn('foto','<a target="_blank" href="{{url("seguimiento/$id")}}" class="tooltipsC" title="Foto"><i class="fa fa-camera"></i>
+            </a>')
+            ->addColumn('foto_Url','{{url("seguimiento/$id")}}')
+            ->addColumn('detalle','<a target="_blank" href="{{url("seguimientodetalle/$id")}}" class="btn btn-outline-warning btn-block btn-flat tooltipsC" title="detalle"
+            ><i class="fa fa-book"></i> Orden detalle</a>')
+            ->addColumn('detalle_Url','{{url("seguimientodetalle/$id")}}')
+            ->addColumn('edit_lectura', function ($orden) {
+                        $button = '<button type="button" class=" btn btn-sm btn-info tooltipsC" 
+                            data-id="" 
+                            data-lectura="" 
+                            data-suscriptor="" 
+                            title="Editar Lectura">
+                            
+                        </button>';
+                        return $button;
+                    })
+            ->addColumn('action', function ($orden) {
+                $button = '<button type="button" name="show_detail" id="" class="btn tooltipsC readonly" title=""  ></button>';
+                    return $button;
+                })
+                ->rawColumns(['detalle','foto','foto_Url','detalle_Url', 'action','edit_lectura' ])
+            ->make(true);
+      //  btn btn-xs btn-warning 
+        
+        
+       }else{
+           
+        
+       $datas = Ordenesmtl::orderBy('id');
+            
+            
+            //Se filtra por usuario  
+        if($request->usuario != ''){
+            
+            $datas->where
+            ([
+             ['Usuario','=',$usuario]
+            ]);
+              
+        }
+        
+       
+        //Se filtra por periodo 
+         if($request->periodo != '' && $request->zona != ''){
+            $datas->where
+            ([
+            ['Periodo','=',$request->periodo],
+            ['Ciclo','=',$request->zona]
+            ]);
+         } 
+        
+       
+        
+        //Se filtra por estado 
+        
+        if($request->estado != ''){
+            $datas->where
+            ([
+            ['Estado_des','=',$request->estado]
+            ]); 
+        
+        }
+        
+        //Se filtra por critica 
+        
+        if($cri != ''){
+            $datas->where
+            ([
+            ['Critica','=',$cri]
+            ]); 
+        
+        }
+        
+       
+       //Se filtra por medidor 
+        if($med != ''){
+            
+            $datas->where([
+            ['Ref_Medidor','=',$med],
+            ]);
+        }
+        
+        //Se filtra por suscriptor
+        if($request->suscriptor != ''){      
+            $datas->where([
+              ['Suscriptor','=',$request->suscriptor],
+              ]);   
+
+        }
+        
+         //Se filtra por fecha de ejecución
+        if($request->fechaini != '' && $request->fechafin != ''){      
+            $datas->whereBetween('fecha_de_ejecucion', [$request->fechaini." 00:00:01",$request->fechafin." 23:59:59"]);
+            }   
+        
+         $datas->get();
+         
+         
+           
+            return  DataTables()->of($datas)
+            ->addColumn('foto','<a target="_blank" href="{{url("seguimiento/$id")}}" class="tooltipsC" title="Foto"><i class="fa fa-camera"></i>
+            </a>')
+            ->addColumn('foto_Url','{{url("seguimiento/$id")}}')
+            ->addColumn('detalle','<a target="_blank" href="{{url("seguimientodetalle/$id")}}" class="btn btn-outline-warning btn-block btn-flat tooltipsC" title="detalle"
+            ><i class="fa fa-book"></i> Orden detalle</a>')
+            ->addColumn('detalle_Url','{{url("seguimientodetalle/$id")}}')
+            ->addColumn('edit_lectura', function ($orden) {
+                        $button = '<button type="button" class=" btn btn-sm btn-info tooltipsC" 
+                            data-id="" 
+                            data-lectura="" 
+                            data-suscriptor="" 
+                            title="Editar Lectura">
+                            
+                        </button>';
+                        return $button;
+                    })
+            ->addColumn('action', function ($orden) {
+                $button = '<button type="button" name="show_detail" id="" class="btn tooltipsC readonly" title=""  ></button>';
+                    return $button;
+                })
+                ->rawColumns(['detalle','foto','foto_Url','detalle_Url', 'action','edit_lectura' ])
+            
+            ->make(true);
+            
+       }
+          
+          
+      }
+         
+         
         }
       
         $usuarios=Usuario::orderBy('id')->where('tipodeusuario','movil')->pluck('nombre', 'usuario', 'id');
@@ -657,12 +976,19 @@ class  OrdenesmtlasignarController extends Controller
         
          foreach ($datas as $data ){    
             $suscriptor = $data->Suscriptor;
+            $medidor = $data->Ref_Medidor;
+            $lectura = $data->Lect_Actual;
             $foto1 = $data->foto1;
                        
             }    
        
        if($foto1 != null){
+           
+           
+           
        $img1 = Image::make(public_path($foto1));
+       
+       
         $textimage = 'Suscriptor: '.$suscriptor;
         $img1->text($textimage, 10, 450,
          function($font){ 
@@ -671,7 +997,28 @@ class  OrdenesmtlasignarController extends Controller
            $font->color('#f1f505'); 
            $font->align('left'); 
            $font->valign('bottom'); 
-           $font->angle(0); }); 
+           $font->angle(0); });
+           
+        $textimage1 = 'Med: '.$medidor;  
+        $img1->text($textimage1, 10, 60,
+         function($font){ 
+           $font->size(24);
+           $font->file(public_path('font/OpenSans-Regular.ttf'));
+           $font->color('#f1f505'); 
+           $font->align('left'); 
+           $font->valign('bottom'); 
+           $font->angle(0); });
+           
+        $textimage2 = 'L: '.$lectura;  
+        $img1->text($textimage2, 10, 95,
+         function($font){ 
+           $font->size(32);
+           $font->file(public_path('font/OpenSans-Regular.ttf'));
+           $font->color('#f1f505'); 
+           $font->align('left'); 
+           $font->valign('bottom'); 
+           $font->angle(0); });
+           
         $img1->save(public_path('/tmp/'.$foto1));
         $img1->destroy();
        }
@@ -686,21 +1033,21 @@ class  OrdenesmtlasignarController extends Controller
 //Actualizacion de marca de agua suscriptor solo detalle de fotos
     public function detalle($id)
     {
-         $datas=Ordenesmtl::orderBy('id')
-            ->where
-            ([
-            ['id','=',$id]
-             ])
-            ->get();
+         $datas=Ordenesmtl::orderBy('id')->where([['id','=',$id]])->get();
             
+           
       foreach ($datas as $data ){    
             $suscriptor = $data->Suscriptor;
+            $medidor = $data->Ref_Medidor;
+            $lectura = $data->Lect_Actual;
             $foto1 = $data->foto1;
-           
-                       }    
-       
+                       
+            }    
+        
        if($foto1 != null){
        $img1 = Image::make(public_path($foto1));
+       
+        
         $textimage = 'Suscriptor: '.$suscriptor;
         $img1->text($textimage, 10, 450,
          function($font){ 
@@ -709,17 +1056,56 @@ class  OrdenesmtlasignarController extends Controller
            $font->color('#f1f505'); 
            $font->align('left'); 
            $font->valign('bottom'); 
+           $font->angle(0); });
+           
+        $textimage1 = 'Med: '.$medidor;  
+        $img1->text($textimage1, 10, 60,
+         function($font){ 
+           $font->size(24);
+           $font->file(public_path('font/OpenSans-Regular.ttf'));
+           $font->color('#f1f505'); 
+           $font->align('left'); 
+           $font->valign('bottom'); 
+           $font->angle(0); });
+           
+        $textimage2 = 'L: '.$lectura;  
+        $img1->text($textimage2, 10, 95,
+         function($font){ 
+           $font->size(32);
+           $font->file(public_path('font/OpenSans-Regular.ttf'));
+           $font->color('#f1f505'); 
+           $font->align('left'); 
+           $font->valign('bottom'); 
            $font->angle(0); }); 
         $img1->save(public_path('/tmp/'.$foto1));
         $img1->destroy();
        }
+       
+       
+       // Obtener la foto de la base de datos
+    /*$foto = Photos::where('id_orden_ejecutada', $id)->firstOrFail();
+    $fotoBlob = $foto->photo_data; // El blob de la imagen
+
+    // Guardar el blob como archivo temporal
+    $tempImagePath = storage_path('app/temp/foto_'.$id.'.jpg');
+    File::put($tempImagePath, $fotoBlob);
       
-     
+      // Verificar si la imagen existe
+    if (File::exists($tempImagePath)) {
+        // Si la imagen existe, enviar la ruta a la vista
+        return view('admin.ordenes.detalle', compact('datas','tempImagePath')); 
+    } else {
+        
+        $tempImagePath = null;*/
+        // Si la imagen no existe, enviar una variable indicando que la imagen no está disponible
+        return view('admin.ordenes.detalle', compact('datas')); 
+    
       
-     
             
+     //dd($tempImagePath);
+         
             
-        return view('admin.ordenes.detalle', compact('datas'));    
+       
             
     }
     
@@ -766,95 +1152,191 @@ class  OrdenesmtlasignarController extends Controller
            
                     
     }  
-//Exportar excel 
-     public function exportarExcel(Request $request)
-    {   
-
-        $fechaAi=now()->toDateString()." 00:00:01";
-        $fechaAf=now()->toDateString()." 23:59:59";
-        
     
-        if(!empty($request->Periodo) && !empty($request->Ciclo) && (!empty($request->usuario) || !empty($request->Estado))){
-            $datas=Ordenesmtl::orderBy('id')
-            ->where
-            ([
-            ['Periodo','=',$request->Periodo],
-            ['Ciclo','=',$request->Ciclo],
-            ['usuario','=',$request->usuario]
-            ])
-            ->orwhere
-            ([
-            ['Periodo','=',$request->Periodo],
-            ['Ciclo','=',$request->Ciclo],
-            ['Estado','=',$request->Estado]
-            ])
-            
-            ->get();
-                    
-        }else if(!empty($request->Periodo) && !empty($request->Ciclo)){
-            $datas=Ordenesmtl::orderBy('id')
-            ->where
-            ([
-            ['Periodo','=',$request->Periodo],
-            ['Ciclo','=',$request->Ciclo]
-            ])
-            ->get();
+    
+    
+    //Exportar excel 
+     public function exportarCiclo(Request $request)
+    {   
         
-        Excel::create('Ordenes_mtl', function ($excel) use ($datas) {
+         $usuarios=Usuario::orderBy('id')->where('tipodeusuario','movil')->pluck('nombre', 'usuario', 'id');
         
-        $excel->sheet('Hoja Uno', function ($sheet) use ($datas) {    
-            
-                $sheet->with($datas, null, 'A1', false, false);
-                });
-            
-        })->download('xlsx');
+        $criticas=Ordenesmtl::groupBy('Critica')->orderBy('Critica')->pluck('Critica');
         
-        
-            }elseif(!empty($request->medidor) || (!empty($request->medidor) && !empty($request->Estado)) || (!empty($request->medidor) && !empty($request->fechaini) && !empty($request->fechafin))){
-            
-            $datas=Ordenesmtl::orderBy('id')
-            ->where([
-            ['medidor','=',$request->medidor],
-            ])
-            ->orwhere([
-                ['medidor','=',$request->medidor],
-                ['Estado','=',$request->Estado],
-              ])
-            ->orwhere([
-                ['medidor','=',$request->medidor],
-              ])
-            ->whereBetween('fecha_de_ejecucion', [$request->fechaini." 00:00:01",$request->fechafin." 23:59:59"])
-            ->get();
-        }elseif(!empty($request->suscriptor) || (!empty($request->suscriptor) && !empty($request->Estado)) || (!empty($request->suscriptor) && !empty($request->fechaini) && !empty($request->fechafin))){      
-            $datas=Ordenesmtl::orderBy('id')
-            ->where([
-              ['suscriptor','=',$request->suscriptor],
-              ])
-            ->orwhere([
-                ['suscriptor','=',$request->suscriptor],
-                ['Estado','=',$request->Estado],
-              ])
-            ->orwhere([
-                ['suscriptor','=',$request->suscriptor],
-              ])
-            ->whereBetween('fecha_de_ejecucion', [$request->fechaini." 00:00:01",$request->fechafin." 23:59:59"])
-            ->get();   
-
-        }elseif(!empty($request->fechaini) && !empty($request->fechafin)){      
-            $datas=Ordenesmtl::orderBy('id')
-            ->whereBetween('fecha_de_ejecucion', [$request->fechaini." 00:00:01",$request->fechafin." 23:59:59"])
-            ->get();   
-            }else{
-
-            $datas=Ordenesmtl::orderBy('id')
-            ->whereBetween('fecha_de_ejecucion', [$fechaAi,$fechaAf])
-            ->get();   
-        }  
+        return view('admin.ordenes.exportar.exportarCiclo', compact('usuarios','criticas')); 
+       
            
            
       
     }
+    
+    
+    
+//Exportar excel 
+     public function exportarExcel(Request $request)
+    {   
+
+        // Definir la hora de inicio y fin para el día actual
+    $fechaAi = now()->toDateString() . " 00:00:01";
+    $fechaAf = now()->toDateString() . " 23:59:59";
+
+    // Verificar si se proporcionan filtros
+    if (empty($request->periodo) && empty($request->zona) && empty($request->estado) && empty($request->fechaini) && empty($request->fechafin)) {
+        return response()->json(['respuesta' => 'Debes seleccionar', 'titulo' => 'Un filtro periodo y ciclo', 'icon' => 'warning']);
+    } 
+
+    // Construir la consulta en base a los filtros proporcionados
+    $datas = Ordenesmtl::select('Suscriptor', 'Lect_Actual', 'Causa_des', 'Observacion_des', 'Fecha_de_ejecucion')->orderBy('id');
+
+    // Aplicar filtros basados en el request
+    if (!empty($request->periodo) && !empty($request->zona) && !empty($request->estado)) {
+        $datas->where([
+            ['Periodo', '=', $request->periodo],
+            ['Ciclo', '=', $request->zona],
+            ['Estado_des', '=', $request->estado]
+        ]);
+    }
+
+    if (!empty($request->fechaini) && !empty($request->fechafin)) {
+        $datas->whereBetween('fecha_de_ejecucion', [$request->fechaini . " 00:00:01", $request->fechafin . " 23:59:59"]);
+    }
+
+    // Ejecutar la consulta y obtener los resultados
+    $data = $datas->get();
+
+    // Verificar si hay resultados
+    if ($data->isEmpty()) {
+        return response()->json(['respuesta' => 'No se encontraron datos', 'titulo' => 'No hay datos', 'icon' => 'info']);
+    }
+
+    // Exportar los datos a un archivo CSV
+    $export = new OrdenesExport($data);
+    $fileName = now()->format('Y-m-d_H-i-s') . "-Ordenes_ejecutadas.csv";
+    $filePath = $export->store("exportv/".$fileName, 'public', \Maatwebsite\Excel\Excel::CSV, ['Content-Type' => 'text/csv']);
+    
+    $destinationPath = public_path('exportn/');
+    
+    $contenidoArchivo = storage_path('app/public/exportv/'.$fileName);
+
+    // Copia el archivo a la nueva ubicación
+    File::move($contenidoArchivo, $destinationPath . $fileName);
+    
+  
+    // Obtener todos los archivos CSV en el directorio de exportación
+    $archivos =File::files($destinationPath);
+    
+   // Filtrar solo los archivos CSV
+    $archivosCSV = array_filter($archivos, function($archivo) {
+            return pathinfo($archivo, PATHINFO_EXTENSION) === 'csv';
+    });
+
+     // Generar URLs públicas para los archivos CSV
+    $archivosCSVs = array_map(function ($archivo) {
+    return asset('exportn/' . basename($archivo));
+    }, $archivosCSV);
+
+    // Contar el número de filas en los datos
+    $datac = $datas->count();
+    
+    
+
+    // Retornar la respuesta con el enlace de descarga
+    return response()->json([
+        'respuesta' => 'Generando Excel -> Registros - '.$datac, 
+        'titulo' => 'Filas - '.$datac, 
+        'icon' => 'success', 
+        'ruta' => $archivosCSVs
+    ]);
+    
+    
+      
+    }
+    
+    
+    
+    
+        public function updateEstado(Request $request)
+        {       
+        
+          if($request->ajax()){
+        
+        
+        
+            if (!empty($request->orden) || $request->orden != null || $request->orden != '' ) { 
+                
+                 
+           
+                  new Ordenesmtl;
+                  
+                  $noupdate = Ordenesmtl::where('id',$request->orden)->where('sync',2)->count();
+                 
+                    if($noupdate>0){
+                        
+                   return response()->json(['respuesta' => 'Orden sync en ACUSYSCOM', 'titulo' => 'Orden # '.$request->orden, 'icon' => 'error']);     
+                    }else{
+                  
+                  $Orden = Ordenesmtl::findOrFail($request->orden);
+                  $Orden->Estado = 2;
+                  $Orden->Estado_des = "PENDIENTE";
+                  $Orden->save();
+              
+              
+                return response()->json(['respuesta' => 'Orden actualizada', 'titulo' => 'Orden # '.$request->orden, 'icon' => 'success']);
+                    }
+                
+               }
+               
+              
+              
+                 
+              
+               
+                        
+        }  
+    
+        }
+        
+        
+        //Api de sincronizacion de ordenes a ejecutar
+ public function medidorejecutadosync(Request $request)
+    { 
+    $Estado = 4;
+    $year = $request->year;
+    $month = $request->month;
+
+    // Buscar órdenes no sincronizadas
+    $ordenes = DB::table('ordenescu')
+        ->where('Estado', $Estado)
+        ->where('Año', $year)
+        ->where('Mes', $month)
+        ->where('sync', 1)
+        ->select(
+            'id_lectura', 'Usuario', 'Lect_Actual', 'Cons_Act',
+            'Causa_id', 'Observacion_id', 'new_medidor', 'Critica',
+            'Latitud', 'Longitud', 'Estado_des', 'Estado', 'fecha_de_ejecucion'
+        )
+        ->get();
+
+    if ($ordenes->isNotEmpty()) {
+        // Marcar como sincronizados y registrar fecha y hora de sincronización
+        DB::table('ordenescu')
+            ->where('Estado', $Estado)
+            ->where('Año', $year)
+            ->where('Mes', $month)
+            ->where('sync', 1)
+            ->update([
+                'sync' => 2,
+                'sync_at' => Carbon::now()
+            ]);
+
+        return response()->json([
+                                'mensaje' => 'Lecturas sincronizadas correctamente',
+                                'datos' => $ordenes
+                                ], 200);
+    } else {
+        return response()->json(['error' => 'sin medidores ejecutados'], 200);
+    }
+    }  
 
 }
-
 

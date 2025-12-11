@@ -54,6 +54,7 @@ class CreateOrdenesmtlTable extends Migration
             $table->integer('Tope')->nullable();
             $table->integer('consecutivoRuta');
             $table->string('new_medidor',50)->nullable();
+            $table->string('id_lectura');
             $table->timestamps();
         });
     }

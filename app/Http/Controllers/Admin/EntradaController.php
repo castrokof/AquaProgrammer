@@ -1,21 +1,109 @@
 <?php
 
 namespace App\Http\Controllers\Admin;
-
+use Illuminate\Support\Facades\Http;
 use Illuminate\Http\Request;
+//use GuzzleHttp\Client;
+
 use App\Http\Controllers\Controller;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Models\Admin\Archivo;
 use App\Models\Admin\Entrada;
 use Illuminate\Support\Facades\DB;
 use App\Http\Requests\ValidacionArchivo;
+use App\Imports\EntradaImport;
 
 class EntradaController extends Controller
- {
-  
- public $rows=0;
-  
-    public function guardar(ValidacionArchivo $request)
+ {  
+     
+             public function sincronizarApi()
+{
+    // Petición GET con PHP puro
+    $json = @file_get_contents('http://localhost/Acusyscom_Backend/public/api');
+
+    if ($json === false) {
+        return response()->json([
+            'status' => 'error',
+            'message' => 'Error al conectarse a la API'
+        ], 500);
+    }
+
+    $payload = json_decode($json, true);
+
+    if (!isset($payload['data'])) {
+        return response()->json([
+            'status' => 'error',
+            'message' => 'No se encontraron datos'
+        ]);
+    }
+
+    $ciclo = null;
+    $periodo = null;
+
+    foreach ($payload['data'] as $filaentrada1) {
+        $ciclo = $filaentrada1['ciclo'];
+        $periodo = $filaentrada1['year'] . $filaentrada1['mes'];
+
+        $Rows = Entrada::where([
+            ['Ciclo', $filaentrada1['ciclo']],
+            ['Suscriptor', $filaentrada1['suscriptor']],
+            ['Periodo', $periodo]
+        ])->count();
+
+        if ($Rows == 0) {
+            Entrada::create([
+                'Ciclo'          => $filaentrada1['ciclo'],
+                'Suscriptor'     => $filaentrada1['suscriptor'],
+                'Nombre'         => $filaentrada1['usuario'],
+                'Apell'          => 'APELLIDO',
+                'Ref_Medidor'    => trim($filaentrada1['medidor']),
+                'Direccion'      => $filaentrada1['direccion'],
+                'LA'             => $filaentrada1['lec_anterior'],
+                'Promedio'       => $filaentrada1['promedio'],
+                'recorrido'      => $filaentrada1['consecutivo'],
+                'uso'            => $filaentrada1['uso'],
+                'estrato'        => null,
+                'Año'            => $filaentrada1['year'],
+                'Mes'            => $filaentrada1['mes'],
+                'id_Ruta'        => $filaentrada1['ruta'],
+                'Periodo'        => $periodo,
+                'consecutivoRuta'=> $filaentrada1['consecutivo'],
+                'consecutivo_int'=> $filaentrada1['consecutivo'],
+                'Ruta'           => $filaentrada1['consecutivo'].'_'.$filaentrada1['suscriptor'].'RUTA',
+                'Tope'           => '10',
+                'id_lectura'     => $filaentrada1['id_lectura'],
+                'servicio'       => $filaentrada1['servicio'],
+            ]);
+        }
+    }
+
+    if ($ciclo && $periodo) {
+        $Total = Entrada::where([
+            ['Ciclo', $ciclo],
+            ['Periodo', $periodo],
+        ])->count();
+
+        Archivo::create([
+            'nombre'   => $periodo . now(),
+            'fecha'    => now(),
+            'registros'=> $Total,
+            'periodo'  => $periodo,
+            'estado'   => 'Cargado desde API',
+            'zona'     => $ciclo,
+            'usuario'  => Auth::user()->usuario,
+            'cantidad' => $Total,
+        ]);
+    }
+
+    return response()->json([
+        'status' => 'success',
+        'message' => 'Datos sincronizados desde API',
+        'data' => $payload['data']
+    ]);
+}
+
+
+    public function guardar(Request $request)
     {     
        
    if($request->ajax()){
@@ -28,30 +116,50 @@ class EntradaController extends Controller
         
         }else{
             
-        $this->importaExcel($request);
+        $name=time().$file->getClientOriginalName();  
+              
+         $destinationPath = public_path('xlsxin/');
+        
+         $file->move($destinationPath, $name);
+        
+         $path=$destinationPath.$name;
          
-            
-            $row = $this->$rows;
-           
-
-            if($row==1){
-           
-               return response()->json(['mensaje' => 'ng']); //return redirect('admin/archivo')->with('mensaje', 'Registros duplicados en base de datos');
+ 
+              try {
+                  
+              $pruebas =  new EntradaImport;       
+              Excel::import($pruebas,$path);
                 
-            }else{
-            
-               return response()->json(['mensaje' => 'ok']); //return redirect('admin/archivo')->with('mensaje', 'Archivo cargado exitosamente');
+           
+                $rows1 = $pruebas->data;
+                
+                } catch (\Maatwebsite\Excel\Validators\ValidationException $e) {
+                // $failures = $e->failures();
+                
             }
+            
+        if($rows1==1){
+          
+             return response()->json(['mensaje' => 'ok']); //return redirect('admin/archivo')->with('mensaje', 'Registros duplicados en base de datos');}
+             
+            
+        }else if($rows1==2){
+                
+               return response()->json(['mensaje' => 'ng']); //return redirect('admin/archivo')->with('mensaje', 'Registros duplicados en base de datos');}  
+             }
 
         }
    
     }
 
    }
-    public function importaExcel(request $request)
+    public function importaExcel(request $request, row $row)
 
     {
-
+        
+        
+ 
+ 
  // Guardo la colección en $file
 
  $file = $request->file('file');             
@@ -67,124 +175,18 @@ class EntradaController extends Controller
  $path=$destinationPath.$name;
  
  
- 
- $archivo = new Archivo;
-
-             $archivo->nombre=$name;
-             $archivo->fecha=now();
-             $archivo->registros=0;
-             $archivo->periodo=0;
-             $archivo->estado='Cargado';
-             $archivo->zona='zona';
-             $archivo->usuario=auth()->user()->usuario;
-             $archivo->cantidad=0;
-
-             $archivo->save();
- 
- 
-
- Excel::load($path, function($reader) { 
-
-        foreach ($reader->get() as $fila1=>$filaentrada2) 
-         {     
-                 $rows1 = DB::table('entrada')
-                    ->where([
-                    ['Periodo', '=', $filaentrada2[6].$filaentrada2[7]],
-                    ['Ciclo', '=', $filaentrada2[8]],
-                    ['Suscriptor', '=', $filaentrada2[0]],])
-                    ->count();    
-         }
+              try {
+               Excel::import(new EntradaImport,$path);
                 
+               return $row = 1;
+                
+                } catch (\Maatwebsite\Excel\Validators\ValidationException $e) {
+                // $failures = $e->failures();
+                    return $row=2;
+            }
+            
+            
 
-if($rows1==0){
- 
-                    $count=0; 
-                    $consecutivo=1;
-                       
-                         
-                   
-                   
-                       foreach ($reader->get() as $fila=>$filaentrada1) 
-                       {  
-                                   
-                   
-                                    $filaentrada = new Entrada;
-                                  
-                                       $filaentrada->Ciclo=$filaentrada1[8];
-                                       $filaentrada->Suscriptor=$filaentrada1[0]; 
-                                       $filaentrada->Nombre=$filaentrada1[1];
-                                       $filaentrada->Apell='APELLIDO'; 
-                                  trim($filaentrada->Ref_Medidor=$filaentrada1[3]);
-                                       $filaentrada->Direccion=$filaentrada1[2];
-                                       $filaentrada->LA=$filaentrada1[4];
-                                       $filaentrada->Promedio=$filaentrada1[5]; 
-                                       $filaentrada->recorrido=$filaentrada1[10];
-                                       $filaentrada->uso=NULL;
-                                       $filaentrada->estrato=NULL;
-                                       $filaentrada->Año=$filaentrada1[6];
-                                       $filaentrada->Mes=$filaentrada1[7];
-                                       $filaentrada->id_Ruta=$filaentrada1[9];
-                                       $filaentrada->Periodo=$filaentrada1[6].$filaentrada1[7];
-                                       $filaentrada->consecutivoRuta=$filaentrada1[10];
-                                       $filaentrada->consecutivo_int=$consecutivo; 
-                                       $filaentrada->Ruta=$filaentrada1[10].'_'.$filaentrada1[0].'RUTA'; 
-                                       $filaentrada->Tope=$filaentrada1[11];                                     
-                   
-                                       $filaentrada->save();
-                   
-                                       
-                   
-                                              
-                   
-                          // Incrementamos contado para ver cuantos usuarios se importan.             
-                          $count++; 
-                          $consecutivo++;
-                   
-                           
-                       }
-                       
-                       
-                       $ids = DB::table('archivo')
-                        ->select('id')
-                        ->orderByDesc('id')
-                        ->limit(1)
-                        ->get();
-                        
-                        
-                   
-                       $rows = DB::table('entrada')
-                       ->select('Periodo', 'Ciclo')
-                       ->orderByDesc('id')
-                       ->limit(1)
-                       ->get();
-                   
-                   
-                       //dd($ids);
-                      
-                       foreach ($ids as $id) { 
-                       foreach ($rows as $row) {
-                          
-                       DB::table('archivo')
-                       ->where('id',$id->id)
-                       ->update(['cantidad' => $count,
-                                'periodo'=> $row->Periodo,
-                                'estado'=>'Procesado',
-                                'zona'=>$row->Ciclo,
-                                'registros' => $count
-                   
-                          ]);
-                   
-                                              }
-                           
-                                            }
-                  
-                  
-                }else{
-                           
-                        $this->$rows = 1; 
-                     }  
-                   
-             });
 
         }         
    }        

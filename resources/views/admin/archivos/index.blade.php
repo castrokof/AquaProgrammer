@@ -262,14 +262,14 @@ $.ajax({
                   
                   if(response.mensaje == 'ok') {
                     $('#modal-lg').modal('hide'); 
-                      Manteliviano.notificaciones('Archivo cargado exitosamente', 'Sistema AcuasurRural', 'success');
+                      Manteliviano.notificaciones('Archivo cargado exitosamente', 'Sistema SystemApp', 'success');
                       $('#tarchivos').DataTable().ajax.reload();
                   }else if(response.mensaje == 'vacio'){
                       
-                      Manteliviano.notificaciones('No seleccionaste ningun arhivo', 'Sistema AcuasurRural', 'info');
+                      Manteliviano.notificaciones('No seleccionaste ningun arhivo', 'Sistema SystemApp', 'info');
                   }else if(response.mensaje =='ng'){
                       $('#modal-lg').modal('hide'); 
-                      Manteliviano.notificaciones('Registros duplicados en base de datos', 'Sistema AcuasurRural', 'warning');
+                      Manteliviano.notificaciones('Registros duplicados en base de datos', 'Sistema SystemApp', 'warning');
                       $('#tarchivos').DataTable().ajax.reload();
                       
                 }
@@ -291,7 +291,7 @@ $.ajax({
 
                   } else if (jqXHR.status == 500) {
                     
-                    Manteliviano.notificaciones('El archivo no tienen la estructura adecuada', 'Sistema AcuasurRural', 'warning');
+                    Manteliviano.notificaciones('El archivo no tienen la estructura adecuada', 'Sistema SystemApp', 'warning');
                     $('#tarchivos').DataTable().ajax.reload();
 
                   } else if (textStatus === 'parsererror') {
@@ -309,7 +309,7 @@ $.ajax({
                   } else {
 
                     
-                    Manteliviano.notificaciones('El campo file debe ser un archivo de tipo: xls, xlsx', 'Sistema AcuasurRural', 'warning');
+                    Manteliviano.notificaciones('El campo file debe ser un archivo de tipo: xls, xlsx', 'Sistema SystemApp', 'warning');
                     $('#tarchivos').DataTable().ajax.reload();
 
                   }
@@ -343,18 +343,18 @@ var tableEntradas = $('#tentradas').DataTable({
             url: "{{ route('sincronizar.entradas') }}",
             method: 'GET',
             beforeSend: function() {
-                Manteliviano.notificaciones('Sincronizando...', 'Sistema AcuasurRural', 'info');
+                Manteliviano.notificaciones('Sincronizando...', 'Sistema SystemApp', 'info');
             },
             success: function(res) {
                 if (res.status === 'success') {
-                    Manteliviano.notificaciones(res.message, 'Sistema AcuasurRural', 'success');
+                    Manteliviano.notificaciones(res.message, 'Sistema SystemApp', 'success');
                     tableEntradas.clear().rows.add(res.data).draw();
                 } else {
-                    Manteliviano.notificaciones(res.message, 'Sistema AcuasurRural', 'warning');
+                    Manteliviano.notificaciones(res.message, 'Sistema SystemApp', 'warning');
                 }
             },
             error: function() {
-                Manteliviano.notificaciones('Error al sincronizar con la API', 'Sistema AcuasurRural', 'danger');
+                Manteliviano.notificaciones('Error al sincronizar con la API', 'Sistema SystemApp', 'danger');
             }
         });
     });

@@ -116,6 +116,7 @@ Route::put('marca/{id}', 'MarcasController@actualizar')->name('actualizar_marca'
    
 });
 
+
 Route::group(['middleware' => ['auth','superEditor']], function () {
 
 /* ORDENES CRITICA */
@@ -129,4 +130,48 @@ Route::get('export_factura', 'OrdenesmtlasignarController@factura')->name('expor
 Route::post('export_facturap', 'OrdenesmtlasignarController@facturap')->name('export_facturap');
 Route::get('generar_factura', 'OrdenesmtlasignarController@generarfactura')->name('generar_factura');
 
+});
+
+Route::group(['middleware' => 'auth'], function () {
+
+    Route::resource('macromedidores', 'MacromedidorController');
+
+    // Ruta adicional para resetear una orden ejecutada a pendiente
+    Route::post('macromedidores/{id}/resetear', 'MacromedidorController@resetear')
+        ->name('macromedidores.resetear');
+});
+
+Route::group(['middleware' => 'auth'], function () {
+
+    // Vista de criticas (supervisor ve lecturas con Estado=4)
+    Route::get('revisiones/criticas', 'RevisionController@criticas')
+        ->name('revisiones.criticas');
+
+    // AJAX: marcar lecturas para revision (Coordenada = 'generar')
+    Route::post('revisiones/adicionar-critica', 'RevisionController@adicionarcritica')
+        ->name('revisiones.adicionar-critica');
+
+    // AJAX: desmarcar lecturas (Coordenada = NULL)
+    Route::post('revisiones/eliminar-critica', 'RevisionController@eliminarcritica')
+        ->name('revisiones.eliminar-critica');
+
+    // Generar ordenes de revision desde las marcadas
+    Route::post('revisiones/generar', 'RevisionController@generar')
+        ->name('revisiones.generar');
+
+    // Reasignar revisor
+    Route::post('revisiones/{id}/reasignar', 'RevisionController@reasignar')
+        ->name('revisiones.reasignar');
+
+    // Listado y detalle de revisiones
+    Route::get('revisiones', 'RevisionController@index')
+        ->name('revisiones.index');
+    Route::get('revisiones/{id}', 'RevisionController@show')
+        ->name('revisiones.show');
+    Route::delete('revisiones/{id}', 'RevisionController@destroy')
+        ->name('revisiones.destroy');
+
+    // Gestion de listas parametros
+    Route::get('listas-parametros', 'RevisionController@listas')
+        ->name('listas.index');
 });

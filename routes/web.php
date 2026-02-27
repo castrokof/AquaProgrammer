@@ -175,3 +175,29 @@ Route::group(['middleware' => 'auth'], function () {
     Route::get('listas-parametros', 'RevisionController@listas')
         ->name('listas.index');
 });
+
+// ─────────────────────────────────────────────────────────────────
+// CONTROL DE CLIENTES / VERIFICACIÓN NUIP
+// ─────────────────────────────────────────────────────────────────
+Route::group(['middleware' => 'auth'], function () {
+
+    // Listado de clientes
+    Route::get('clientes', 'ClienteController@index')
+        ->name('clientes.index');
+
+    // Detalle / perfil del cliente
+    Route::get('clientes/{id}', 'ClienteController@show')
+        ->name('clientes.show');
+
+    // Crear / actualizar perfil (formulario web)
+    Route::post('clientes', 'ClienteController@store')
+        ->name('clientes.store');
+
+    // Agregar foto desde el panel web
+    Route::post('clientes/{id}/foto', 'ClienteController@agregarFoto')
+        ->name('clientes.foto.agregar');
+
+    // Eliminar foto
+    Route::delete('clientes/{clienteId}/foto/{fotoId}', 'ClienteController@eliminarFoto')
+        ->name('clientes.foto.eliminar');
+});

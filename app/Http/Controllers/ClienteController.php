@@ -1,0 +1,154 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Cliente;
+use App\Models\ClienteFoto;
+use App\Models\ClienteSerie;
+use App\Models\Admin\Ordenesmtl;
+use Illuminate\Http\Request;
+
+/**
+ * Controller WEB – Control de Clientes / Verificación NUIP.
+ *
+ * Rutas:
+ *   GET  /clientes                       → index()        Listado con búsqueda
+ *   GET  /clientes/{id}                  → show()         Perfil + historial + series
+ *   POST /clientes                       → store()        Crear / actualizar perfil
+ *   POST /clientes/{id}/foto             → agregarFoto()  Subir foto desde el panel web
+ *   DELETE /clientes/{id}/foto/{fid}     → eliminarFoto() Eliminar foto
+ */
+class ClienteController extends Controller
+{
+    // ────────────────────────────────────────────────
+    // LISTADO
+    // ────────────────────────────────────────────────
+
+    public function index(Request $request)
+    {
+        $query = Cliente::with('fotos');
+
+        if ($request->filled('buscar')) {
+            $query->buscar($request->buscar);
+        }
+
+        $clientes = $query->orderBy('updated_at', 'desc')->paginate(25);
+
+        return view('clientes.index', compact('clientes'));
+    }
+
+    // ────────────────────────────────────────────────
+    // DETALLE / PERFIL
+    // ────────────────────────────────────────────────
+
+    public function show($id)
+    {
+        $cliente = Cliente::with('fotos', 'series')->findOrFail($id);
+
+        // Historial de lecturas/órdenes del suscriptor
+        $ordenes = Ordenesmtl::where('Suscriptor', $cliente->suscriptor)
+            ->orderBy('Periodo', 'desc')
+            ->limit(24)
+            ->get();
+
+        return view('clientes.show', compact('cliente', 'ordenes'));
+    }
+
+    // ────────────────────────────────────────────────
+    // CREAR / ACTUALIZAR PERFIL (formulario web)
+    // ────────────────────────────────────────────────
+
+    public function store(Request $request)
+    {
+        $this->validate($request, [
+            'suscriptor'     => 'required|string|max:50',
+            'nuip'           => 'nullable|string|max:30',
+            'tipo_documento' => 'nullable|string|max:10',
+            'nombre'         => 'nullable|string|max:150',
+            'apellido'       => 'nullable|string|max:150',
+            'telefono'       => 'nullable|string|max:30',
+            'direccion'      => 'nullable|string|max:255',
+            'serie_medidor'  => 'nullable|string|max:100',
+            'foto'           => 'nullable|image|max:5120',
+            'tipo_foto'      => 'nullable|string|in:documento,medidor,predio',
+        ]);
+
+        $cliente = Cliente::upsertDesdeDatos($request->only([
+            'suscriptor', 'nuip', 'tipo_documento', 'nombre', 'apellido',
+            'telefono', 'direccion', 'serie_medidor',
+        ]));
+
+        // Registrar serie en el historial si viene informada
+        if ($request->filled('serie_medidor')) {
+            ClienteSerie::registrar($cliente->id, $request->input('serie_medidor'), date('Ym'));
+        }
+
+        // Guardar foto si viene adjunta
+        if ($request->hasFile('foto') && $request->file('foto')->isValid()) {
+            $this->_guardarFoto($request->file('foto'), $cliente, $request->input('tipo_foto', 'medidor'));
+        }
+
+        return redirect()->route('clientes.show', $cliente->id)
+            ->with('success', 'Perfil de cliente guardado correctamente.');
+    }
+
+    // ────────────────────────────────────────────────
+    // AGREGAR FOTO DESDE EL PANEL WEB
+    // ────────────────────────────────────────────────
+
+    public function agregarFoto(Request $request, $id)
+    {
+        $this->validate($request, [
+            'foto'      => 'required|image|max:8192',
+            'tipo_foto' => 'nullable|string|in:documento,medidor,predio',
+        ]);
+
+        $cliente = Cliente::findOrFail($id);
+
+        if ($request->file('foto')->isValid()) {
+            $this->_guardarFoto($request->file('foto'), $cliente, $request->input('tipo_foto', 'medidor'));
+        }
+
+        return redirect()->route('clientes.show', $cliente->id)
+            ->with('success', 'Foto agregada correctamente.');
+    }
+
+    // ────────────────────────────────────────────────
+    // ELIMINAR FOTO
+    // ────────────────────────────────────────────────
+
+    public function eliminarFoto($clienteId, $fotoId)
+    {
+        $foto = ClienteFoto::where('cliente_id', $clienteId)->findOrFail($fotoId);
+
+        if (file_exists(public_path($foto->ruta_foto))) {
+            unlink(public_path($foto->ruta_foto));
+        }
+
+        $foto->delete();
+
+        return redirect()->route('clientes.show', $clienteId)
+            ->with('success', 'Foto eliminada.');
+    }
+
+    // ────────────────────────────────────────────────
+    // HELPER PRIVADO
+    // ────────────────────────────────────────────────
+
+    private function _guardarFoto($archivo, Cliente $cliente, string $tipo)
+    {
+        $directorio = public_path('uploads/clientes');
+        if (!is_dir($directorio)) {
+            mkdir($directorio, 0755, true);
+        }
+
+        $nombre = 'cli_' . $cliente->id . '_' . time() . '_' . uniqid() . '.' . $archivo->getClientOriginalExtension();
+        $archivo->move($directorio, $nombre);
+
+        ClienteFoto::create([
+            'cliente_id' => $cliente->id,
+            'ruta_foto'  => 'uploads/clientes/' . $nombre,
+            'tipo'       => $tipo,
+        ]);
+    }
+}

@@ -1,9 +1,11 @@
 {{-- resources/views/macromedidores/edit.blade.php --}}
-@extends('layouts.app')
+@extends("theme.$theme.layout")
 
-@section('title', 'Editar Macromedidor: ' . $macro->codigo_macro)
+@section('title')
+'Editar Macromedidor: ' . $macro->codigo_macro
+@endsection
 
-@section('content')
+@section('contenido')
 <div class="container-fluid">
     <div class="row">
         <div class="col-md-8 col-md-offset-2">

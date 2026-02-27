@@ -18,8 +18,7 @@ Route::middleware('auth.api.token')->group(function () {
     Route::post('medidores','OrdenEjecutadaController@medidorejecutado');
     Route::post('marcas','MarcasController@marcasall');
     Route::post('medidorejecutado','OrdenesmtlasignarController@medidorejecutadosync');
-    
-    
+
     // GET  /api/ordenesMacro?api_token=xxx
     Route::get('ordenesMacro', 'Api\MacromedidorApiController@ordenesMacro');
 
@@ -37,12 +36,17 @@ Route::middleware('auth.api.token')->group(function () {
     // Descargar listas de parametros (dropdowns de la app)
     // GET  /api/listasParametros?api_token=xxx
     Route::get('listasParametros', 'Api\RevisionApiController@listasParametros');
-
+    
+    
+   
 
 
 });
 
 // Ruta pública para login
 Route::post('loginMovil1','Seguridad\LoginController@loginMovil');
+
+ 
+
 
 

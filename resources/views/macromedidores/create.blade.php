@@ -1,9 +1,11 @@
 {{-- resources/views/macromedidores/create.blade.php --}}
-@extends('layouts.app')
+@extends("theme.$theme.layout")
 
-@section('title', 'Crear Macromedidor')
+@section('title')
+'Crear Macromedidor'
+@endsection
 
-@section('content')
+@section('contenido')
 <div class="container-fluid">
     <div class="row">
         <div class="col-md-8 col-md-offset-2">

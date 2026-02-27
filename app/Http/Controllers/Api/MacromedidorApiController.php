@@ -46,15 +46,8 @@ class MacromedidorApiController extends Controller
      */
     public function ordenesMacro(Request $request)
     {
-        $apiToken = $request->input('api_token');
-        if (!$apiToken) {
-            return response()->json(['error' => 'api_token requerido'], 401);
-        }
-
-        $user = Usuario::where('api_token', $apiToken)->first();
-        if (!$user) {
-            return response()->json(['error' => 'Token invalido'], 401);
-        }
+          $user = $request->user();
+         
 
         $macros = Macromedidor::with('fotos')
             ->where('usuario_id', $user->id)

@@ -177,7 +177,7 @@ class RevisionController extends Controller
     public function generar(Request $request)
     {
         $this->validate($request, [
-            'usuario_id' => 'required|exists:users,id',
+            'usuario_id' => 'required|exists:usuario,id',
         ]);
 
         $usuarioId = $request->input('usuario_id');
@@ -261,7 +261,7 @@ class RevisionController extends Controller
     public function reasignar(Request $request, $id)
     {
         $this->validate($request, [
-            'usuario_id' => 'required|exists:users,id',
+            'usuario_id' => 'required|exists:usuario,id',
         ]);
 
         $revision = OrdenRevision::findOrFail($id);

@@ -36,9 +36,16 @@ Route::middleware('auth.api.token')->group(function () {
     // Descargar listas de parametros (dropdowns de la app)
     // GET  /api/listasParametros?api_token=xxx
     Route::get('listasParametros', 'Api\RevisionApiController@listasParametros');
-    
-    
-   
+
+    // ── CLIENTES / VERIFICACIÓN NUIP ──────────────────────────────
+    // GET  /api/cliente?api_token=xxx&suscriptor=xxx   → Consultar perfil
+    Route::get('cliente', 'Api\ClienteApiController@consultar');
+
+    // POST /api/cliente   → Crear / actualizar perfil + fotos desde la app
+    Route::post('cliente', 'Api\ClienteApiController@guardar');
+
+
+
 
 
 });

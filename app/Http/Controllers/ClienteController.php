@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Cliente;
 use App\Models\ClienteFoto;
+use App\Models\ClienteSerie;
 use App\Models\Admin\Ordenesmtl;
 use Illuminate\Http\Request;
 
@@ -11,11 +12,11 @@ use Illuminate\Http\Request;
  * Controller WEB – Control de Clientes / Verificación NUIP.
  *
  * Rutas:
- *   GET  /clientes                   → index()   Listado con búsqueda
- *   GET  /clientes/{id}              → show()    Perfil detallado + historial
- *   POST /clientes                   → store()   Crear / actualizar perfil manual
- *   POST /clientes/{id}/foto         → agregarFoto()  Subir foto desde el panel web
- *   DELETE /clientes/{id}/foto/{fid} → eliminarFoto() Eliminar foto
+ *   GET  /clientes                       → index()        Listado con búsqueda
+ *   GET  /clientes/{id}                  → show()         Perfil + historial + series
+ *   POST /clientes                       → store()        Crear / actualizar perfil
+ *   POST /clientes/{id}/foto             → agregarFoto()  Subir foto desde el panel web
+ *   DELETE /clientes/{id}/foto/{fid}     → eliminarFoto() Eliminar foto
  */
 class ClienteController extends Controller
 {
@@ -42,7 +43,7 @@ class ClienteController extends Controller
 
     public function show($id)
     {
-        $cliente = Cliente::with('fotos')->findOrFail($id);
+        $cliente = Cliente::with('fotos', 'series')->findOrFail($id);
 
         // Historial de lecturas/órdenes del suscriptor
         $ordenes = Ordenesmtl::where('Suscriptor', $cliente->suscriptor)
@@ -67,17 +68,24 @@ class ClienteController extends Controller
             'apellido'       => 'nullable|string|max:150',
             'telefono'       => 'nullable|string|max:30',
             'direccion'      => 'nullable|string|max:255',
+            'serie_medidor'  => 'nullable|string|max:100',
             'foto'           => 'nullable|image|max:5120',
-            'tipo_foto'      => 'nullable|string|in:documento,rostro,medidor',
+            'tipo_foto'      => 'nullable|string|in:documento,medidor,predio',
         ]);
 
         $cliente = Cliente::upsertDesdeDatos($request->only([
-            'suscriptor', 'nuip', 'tipo_documento', 'nombre', 'apellido', 'telefono', 'direccion',
+            'suscriptor', 'nuip', 'tipo_documento', 'nombre', 'apellido',
+            'telefono', 'direccion', 'serie_medidor',
         ]));
+
+        // Registrar serie en el historial si viene informada
+        if ($request->filled('serie_medidor')) {
+            ClienteSerie::registrar($cliente->id, $request->input('serie_medidor'), date('Ym'));
+        }
 
         // Guardar foto si viene adjunta
         if ($request->hasFile('foto') && $request->file('foto')->isValid()) {
-            $this->_guardarFoto($request->file('foto'), $cliente, $request->input('tipo_foto', 'documento'));
+            $this->_guardarFoto($request->file('foto'), $cliente, $request->input('tipo_foto', 'medidor'));
         }
 
         return redirect()->route('clientes.show', $cliente->id)
@@ -92,13 +100,13 @@ class ClienteController extends Controller
     {
         $this->validate($request, [
             'foto'      => 'required|image|max:8192',
-            'tipo_foto' => 'nullable|string|in:documento,rostro,medidor',
+            'tipo_foto' => 'nullable|string|in:documento,medidor,predio',
         ]);
 
         $cliente = Cliente::findOrFail($id);
 
         if ($request->file('foto')->isValid()) {
-            $this->_guardarFoto($request->file('foto'), $cliente, $request->input('tipo_foto', 'documento'));
+            $this->_guardarFoto($request->file('foto'), $cliente, $request->input('tipo_foto', 'medidor'));
         }
 
         return redirect()->route('clientes.show', $cliente->id)

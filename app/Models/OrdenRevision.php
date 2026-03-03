@@ -36,6 +36,8 @@ class OrdenRevision extends Model
         'fecha_cierre',
         'sincronizado',
         'usuario_id',
+        'acta_pdf',
+        'nueva_lectura',
     ];
 
     protected $casts = [
@@ -43,6 +45,7 @@ class OrdenRevision extends Model
         'lectura_anterior'    => 'integer',
         'consumo_actual'      => 'integer',
         'promedio'            => 'integer',
+        'nueva_lectura'       => 'integer',
         'num_familias'        => 'integer',
         'num_personas'        => 'integer',
         'gps_latitud_predio'  => 'double',

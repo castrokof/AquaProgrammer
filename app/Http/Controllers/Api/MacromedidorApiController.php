@@ -4,7 +4,8 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Macromedidor;
-use App\Models\MacroFoto;
+use App\Models\MacroLectura;
+use App\Models\MacroLecturaFoto;
 use App\Models\Seguridad\Usuario;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
@@ -12,49 +13,27 @@ use Carbon\Carbon;
 /**
  * Controller API - Endpoints para la app Android.
  *
- * Endpoints que consume la app:
- *   GET  /api/ordenesMacro?api_token=xxx       -> Descargar ordenes pendientes
- *   POST /api/macromedidoresMovil               -> Subir lectura con fotos
+ * Endpoints:
+ *   GET  /api/ordenesMacro?api_token=xxx       -> Todos los macros del usuario (siempre activos)
+ *   POST /api/macromedidoresMovil               -> Registrar nueva lectura diaria
  */
 class MacromedidorApiController extends Controller
 {
     /**
-     * ================================================
      * GET /api/ordenesMacro?api_token=xxx
-     * ================================================
      *
-     * Descarga las ordenes de macro asignadas al usuario.
-     * La app Android espera un array JSON con la estructura de MacroEntity.
-     *
-     * Response: [
-     *   {
-     *     "id_orden": 1,
-     *     "codigo_macro": "MAC-001",
-     *     "ubicacion": "Calle 5 #12-30",
-     *     "lectura_anterior": 12500,
-     *     "estado": "PENDIENTE",
-     *     "lectura_actual": null,
-     *     "observacion": null,
-     *     "ruta_fotos": null,
-     *     "gps_latitud_lectura": null,
-     *     "gps_longitud_lectura": null,
-     *     "fecha_lectura": null,
-     *     "sincronizado": false
-     *   },
-     *   ...
-     * ]
+     * Devuelve todos los macromedidores asignados al usuario.
+     * Siempre con estado PENDIENTE para que la app permita leer diariamente.
      */
     public function ordenesMacro(Request $request)
     {
-          $user = $request->user();
-         
+        $user = $request->user();
 
-        $macros = Macromedidor::with('fotos')
+        $macros = Macromedidor::with('ultimaLectura')
             ->where('usuario_id', $user->id)
-            ->orderBy('created_at', 'desc')
+            ->orderBy('codigo_macro')
             ->get();
 
-        // Mapear al formato que espera la app (MacroEntity)
         $resultado = $macros->map(function ($macro) {
             return $macro->toApiArray();
         });
@@ -63,83 +42,93 @@ class MacromedidorApiController extends Controller
     }
 
     /**
-     * ================================================
      * POST /api/macromedidoresMovil
-     * ================================================
      *
-     * Recibe la lectura desde la app Android.
-     * La app envia multipart/form-data con:
-     *   - api_token: string
-     *   - id_orden: int (= macromedidores.id)
-     *   - lectura_actual: string
-     *   - observacion: string (nullable)
-     *   - gps_latitud: double (nullable)
-     *   - gps_longitud: double (nullable)
-     *   - fotos[0], fotos[1]...: archivos imagen
+     * Registra una nueva lectura diaria del macromedidor.
+     * Crea un registro en macro_lecturas (historial) y actualiza
+     * lectura_anterior en macromedidores para la siguiente lectura.
      *
-     * Response: { "success": true, "message": "...", "id": 1 }
+     * Campos multipart/form-data:
+     *   api_token      string   requerido
+     *   id_orden       int      requerido (= macromedidores.id)
+     *   lectura_actual string   requerido
+     *   observacion    string   opcional
+     *   gps_latitud    double   opcional
+     *   gps_longitud   double   opcional
+     *   fotos[]        file     opcional
      */
     public function enviarMacro(Request $request)
     {
         // 1. Validar token
         $apiToken = $request->input('api_token');
         if (!$apiToken) {
-            return response()->json([
-                'success' => false,
-                'message' => 'api_token requerido'
-            ], 401);
+            return response()->json(['success' => false, 'message' => 'api_token requerido'], 401);
         }
 
         $user = Usuario::where('api_token', $apiToken)->first();
         if (!$user) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Token invalido'
-            ], 401);
+            return response()->json(['success' => false, 'message' => 'Token invalido'], 401);
         }
 
-        // 2. Buscar la orden
+        // 2. Buscar el macromedidor
         $idOrden = $request->input('id_orden');
-        $macro = Macromedidor::where('id', $idOrden)
+        $macro   = Macromedidor::where('id', $idOrden)
             ->where('usuario_id', $user->id)
             ->first();
 
         if (!$macro) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Orden no encontrada o no pertenece al usuario'
-            ], 404);
+            return response()->json(['success' => false, 'message' => 'Macromedidor no encontrado o no pertenece al usuario'], 404);
         }
 
-        // 3. Actualizar datos de lectura
-        $macro->estado                = 'EJECUTADO';
-        $macro->lectura_actual        = $request->input('lectura_actual');
-        $macro->observacion           = $request->input('observacion');
-        $macro->gps_latitud_lectura   = $request->input('gps_latitud');
-        $macro->gps_longitud_lectura  = $request->input('gps_longitud');
-        $macro->fecha_lectura         = Carbon::now();
-        $macro->sincronizado          = true;
+        // 3. Lectura_anterior = última lectura registrada o valor inicial del macro
+        $ultimaLectura   = MacroLectura::where('macromedidor_id', $macro->id)->latest('fecha_lectura')->first();
+        $lecturaAnterior = $ultimaLectura ? $ultimaLectura->lectura_actual : $macro->lectura_anterior;
+
+        $lecturaActual = intval($request->input('lectura_actual'));
+        $consumo       = $lecturaActual - $lecturaAnterior;
+
+        // 4. Crear registro de lectura en historial
+        $lectura = MacroLectura::create([
+            'macromedidor_id'  => $macro->id,
+            'usuario_id'       => $user->id,
+            'lectura_anterior'  => $lecturaAnterior,
+            'lectura_actual'   => $lecturaActual,
+            'consumo'          => $consumo,
+            'observacion'      => $request->input('observacion'),
+            'gps_latitud'      => $request->input('gps_latitud'),
+            'gps_longitud'     => $request->input('gps_longitud'),
+            'fecha_lectura'    => Carbon::now(),
+            'sincronizado'     => true,
+        ]);
+
+        // 5. Actualizar lectura_anterior del macro para la próxima lectura
+        $macro->lectura_anterior = $lecturaActual;
         $macro->save();
 
-        // 4. Guardar fotos
+        // 6. Guardar fotos en macro_lectura_fotos
         if ($request->hasFile('fotos')) {
+            $directorio = public_path('uploads/macros');
+            if (!is_dir($directorio)) {
+                mkdir($directorio, 0755, true);
+            }
             foreach ($request->file('fotos') as $foto) {
                 if ($foto->isValid()) {
-                    $nombreArchivo = 'macro_' . $macro->id . '_' . time() . '_' . uniqid() . '.' . $foto->getClientOriginalExtension();
-                    $ruta = $foto->move(public_path('uploads/macros'), $nombreArchivo);
-
-                    MacroFoto::create([
-                        'macromedidor_id' => $macro->id,
-                        'ruta_foto'       => 'uploads/macros/' . $nombreArchivo,
+                    $nombre = 'macro_' . $macro->id . '_' . time() . '_' . uniqid() . '.' . $foto->getClientOriginalExtension();
+                    $foto->move($directorio, $nombre);
+                    MacroLecturaFoto::create([
+                        'macro_lectura_id' => $lectura->id,
+                        'ruta_foto'        => 'uploads/macros/' . $nombre,
                     ]);
                 }
             }
         }
 
         return response()->json([
-            'success' => true,
-            'message' => 'Lectura recibida correctamente',
-            'id'      => $macro->id,
+            'success'          => true,
+            'message'          => 'Lectura registrada correctamente',
+            'id'               => $lectura->id,
+            'consumo'          => $consumo,
+            'lectura_anterior' => $lecturaAnterior,
         ]);
     }
 }

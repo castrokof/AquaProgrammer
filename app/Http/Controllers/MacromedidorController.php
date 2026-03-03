@@ -8,29 +8,22 @@ use Illuminate\Http\Request;
 
 /**
  * Controller WEB - CRUD de Macromedidores.
- * Para el panel administrativo (formularios Blade).
+ * Los macros son dispositivos permanentes que se leen diariamente.
+ * El historial de lecturas se almacena en macro_lecturas.
  */
 class MacromedidorController extends Controller
 {
     /**
-     * Listado de macromedidores con filtros.
      * GET /macromedidores
      */
     public function index(Request $request)
     {
-        $query = Macromedidor::with('usuario', 'fotos');
+        $query = Macromedidor::with('usuario', 'ultimaLectura');
 
-        // Filtro por estado
-        if ($request->filled('estado')) {
-            $query->where('estado', $request->estado);
-        }
-
-        // Filtro por usuario
         if ($request->filled('usuario_id')) {
             $query->where('usuario_id', $request->usuario_id);
         }
 
-        // Buscar por codigo
         if ($request->filled('buscar')) {
             $query->where(function ($q) use ($request) {
                 $q->where('codigo_macro', 'LIKE', '%' . $request->buscar . '%')
@@ -38,14 +31,13 @@ class MacromedidorController extends Controller
             });
         }
 
-        $macros = $query->orderBy('created_at', 'desc')->paginate(20);
+        $macros   = $query->orderBy('codigo_macro')->paginate(50);
         $usuarios = Usuario::orderBy('nombre')->pluck('nombre', 'id');
 
         return view('macromedidores.index', compact('macros', 'usuarios'));
     }
 
     /**
-     * Formulario de creacion.
      * GET /macromedidores/create
      */
     public function create()
@@ -55,16 +47,15 @@ class MacromedidorController extends Controller
     }
 
     /**
-     * Guardar nuevo macromedidor.
      * POST /macromedidores
      */
     public function store(Request $request)
     {
         $this->validate($request, [
-            'codigo_macro'    => 'required|string|unique:macromedidores,codigo_macro',
-            'ubicacion'       => 'nullable|string|max:500',
+            'codigo_macro'     => 'required|string|unique:macromedidores,codigo_macro',
+            'ubicacion'        => 'nullable|string|max:500',
             'lectura_anterior' => 'nullable|integer|min:0',
-            'usuario_id'      => 'required|exists:usuario,id',
+            'usuario_id'       => 'required|exists:usuario,id',
         ]);
 
         Macromedidor::create([
@@ -80,28 +71,29 @@ class MacromedidorController extends Controller
     }
 
     /**
-     * Detalle de un macromedidor con sus lecturas y fotos.
      * GET /macromedidores/{id}
+     * Muestra el detalle con timeline de todas las lecturas.
      */
     public function show($id)
     {
-        $macro = Macromedidor::with('fotos', 'usuario')->findOrFail($id);
+        $macro = Macromedidor::with(['usuario', 'lecturas' => function ($q) {
+            $q->with('fotos', 'usuario')->orderBy('fecha_lectura', 'desc');
+        }])->findOrFail($id);
+
         return view('macromedidores.show', compact('macro'));
     }
 
     /**
-     * Formulario de edicion.
      * GET /macromedidores/{id}/edit
      */
     public function edit($id)
     {
-        $macro = Macromedidor::findOrFail($id);
+        $macro    = Macromedidor::findOrFail($id);
         $usuarios = Usuario::orderBy('nombre')->pluck('nombre', 'id');
         return view('macromedidores.edit', compact('macro', 'usuarios'));
     }
 
     /**
-     * Actualizar macromedidor.
      * PUT /macromedidores/{id}
      */
     public function update(Request $request, $id)
@@ -109,10 +101,10 @@ class MacromedidorController extends Controller
         $macro = Macromedidor::findOrFail($id);
 
         $this->validate($request, [
-            'codigo_macro'    => 'required|string|unique:macromedidores,codigo_macro,' . $id,
-            'ubicacion'       => 'nullable|string|max:500',
+            'codigo_macro'     => 'required|string|unique:macromedidores,codigo_macro,' . $id,
+            'ubicacion'        => 'nullable|string|max:500',
             'lectura_anterior' => 'nullable|integer|min:0',
-            'usuario_id'      => 'required|exists:usuario,id',
+            'usuario_id'       => 'required|exists:usuario,id',
         ]);
 
         $macro->update([
@@ -127,52 +119,20 @@ class MacromedidorController extends Controller
     }
 
     /**
-     * Eliminar macromedidor.
      * DELETE /macromedidores/{id}
      */
     public function destroy($id)
     {
         $macro = Macromedidor::findOrFail($id);
 
-        // Solo se puede eliminar si esta PENDIENTE
-        if ($macro->estado === 'EJECUTADO') {
+        if ($macro->lecturas()->count() > 0) {
             return redirect()->back()
-                ->with('error', 'No se puede eliminar un macromedidor ya ejecutado.');
+                ->with('error', 'No se puede eliminar un macromedidor que ya tiene lecturas registradas.');
         }
 
         $macro->delete();
 
         return redirect()->route('macromedidores.index')
             ->with('success', 'Macromedidor eliminado.');
-    }
-
-    /**
-     * Resetear un macro EJECUTADO a PENDIENTE (re-asignar).
-     * POST /macromedidores/{id}/resetear
-     */
-    public function resetear($id)
-    {
-        $macro = Macromedidor::findOrFail($id);
-
-        $macro->update([
-            'estado'                => 'PENDIENTE',
-            'lectura_actual'        => null,
-            'observacion'           => null,
-            'gps_latitud_lectura'   => null,
-            'gps_longitud_lectura'  => null,
-            'fecha_lectura'         => null,
-            'sincronizado'          => false,
-        ]);
-
-        // Eliminar fotos asociadas
-        foreach ($macro->fotos as $foto) {
-            if (file_exists(public_path($foto->ruta_foto))) {
-                unlink(public_path($foto->ruta_foto));
-            }
-            $foto->delete();
-        }
-
-        return redirect()->route('macromedidores.show', $id)
-            ->with('success', 'Macromedidor reseteado a PENDIENTE.');
     }
 }

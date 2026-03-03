@@ -120,6 +120,10 @@ class RevisionApiController extends Controller
         $revision->gps_longitud_predio = $request->input('gps_longitud');
         $revision->fecha_cierre      = Carbon::now();
         $revision->sincronizado      = true;
+        // Nueva lectura tomada en campo por el revisor
+        if ($request->filled('nueva_lectura')) {
+            $revision->nueva_lectura = intval($request->input('nueva_lectura'));
+        }
 
         // 4. Guardar firma del cliente
         if ($request->hasFile('firma_cliente')) {
@@ -167,13 +171,18 @@ class RevisionApiController extends Controller
             }
         }
 
-        // 7. Guardar acta PDF (opcional)
+        // 7. Guardar acta PDF (opcional) y persistir la ruta
         if ($request->hasFile('acta_pdf')) {
             $acta = $request->file('acta_pdf');
             if ($acta->isValid()) {
+                $dirActas = public_path('uploads/revisiones/actas');
+                if (!is_dir($dirActas)) {
+                    mkdir($dirActas, 0755, true);
+                }
                 $nombreActa = 'acta_rev_' . $revision->id . '_' . time() . '.pdf';
-                $acta->move(public_path('uploads/revisiones/actas'), $nombreActa);
-                // Puedes guardar la ruta en un campo adicional si lo necesitas
+                $acta->move($dirActas, $nombreActa);
+                $revision->acta_pdf = 'uploads/revisiones/actas/' . $nombreActa;
+                $revision->save();
             }
         }
 

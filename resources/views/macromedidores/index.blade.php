@@ -5,7 +5,7 @@
 @endsection
 
 @section("styles")
-<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap.min.css">
+<link href="{{asset("assets/$theme/plugins/datatables-bs4/css/dataTables.bootstrap4.css")}}" rel="stylesheet" type="text/css"/>
 <style>
 .modal-modern .modal-content { border-radius: 20px; border: none; box-shadow: 0 20px 60px rgba(0,0,0,0.3); overflow: hidden; }
 .modal-modern .modal-header { background: linear-gradient(135deg, #2e50e4ff 0%, #2b0c49ff 100%); border: none; padding: 24px 30px; }
@@ -257,16 +257,15 @@ label.requerido::after { content: " *"; color: #f5576c; font-weight: 700; }
 @endsection
 
 @section("scriptsPlugins")
-<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap.min.js"></script>
+<script src="{{ asset("assets/$theme/plugins/datatables/jquery.dataTables.js") }}" type="text/javascript"></script>
+<script src="{{ asset("assets/$theme/plugins/datatables-bs4/js/dataTables.bootstrap4.js") }}" type="text/javascript"></script>
 <script>
 $(document).ready(function() {
+    var idioma = {"sProcessing":"Procesando...","sLengthMenu":"Mostrar _MENU_ registros","sZeroRecords":"No se encontraron resultados","sEmptyTable":"Ningún dato disponible","sInfo":"Mostrando del _START_ al _END_ de _TOTAL_ registros","sInfoEmpty":"Mostrando 0 registros","sInfoFiltered":"(filtrado de _MAX_ total)","sSearch":"Buscar:","sLoadingRecords":"Cargando...","oPaginate":{"sFirst":"Primero","sLast":"Último","sNext":"Siguiente","sPrevious":"Anterior"}};
     $('#tblMacros').DataTable({
         order: [[0, 'desc']],
         pageLength: 25,
-        language: {
-            url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json'
-        },
+        language: idioma,
         columnDefs: [
             { orderable: false, targets: [9] }
         ]

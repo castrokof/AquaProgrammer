@@ -13,9 +13,9 @@ class CreateMacroLecturas extends Migration
     public function up()
     {
         Schema::create('macro_lecturas', function (Blueprint $table) {
-            $table->increments('id');
-            $table->unsignedInteger('macromedidor_id');
-            $table->unsignedInteger('usuario_id')->nullable();
+            $table->bigIncrements('id');
+            $table->unsignedBigInteger('macromedidor_id');
+            $table->unsignedBigInteger('usuario_id')->nullable();
 
             // Snapshot de la lectura anterior al momento de tomar la nueva
             $table->integer('lectura_anterior')->default(0);
@@ -35,8 +35,8 @@ class CreateMacroLecturas extends Migration
         });
 
         Schema::create('macro_lectura_fotos', function (Blueprint $table) {
-            $table->increments('id');
-            $table->unsignedInteger('macro_lectura_id');
+            $table->bigIncrements('id');
+            $table->unsignedBigInteger('macro_lectura_id');
             $table->string('ruta_foto', 400);
             $table->timestamps();
 

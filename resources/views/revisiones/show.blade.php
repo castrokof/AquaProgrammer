@@ -1,14 +1,15 @@
 {{-- resources/views/revisiones/show.blade.php --}}
-@extends('layouts.app')
+@extends("theme.$theme.layout")
 
-@section('title', 'Revision: ' . $revision->codigo_predio)
+@section('titulo')
+'Revision: ' . $revision->codigo_predio
+@endsection
 
-@section('content')
-
+@section('styles')
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
 <style>
 .modern-card { border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); border: none; overflow: hidden; margin-bottom: 25px; background: white; animation: fadeIn 0.5s ease-out; }
 .modern-card .card-header { background: linear-gradient(135deg, #2e50e4ff 0%, #2b0c49ff 100%); border: none; padding: 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
-.modern-card .card-header-danger .card-header, .card-header-danger { background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%) !important; }
 .modern-card .card-body { padding: 30px; background: #fafbfc; }
 .modern-card h3 { color: white; font-weight: 700; font-size: 1.4rem; margin: 0; text-shadow: 0 2px 10px rgba(0,0,0,0.2); }
 .badge-estado { display: inline-block; padding: 5px 14px; border-radius: 20px; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
@@ -43,19 +44,21 @@
 .btn-volver:hover { background: #cbd5e0; color: #2d3748; }
 .btn-eliminar { background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%); color: white; }
 .btn-eliminar:hover { color: white; box-shadow: 0 4px 15px rgba(235,51,73,0.4); }
-.btn-mapa { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; border-radius: 10px; padding: 6px 14px; font-size: 0.8rem; font-weight: 600; border: none; transition: all 0.3s ease; }
-.btn-mapa:hover { color: white; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(79,172,254,0.4); }
+.btn-pdf { background: linear-gradient(135deg, #f6d365 0%, #fda085 100%); color: white; }
+.btn-pdf:hover { color: white; box-shadow: 0 4px 15px rgba(253,160,133,0.4); }
 .alert-info-modern { background: linear-gradient(135deg, #e0e7ff 0%, #f0f4ff 100%); border: 2px solid #c7d2fe; border-radius: 12px; padding: 15px 20px; color: #4338ca; font-weight: 500; }
-.reasignar-form .form-control { border-radius: 12px; border: 2px solid #e2e8f0; padding: 10px 14px; transition: all 0.3s ease; }
-.reasignar-form .form-control:focus { border-color: #667eea; box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1); outline: none; }
 .separator { height: 2px; background: linear-gradient(90deg, transparent 0%, #e2e8f0 50%, transparent 100%); margin: 25px 0; }
 .info-cierre { background: white; border-radius: 12px; padding: 15px 20px; display: flex; gap: 30px; align-items: center; flex-wrap: wrap; }
+.map-container { border-radius: 16px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1); height: 300px; }
+.nueva-lectura-box { background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%); border: 2px solid #80deea; border-radius: 14px; padding: 18px 24px; display: flex; align-items: center; gap: 16px; }
+.nueva-lectura-valor { font-size: 2rem; font-weight: 800; color: #00695c; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 </style>
+@endsection
 
+@section('contenido')
 <div class="container-fluid">
 
-    {{-- ALERTAS --}}
     @if(session('success'))
         <div class="alert alert-success alert-dismissible" style="border-radius:12px; border:none; box-shadow:0 4px 15px rgba(17,153,142,0.2);">
             <button type="button" class="close" data-dismiss="alert">&times;</button>
@@ -74,8 +77,8 @@
                     <table class="info-table">
                         <tr><th><i class="fa fa-id-card" style="color:#eb3349;"></i> Predio / Suscriptor</th><td><strong style="color:#2e50e4;">{{ $revision->codigo_predio }}</strong></td></tr>
                         <tr><th><i class="fa fa-user" style="color:#eb3349;"></i> Nombre</th><td>{{ $revision->nombre_suscriptor ?: '-' }}</td></tr>
-                        <tr><th><i class="fa fa-map-marker" style="color:#eb3349;"></i> Direccion</th><td>{{ $revision->direccion ?: '-' }}</td></tr>
-                        <tr><th><i class="fa fa-phone" style="color:#eb3349;"></i> Telefono</th><td>{{ $revision->telefono ?: '-' }}</td></tr>
+                        <tr><th><i class="fa fa-map-marker" style="color:#eb3349;"></i> Dirección</th><td>{{ $revision->direccion ?: '-' }}</td></tr>
+                        <tr><th><i class="fa fa-phone" style="color:#eb3349;"></i> Teléfono</th><td>{{ $revision->telefono ?: '-' }}</td></tr>
                         <tr><th><i class="fa fa-barcode" style="color:#eb3349;"></i> Ref. Medidor</th><td>{{ $revision->ref_medidor ?: '-' }}</td></tr>
                     </table>
                 </div>
@@ -94,7 +97,7 @@
                             </td>
                         </tr>
                         <tr><th><i class="fa fa-bar-chart" style="color:#eb3349;"></i> Promedio</th><td>{{ $revision->promedio ?: '-' }}</td></tr>
-                        <tr><th><i class="fa fa-warning" style="color:#eb3349;"></i> Critica</th><td><span class="badge-estado badge-critica">{{ $revision->critica_original ?: '-' }}</span></td></tr>
+                        <tr><th><i class="fa fa-warning" style="color:#eb3349;"></i> Crítica</th><td><span class="badge-estado badge-critica">{{ $revision->critica_original ?: '-' }}</span></td></tr>
                     </table>
                 </div>
             </div>
@@ -114,9 +117,8 @@
         <div class="card-body">
             @if($revision->estado_orden == 'PENDIENTE')
                 <div class="alert-info-modern">
-                    <i class="fa fa-info-circle"></i> Esta orden aun no ha sido ejecutada por el revisor en campo.
+                    <i class="fa fa-info-circle"></i> Esta orden aún no ha sido ejecutada por el revisor en campo.
                 </div>
-
                 <div style="margin-top:20px;">
                     <strong style="color:#4a5568;">Revisor asignado:</strong>
                     <span style="font-size:1.1rem; font-weight:600; color:#2e50e4; margin-left:8px;">{{ $revision->usuario ? $revision->usuario->nombre : 'Sin asignar' }}</span>
@@ -155,9 +157,6 @@
                                 <td>
                                     @if($revision->gps_latitud_predio && $revision->gps_longitud_predio)
                                         {{ $revision->gps_latitud_predio }}, {{ $revision->gps_longitud_predio }}
-                                        <a href="https://www.google.com/maps?q={{ $revision->gps_latitud_predio }},{{ $revision->gps_longitud_predio }}" target="_blank" class="btn-mapa" style="margin-left:8px;">
-                                            <i class="fa fa-external-link"></i> Ver mapa
-                                        </a>
                                     @else
                                         <span style="color:#a0aec0;">Sin GPS</span>
                                     @endif
@@ -166,6 +165,13 @@
                         </table>
                     </div>
                 </div>
+
+                {{-- MAPA LEAFLET --}}
+                @if($revision->gps_latitud_predio && $revision->gps_longitud_predio)
+                <div style="margin-top:20px;">
+                    <div class="map-container" id="mapaRevision"></div>
+                </div>
+                @endif
 
                 <div class="separator"></div>
 
@@ -184,7 +190,7 @@
                     {{-- PASO 4: Censo Hidraulico --}}
                     <div class="col-md-6">
                         <div class="paso-titulo">
-                            <span class="badge-paso">Paso 4</span> Censo Hidraulico
+                            <span class="badge-paso">Paso 4</span> Censo Hidráulico
                         </div>
                         @if($revision->censoHidraulico->count() > 0)
                             <table class="censo-table">
@@ -212,7 +218,7 @@
                                 </tbody>
                             </table>
                         @else
-                            <p style="color:#a0aec0; padding:15px 0;">Sin datos de censo hidraulico.</p>
+                            <p style="color:#a0aec0; padding:15px 0;">Sin datos de censo hidráulico.</p>
                         @endif
                     </div>
                 </div>
@@ -257,6 +263,21 @@
                     </div>
                 </div>
 
+                {{-- NUEVA LECTURA --}}
+                @if($revision->nueva_lectura !== null)
+                <div class="separator"></div>
+                <div class="paso-titulo">
+                    <span class="badge-paso">Nueva Lectura</span>
+                </div>
+                <div class="nueva-lectura-box">
+                    <i class="fa fa-tachometer" style="font-size:2rem; color:#00897b;"></i>
+                    <div>
+                        <div style="font-size:0.75rem; color:#00695c; font-weight:600; text-transform:uppercase; letter-spacing:0.5px;">Lectura tomada en campo</div>
+                        <div class="nueva-lectura-valor">{{ number_format($revision->nueva_lectura) }}</div>
+                    </div>
+                </div>
+                @endif
+
                 <div class="separator"></div>
 
                 <div class="info-cierre">
@@ -278,12 +299,20 @@
     </div>
 
     {{-- ACCIONES --}}
-    <div style="margin-bottom:30px; animation: fadeIn 0.6s ease-out;">
+    <div style="margin-bottom:30px; animation: fadeIn 0.6s ease-out; display:flex; gap:10px; flex-wrap:wrap;">
         <a href="{{ route('revisiones.index') }}" class="btn-accion btn-volver">
             <i class="fa fa-arrow-left"></i> Volver al listado
         </a>
+
+        @if($revision->acta_pdf)
+            <a href="{{ asset($revision->acta_pdf) }}" target="_blank" class="btn-accion btn-pdf">
+                <i class="fa fa-file-pdf-o"></i> Descargar Acta PDF
+            </a>
+        @endif
+
         @if($revision->estado_orden == 'PENDIENTE')
-            <form action="{{ route('revisiones.destroy', $revision->id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Eliminar esta orden de revision?')">
+            <form action="{{ route('revisiones.destroy', $revision->id) }}" method="POST" style="display:inline;"
+                  onsubmit="return confirm('¿Eliminar esta orden de revision?')">
                 {{ csrf_field() }}
                 {{ method_field('DELETE') }}
                 <button type="submit" class="btn-accion btn-eliminar">
@@ -293,4 +322,25 @@
         @endif
     </div>
 </div>
+@endsection
+
+@section('scriptsPlugins')
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV/XN/7+0=" crossorigin=""></script>
+@if($revision->estado_orden != 'PENDIENTE' && $revision->gps_latitud_predio && $revision->gps_longitud_predio)
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var lat = {{ $revision->gps_latitud_predio }};
+    var lng = {{ $revision->gps_longitud_predio }};
+    var map = L.map('mapaRevision').setView([lat, lng], 16);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+        maxZoom: 19
+    }).addTo(map);
+    L.marker([lat, lng])
+        .addTo(map)
+        .bindPopup('<strong>{{ addslashes($revision->codigo_predio) }}</strong><br>{{ addslashes($revision->nombre_suscriptor ?? "") }}<br>{{ addslashes($revision->direccion ?? "") }}')
+        .openPopup();
+});
+</script>
+@endif
 @endsection

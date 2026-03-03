@@ -7,6 +7,7 @@
 
 
 @section("styles")
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap.min.css">
 <style>
 .modern-card { border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); border: none; overflow: hidden; margin-bottom: 25px; background: white; animation: fadeIn 0.5s ease-out; }
 .modern-card .card-header { background: linear-gradient(135deg, #2e50e4ff 0%, #2b0c49ff 100%); border: none; padding: 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
@@ -33,6 +34,13 @@
 .table-modern-container::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
 .table-modern-container::-webkit-scrollbar-thumb { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 10px; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+/* DataTables overrides */
+#tblRevisiones_wrapper .dataTables_filter input,
+#tblRevisiones_wrapper .dataTables_length select { border-radius: 10px; border: 2px solid #e2e8f0; padding: 6px 12px; }
+#tblRevisiones_wrapper .dataTables_filter input:focus,
+#tblRevisiones_wrapper .dataTables_length select:focus { border-color: #667eea; outline: none; }
+#tblRevisiones_wrapper .dataTables_info,
+#tblRevisiones_wrapper .dataTables_paginate { margin-top: 12px; }
 </style>
 @endsection
 @section('contenido')
@@ -188,10 +196,26 @@
                 </table>
             </div>
 
-            <div class="text-center" style="margin-top:20px;">
-                {!! $revisiones->appends(request()->query())->render() !!}
-            </div>
         </div>
     </div>
 </div>
+@endsection
+
+@section('scriptsPlugins')
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap.min.js"></script>
+<script>
+$(document).ready(function() {
+    $('#tblRevisiones').DataTable({
+        order: [[0, 'desc']],
+        pageLength: 25,
+        language: {
+            url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json'
+        },
+        columnDefs: [
+            { orderable: false, targets: [11] }
+        ]
+    });
+});
+</script>
 @endsection

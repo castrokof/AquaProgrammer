@@ -1,7 +1,8 @@
 {{-- resources/views/revisiones/show.blade.php --}}
 @extends("theme.$theme.layout")
 
-@section('titulo')
+@section('title')
+
 'Revision: ' . $revision->codigo_predio
 @endsection
 
@@ -55,7 +56,6 @@
 @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 </style>
 @endsection
-
 @section('contenido')
 <div class="container-fluid">
 

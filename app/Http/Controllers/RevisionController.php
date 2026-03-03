@@ -66,7 +66,10 @@ class RevisionController extends Controller
      */
     public function criticas(Request $request)
     {
-        $query = Ordenesmtl::where('Estado', 4);
+        $query = Ordenesmtl::where('Estado', 4)
+    ->where('Critica', '!=', '54-NORMAL')
+    ->whereMonth('fecha_de_ejecucion', now()->month)
+    ->whereYear('fecha_de_ejecucion', now()->year);
 
         // Filtros
         if ($request->filled('critica')) {
@@ -105,8 +108,17 @@ class RevisionController extends Controller
             ->pluck('Critica');
 
         // Contadores
-        $totalCriticas = Ordenesmtl::where('Estado', 4)->count();
-        $totalMarcadas = Ordenesmtl::where('Estado', 4)->where('Coordenada', 'generar')->count();
+        $totalCriticas = Ordenesmtl::whereMonth('fecha_de_ejecucion', now()->month)
+                        ->whereYear('fecha_de_ejecucion', now()->year)
+                        ->where('Estado', 4)
+                        ->where('Critica', '!=', '54-NORMAL')
+                        ->count();
+       
+                        $totalMarcadas = Ordenesmtl::where([['Estado', 4],['Critica', '!=', '54-NORMAL']])
+                        ->where('Coordenada', 'generar')
+                        ->whereMonth('fecha_de_ejecucion', now()->month)
+                        ->whereYear('fecha_de_ejecucion', now()->year)
+                        ->count();
 
         // Usuarios revisores para asignar
         $revisores = Usuario::orderBy('nombre')->pluck('nombre', 'id');

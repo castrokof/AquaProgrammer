@@ -31,15 +31,7 @@ class RevisionApiController extends Controller
      */
     public function ordenesRevision(Request $request)
     {
-        $apiToken = $request->input('api_token');
-        if (!$apiToken) {
-            return response()->json(['error' => 'api_token requerido'], 401);
-        }
-
-        $user = Usuario::where('api_token', $apiToken)->first();
-        if (!$user) {
-            return response()->json(['error' => 'Token invalido'], 401);
-        }
+         $user = $request->user();
 
         $revisiones = OrdenRevision::with('fotos')
             ->where('usuario_id', $user->id)
@@ -74,22 +66,7 @@ class RevisionApiController extends Controller
      */
     public function enviarRevisionV2(Request $request)
     {
-        // 1. Validar token
-        $apiToken = $request->input('api_token');
-        if (!$apiToken) {
-            return response()->json([
-                'success' => false,
-                'message' => 'api_token requerido',
-            ], 401);
-        }
-
-        $user = Usuario::where('api_token', $apiToken)->first();
-        if (!$user) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Token invalido',
-            ], 401);
-        }
+         $user = $request->user();
 
         // 2. Buscar la orden
         $idOrden = $request->input('id_orden');
@@ -194,16 +171,7 @@ class RevisionApiController extends Controller
      */
     public function listasParametros(Request $request)
     {
-        $apiToken = $request->input('api_token');
-        if (!$apiToken) {
-            return response()->json(['error' => 'api_token requerido'], 401);
-        }
-
-        $user = Usuario::where('api_token', $apiToken)->first();
-        if (!$user) {
-            return response()->json(['error' => 'Token invalido'], 401);
-        }
-
+          $user = $request->user();
         $listas = ListaParametro::activos()->orderBy('tipo_lista')->orderBy('id')->get();
 
         $resultado = $listas->map(function ($item) {

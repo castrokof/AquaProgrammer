@@ -1,9 +1,13 @@
 {{-- resources/views/revisiones/show.blade.php --}}
-@extends('layouts.app')
+@extends("theme.$theme.layout")
 
-@section('title', 'Revision: ' . $revision->codigo_predio)
+@section('title')
 
-@section('content')
+'Revision: ' . $revision->codigo_predio
+@endsection
+
+
+@section('styles')
 
 <style>
 .modern-card { border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); border: none; overflow: hidden; margin-bottom: 25px; background: white; animation: fadeIn 0.5s ease-out; }
@@ -52,7 +56,8 @@
 .info-cierre { background: white; border-radius: 12px; padding: 15px 20px; display: flex; gap: 30px; align-items: center; flex-wrap: wrap; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 </style>
-
+@endsection
+@section('contenido')
 <div class="container-fluid">
 
     {{-- ALERTAS --}}

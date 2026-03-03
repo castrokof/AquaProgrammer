@@ -135,10 +135,6 @@ Route::get('generar_factura', 'OrdenesmtlasignarController@generarfactura')->nam
 Route::group(['middleware' => 'auth'], function () {
 
     Route::resource('macromedidores', 'MacromedidorController');
-
-    // Ruta adicional para resetear una orden ejecutada a pendiente
-    Route::post('macromedidores/{id}/resetear', 'MacromedidorController@resetear')
-        ->name('macromedidores.resetear');
 });
 
 Route::group(['middleware' => 'auth'], function () {

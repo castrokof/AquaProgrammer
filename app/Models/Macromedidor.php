@@ -34,9 +34,21 @@ class Macromedidor extends Model
     // RELACIONES
     // ========================================
 
+    /** Fotos legacy (modelo anterior – se mantiene por compatibilidad) */
     public function fotos()
     {
         return $this->hasMany(MacroFoto::class, 'macromedidor_id');
+    }
+
+    /** Historial de lecturas (modelo nuevo – lectura diaria) */
+    public function lecturas()
+    {
+        return $this->hasMany(MacroLectura::class, 'macromedidor_id')->orderBy('fecha_lectura', 'desc');
+    }
+
+    public function ultimaLectura()
+    {
+        return $this->hasOne(MacroLectura::class, 'macromedidor_id')->latest('fecha_lectura');
     }
 
     public function usuario()
@@ -47,16 +59,6 @@ class Macromedidor extends Model
     // ========================================
     // SCOPES
     // ========================================
-
-    public function scopePendientes($query)
-    {
-        return $query->where('estado', 'PENDIENTE');
-    }
-
-    public function scopeEjecutados($query)
-    {
-        return $query->where('estado', 'EJECUTADO');
-    }
 
     public function scopeDelUsuario($query, $userId)
     {
@@ -69,23 +71,28 @@ class Macromedidor extends Model
 
     /**
      * Formato que espera la app Android (MacroEntity).
-     * Los nombres coinciden con @ColumnInfo del Room Entity.
+     * lectura_anterior = última lectura registrada (o la inicial).
+     * estado siempre PENDIENTE para que la app lo descargue siempre.
      */
     public function toApiArray()
     {
+        // La lectura_anterior que ve la app es la última lectura_actual registrada
+        $ultimaLectura = $this->ultimaLectura ?? null;
+        $lecturaBase   = $ultimaLectura ? $ultimaLectura->lectura_actual : $this->lectura_anterior;
+
         return [
             'id_orden'              => $this->id,
             'codigo_macro'          => $this->codigo_macro,
             'ubicacion'             => $this->ubicacion,
-            'lectura_anterior'      => $this->lectura_anterior,
-            'estado'                => $this->estado,
-            'lectura_actual'        => $this->lectura_actual,
-            'observacion'           => $this->observacion,
-            'ruta_fotos'            => $this->fotos->pluck('ruta_foto')->implode(','),
-            'gps_latitud_lectura'   => $this->gps_latitud_lectura,
-            'gps_longitud_lectura'  => $this->gps_longitud_lectura,
-            'fecha_lectura'         => $this->fecha_lectura,
-            'sincronizado'          => $this->sincronizado,
+            'lectura_anterior'      => $lecturaBase,
+            'estado'                => 'PENDIENTE',   // siempre disponible para leer
+            'lectura_actual'        => null,
+            'observacion'           => null,
+            'ruta_fotos'            => '',
+            'gps_latitud_lectura'   => null,
+            'gps_longitud_lectura'  => null,
+            'fecha_lectura'         => null,
+            'sincronizado'          => false,
         ];
     }
 }

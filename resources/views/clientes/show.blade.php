@@ -443,7 +443,7 @@
                                 <td style="font-size:0.72rem;max-width:120px;text-align:left;">
                                     @if($orden->Critica)
                                         <span style="background:#fed7d7;color:#742a2a;padding:2px 6px;border-radius:6px;font-size:0.68rem;">
-                                            {{ Str::limit($orden->Critica, 30) }}
+                                            {{ mb_strlen($orden->Critica) > 30 ? mb_substr($orden->Critica,0,30).'…' : $orden->Critica }}
                                         </span>
                                     @else
                                         <span style="color:#c6f6d5;">—</span>

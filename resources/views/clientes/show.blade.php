@@ -722,16 +722,23 @@
                         </div>
                     </div>
                     <div class="row">
-                        <div class="col-md-8">
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label style="font-weight:600;color:#4a5568;font-size:0.8rem;text-transform:uppercase;">ID Ruta (Grupo)</label>
+                                <input type="number" name="id_ruta" class="form-control"
+                                       value="{{ $cliente->id_ruta }}" min="1" placeholder="Ej: 5">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
                             <div class="form-group">
                                 <label style="font-weight:600;color:#4a5568;font-size:0.8rem;text-transform:uppercase;">Ruta de Lectura</label>
                                 <input type="text" name="ruta" class="form-control"
                                        value="{{ $cliente->ruta }}" placeholder="Ej: RUTA-01, NORTE-A">
                             </div>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <div class="form-group">
-                                <label style="font-weight:600;color:#4a5568;font-size:0.8rem;text-transform:uppercase;">Consecutivo en Ruta</label>
+                                <label style="font-weight:600;color:#4a5568;font-size:0.8rem;text-transform:uppercase;">Consecutivo</label>
                                 <input type="number" name="consecutivo" class="form-control"
                                        value="{{ $cliente->consecutivo }}" min="1" placeholder="Ej: 15">
                             </div>

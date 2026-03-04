@@ -11,6 +11,11 @@ use Illuminate\Support\Facades\Log;
 use App\Models\Admin\Photos;
 use App\Models\Admin\Orden_ejecutada;
 use Illuminate\Support\Facades\Storage;
+use App\Models\Cliente;
+use App\Models\Factura;
+use App\Models\PeriodoLectura;
+use App\Models\ClienteHistoricoConsumo;
+use App\Services\FacturacionService;
 
 class OrdenEjecutadaController extends Controller
 {
@@ -122,9 +127,18 @@ class OrdenEjecutadaController extends Controller
                             'updated_at' => now()
                         ]);
                     
-                    DB::commit();         
+                    DB::commit();
                     Log::info("Registro recibido en cu y commit ok: " . json_encode($request->all()));
-                    
+
+                    // ── Facturación automática post-sincronización ──────────
+                    $this->procesarFacturacion(
+                        $id_orden,
+                        (int) $request->consumo,
+                        (int) $Lec,
+                        (string) ($critica1 ?? ''),
+                        $causa
+                    );
+
                     return response()->json([
                         'success' => true,
                         'message' => 'Lectura cargada en servidor'
@@ -211,9 +225,18 @@ class OrdenEjecutadaController extends Controller
                             'updated_at' => now()
                         ]);
                     
-                    DB::commit();        
+                    DB::commit();
                     Log::info("Registro actualizado con commit: " . json_encode($request->all()));
-                    
+
+                    // ── Facturación automática post-sincronización ──────────
+                    $this->procesarFacturacion(
+                        $id_orden,
+                        (int) $request->consumo,
+                        (int) $Lec,
+                        (string) ($critica1 ?? ''),
+                        $causa
+                    );
+
                     return response()->json([
                         'success' => true,
                         'message' => 'Lectura actualizada en servidor'
@@ -234,6 +257,110 @@ class OrdenEjecutadaController extends Controller
         }            
     }
     
+    /**
+     * Procesa la facturación automática luego de recibir una lectura desde el móvil.
+     *
+     * Reglas:
+     *  - Normal (Critica='54-NORMAL' o dentro del ±50% del promedio) → Factura con consumo real.
+     *  - Crítica CON causa  → Factura con el promedio del cliente (según tipo de causa).
+     *  - Crítica SIN causa  → No factura; queda pendiente de revisión manual.
+     *
+     * En todos los casos facturados actualiza el historial de consumo y el promedio del cliente.
+     */
+    private function procesarFacturacion(
+        $idOrden,
+        int $consumoM3,
+        int $lectActual,
+        string $critica,
+        $causa
+    ): void {
+        try {
+            $orden = DB::table('ordenescu')->where('id', $idOrden)->first();
+
+            if (!$orden || empty($orden->periodo_lectura_id)) {
+                Log::info("procesarFacturacion: orden {$idOrden} sin periodo_lectura_id, sin facturar.");
+                return;
+            }
+
+            $cliente = Cliente::with(['estrato', 'otrosCobros', 'historicoConsumos'])
+                ->where('suscriptor', $orden->Suscriptor)
+                ->first();
+
+            if (!$cliente || !$cliente->estrato_id) {
+                Log::warning("procesarFacturacion: suscriptor {$orden->Suscriptor} sin perfil de facturación completo.");
+                return;
+            }
+
+            $periodo = PeriodoLectura::with('tarifa')->find($orden->periodo_lectura_id);
+
+            if (!$periodo) {
+                Log::warning("procesarFacturacion: período {$orden->periodo_lectura_id} no encontrado.");
+                return;
+            }
+
+            // Evitar duplicar factura si ya existe para este cliente/período
+            if (Factura::where('cliente_id', $cliente->id)->where('periodo', $periodo->codigo)->exists()) {
+                Log::info("procesarFacturacion: cliente {$cliente->suscriptor} ya tiene factura en {$periodo->codigo}.");
+                return;
+            }
+
+            $esNormal = (
+                strtoupper(trim($critica)) === '54-NORMAL'
+                || strtoupper(trim($critica)) === 'NORMAL'
+                || $cliente->lecturaEsNormal($consumoM3)
+            );
+
+            $facturacionService = new FacturacionService();
+            $lecturaAnterior    = isset($orden->LA) ? (int) $orden->LA : null;
+            $consumoFacturado   = null;
+
+            if ($esNormal) {
+                // Lectura normal → factura con consumo real
+                $datos           = $facturacionService->calcular($cliente, $consumoM3, $periodo, $lecturaAnterior, $lectActual);
+                $consumoFacturado = $consumoM3;
+                Factura::create($datos);
+                Log::info("procesarFacturacion: {$cliente->suscriptor} NORMAL → facturado {$consumoM3} m³.");
+
+            } elseif (!empty($causa)) {
+                // Crítica con causa → factura con promedio según causa
+                $consumoProm     = max(1, (int) round($cliente->promedio_consumo));
+                $datos           = $facturacionService->calcular($cliente, $consumoProm, $periodo);
+                $consumoFacturado = $consumoProm;
+                Factura::create($datos);
+                Log::info("procesarFacturacion: {$cliente->suscriptor} CRÍTICA+CAUSA → facturado promedio {$consumoProm} m³.");
+
+            } else {
+                // Crítica sin causa → no facturar, queda en revisión
+                Log::info("procesarFacturacion: {$cliente->suscriptor} CRÍTICA sin causa → pendiente de revisión.");
+                return;
+            }
+
+            // ── Actualizar historial de consumo y promedio del cliente ────────
+            if ($consumoFacturado !== null) {
+                ClienteHistoricoConsumo::updateOrCreate(
+                    ['cliente_id' => $cliente->id, 'periodo' => $periodo->codigo],
+                    [
+                        'suscriptor'       => $cliente->suscriptor,
+                        'consumo_m3'       => $consumoFacturado,
+                        'lectura_anterior' => $lecturaAnterior,
+                        'lectura_actual'   => $lectActual,
+                        'dias_facturados'  => 30,
+                    ]
+                );
+
+                $nuevoPromedio = ClienteHistoricoConsumo::where('cliente_id', $cliente->id)
+                    ->orderBy('periodo', 'desc')
+                    ->limit(6)
+                    ->avg('consumo_m3');
+
+                $cliente->update(['promedio_consumo' => round($nuevoPromedio ?? 0, 2)]);
+            }
+
+        } catch (\Throwable $e) {
+            Log::error("procesarFacturacion error orden {$idOrden}: " . $e->getMessage());
+        }
+    }
+
     public function guardarFotoEnTabla($id) {
         $orden = Orden_ejecutada::findOrFail($id);
         $nombreFoto = $orden->foto1; 

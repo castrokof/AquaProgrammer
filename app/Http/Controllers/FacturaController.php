@@ -141,10 +141,11 @@ class FacturaController extends Controller
 
         $factura = Factura::create($calculo);
 
-        // Registrar en historial de consumos
+        // Registrar en historial de consumos (usa el consumo efectivo calculado,
+        // que puede diferir del request cuando el cliente no tiene medidor)
         ClienteHistoricoConsumo::registrarYActualizarPromedio(
             $cliente->id, $cliente->suscriptor, $periodo->codigo,
-            $request->consumo_m3, $request->lectura_anterior, $request->lectura_actual
+            $calculo['consumo_m3'], $calculo['lectura_anterior'], $calculo['lectura_actual']
         );
 
         // Descontar cuotas de otros cobros

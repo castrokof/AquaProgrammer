@@ -132,25 +132,36 @@ label.lbl { font-weight:600; color:#4a5568; font-size:.8rem; text-transform:uppe
             </div>
 
             <div class="form-box">
-                <h5><i class="fa fa-tachometer-alt"></i> 3. Lectura del Medidor</h5>
-                <div class="row">
-                    <div class="col-6">
-                        <div class="form-group">
-                            <label class="lbl">Lectura Anterior (m³)</label>
-                            <input type="number" class="form-control form-control-gen" id="lectAnterior" min="0" placeholder="0">
+                <h5><i class="fa fa-tachometer-alt"></i> 3. <span id="tituloLectura">Lectura del Medidor</span></h5>
+
+                {{-- Aviso cliente sin medidor --}}
+                <div id="noMedidorNotice" style="display:none;background:#fffbeb;border:2px solid #f6e05e;border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:.84rem;color:#744210;">
+                    <i class="fas fa-exclamation-triangle" style="color:#d69e2e;"></i>
+                    <strong>Cliente sin medidor</strong> — se facturará con el promedio de consumo:
+                    <strong id="noMedidorPromedio"></strong> m³
+                </div>
+
+                <div id="seccionLectura">
+                    <div class="row">
+                        <div class="col-6">
+                            <div class="form-group">
+                                <label class="lbl">Lectura Anterior (m³)</label>
+                                <input type="number" class="form-control form-control-gen" id="lectAnterior" min="0" placeholder="0">
+                            </div>
                         </div>
-                    </div>
-                    <div class="col-6">
-                        <div class="form-group">
-                            <label class="lbl">Lectura Actual (m³)</label>
-                            <input type="number" class="form-control form-control-gen" id="lectActual" min="0" placeholder="0">
+                        <div class="col-6">
+                            <div class="form-group">
+                                <label class="lbl">Lectura Actual (m³)</label>
+                                <input type="number" class="form-control form-control-gen" id="lectActual" min="0" placeholder="0">
+                            </div>
                         </div>
                     </div>
                 </div>
+
                 <div class="form-group">
-                    <label class="lbl">Consumo del período (m³) <span style="color:red">*</span></label>
+                    <label class="lbl" id="lblConsumoM3">Consumo del período (m³) <span style="color:red">*</span></label>
                     <input type="number" class="form-control form-control-gen" id="consumoM3" min="0" placeholder="Se auto-calcula al ingresar lecturas">
-                    <small style="color:#718096;font-size:.78rem;">Si ingresa lecturas anterior y actual, el consumo se calcula automáticamente.</small>
+                    <small id="consumoHint" style="color:#718096;font-size:.78rem;">Si ingresa lecturas anterior y actual, el consumo se calcula automáticamente.</small>
                 </div>
                 <div class="form-group">
                     <label class="lbl">Observaciones</label>
@@ -303,6 +314,27 @@ function buscarCliente() {
                 html += '</div>';
             });
             $('#histBarras').html(html || '<span style="color:#a0aec0;font-size:.78rem;">Sin historial</span>');
+
+            // Adaptar sección de lectura según si el cliente tiene medidor
+            var promedio = parseFloat(c.promedio_consumo) || 0;
+            var consumoSinMedidor = Math.round(promedio) || 1;
+            if (!c.tiene_medidor) {
+                $('#tituloLectura').text('Consumo Estimado (sin medidor)');
+                $('#seccionLectura').hide();
+                $('#noMedidorPromedio').text(consumoSinMedidor);
+                $('#noMedidorNotice').show();
+                $('#consumoM3').val(consumoSinMedidor).prop('readonly', true);
+                $('#lblConsumoM3').html('Consumo estimado por promedio (m³)');
+                $('#consumoHint').text('Calculado automáticamente sobre el promedio de los últimos 6 meses.');
+            } else {
+                $('#tituloLectura').text('Lectura del Medidor');
+                $('#seccionLectura').show();
+                $('#noMedidorNotice').hide();
+                $('#consumoM3').val('').prop('readonly', false);
+                $('#lblConsumoM3').html('Consumo del período (m³) <span style="color:red">*</span>');
+                $('#consumoHint').text('Si ingresa lecturas anterior y actual, el consumo se calcula automáticamente.');
+            }
+
             $('#panelCliente').show();
             previewOk = false; $('#btnGenerar').prop('disabled', true);
         },
@@ -347,9 +379,13 @@ $('#btnPreview').on('click', function () {
             $('#pvProm').text('Prom: ' + (c.promedio_consumo_snapshot || 0).toFixed(1) + ' m³');
             $('#pvBarras').text('[' + meses.join(' | ') + '] m³');
             // Tipo de factura
-            $('#badgeTipoFactura').html(c.es_automatica
+            var badgeHtml = c.tiene_medidor_snapshot === false
+                ? '<span style="background:#fefcbf;color:#744210;padding:3px 10px;border-radius:12px;font-size:.72rem;font-weight:700;margin-right:6px;"><i class="fas fa-times-circle"></i> Sin Medidor</span>'
+                : '';
+            badgeHtml += c.es_automatica
                 ? '<span class="badge-normal"><i class="fa fa-check-circle"></i> Lectura Normal</span>'
-                : '<span class="badge-critica"><i class="fa fa-exclamation-triangle"></i> Requiere Revisión</span>');
+                : '<span class="badge-critica"><i class="fa fa-exclamation-triangle"></i> Requiere Revisión</span>';
+            $('#badgeTipoFactura').html(badgeHtml);
             // Acueducto
             $('#pvCfAcueducto').text(fmt(c.cargo_fijo_acueducto));
             $('#pvBasicoAcLbl').text('Básico (' + (c.consumo_basico_acueducto_m3||0) + ' m³)');

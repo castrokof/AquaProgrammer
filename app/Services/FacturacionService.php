@@ -34,6 +34,14 @@ class FacturacionService
         ?int $lecturaAnterior = null,
         ?int $lecturaActual   = null
     ): array {
+        // Sin medidor → se factura con el promedio de los últimos 6 meses.
+        // Si tampoco hay historial se usa 1 m³ como mínimo facturable.
+        if (!$cliente->tiene_medidor) {
+            $consumoM3       = max(1, (int) round($cliente->promedio_consumo));
+            $lecturaAnterior = null;
+            $lecturaActual   = null;
+        }
+
         $tarifa    = $periodo->tarifa ?? TarifaPeriodo::vigente();
         $estratoId = $cliente->estrato_id;
         $servicios = $cliente->servicios ?? 'AG-AL';

@@ -45,34 +45,40 @@ class FacturacionMenuSeeder extends Seeder
         // ── 2. Hijos ──────────────────────────────────────────────────────────
         $hijos = [
             [
+                'nombre' => 'Clientes',
+                'url'    => 'clientes',
+                'icono'  => 'fas fa-users',
+                'orden'  => 1,
+            ],
+            [
                 'nombre' => 'Períodos de Lectura',
                 'url'    => 'facturacion/periodos',
                 'icono'  => 'fas fa-calendar-alt',
-                'orden'  => 1,
+                'orden'  => 2,
             ],
             [
                 'nombre' => 'Resoluciones Tarifarias',
                 'url'    => 'facturacion/tarifas',
                 'icono'  => 'fas fa-tags',
-                'orden'  => 2,
+                'orden'  => 3,
             ],
             [
                 'nombre' => 'Facturas',
                 'url'    => 'facturacion/facturas',
                 'icono'  => 'fas fa-file-invoice',
-                'orden'  => 3,
+                'orden'  => 4,
             ],
             [
                 'nombre' => 'Generar Factura',
                 'url'    => 'facturacion/facturas/generar',
                 'icono'  => 'fas fa-plus-circle',
-                'orden'  => 4,
+                'orden'  => 5,
             ],
             [
                 'nombre' => 'Otros Cobros',
                 'url'    => 'facturacion/otros-cobros',
                 'icono'  => 'fas fa-receipt',
-                'orden'  => 5,
+                'orden'  => 6,
             ],
         ];
 

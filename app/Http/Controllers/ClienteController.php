@@ -48,9 +48,11 @@ class ClienteController extends Controller
         $cliente = Cliente::with('fotos', 'series', 'estrato')->findOrFail($id);
 
         // Historial de lecturas/órdenes del suscriptor
+        // Ordena por fecha real de ejecución (si existe) y luego por período
         $ordenes = Ordenesmtl::where('Suscriptor', $cliente->suscriptor)
+            ->orderByRaw("CASE WHEN fecha_de_ejecucion IS NULL OR fecha_de_ejecucion = '0000-00-00 00:00:00' THEN '1900-01-01' ELSE fecha_de_ejecucion END DESC")
             ->orderBy('Periodo', 'desc')
-            ->limit(24)
+            ->limit(36)
             ->get();
 
         $estratos = Estrato::where('activo', true)->orderBy('numero')->get();

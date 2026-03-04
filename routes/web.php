@@ -197,3 +197,63 @@ Route::group(['middleware' => 'auth'], function () {
     Route::delete('clientes/{clienteId}/foto/{fotoId}', 'ClienteController@eliminarFoto')
         ->name('clientes.foto.eliminar');
 });
+
+// ─────────────────────────────────────────────────────────────────
+// MÓDULO DE FACTURACIÓN
+// ─────────────────────────────────────────────────────────────────
+Route::group(['middleware' => 'auth', 'prefix' => 'facturacion'], function () {
+
+    // ── Períodos de Lectura ──────────────────────────────────────
+    Route::get('periodos', 'PeriodoLecturaController@index')
+        ->name('periodos.index');
+    Route::post('periodos', 'PeriodoLecturaController@store')
+        ->name('periodos.store');
+    Route::put('periodos/{id}', 'PeriodoLecturaController@update')
+        ->name('periodos.update');
+    Route::post('periodos/{id}/estado', 'PeriodoLecturaController@cambiarEstado')
+        ->name('periodos.estado');
+    Route::get('periodos/{id}', 'PeriodoLecturaController@show')
+        ->name('periodos.show');
+
+    // ── Tarifas ──────────────────────────────────────────────────
+    Route::get('tarifas', 'TarifaController@index')
+        ->name('tarifas.index');
+    Route::post('tarifas', 'TarifaController@store')
+        ->name('tarifas.store');
+    Route::get('tarifas/{id}/detalle', 'TarifaController@detalle')
+        ->name('tarifas.detalle');
+    Route::post('tarifas/{id}/cargos', 'TarifaController@guardarCargos')
+        ->name('tarifas.cargos');
+    Route::post('tarifas/{id}/rangos', 'TarifaController@guardarRangos')
+        ->name('tarifas.rangos');
+    Route::post('tarifas/{id}/activar', 'TarifaController@activar')
+        ->name('tarifas.activar');
+
+    // ── Facturas ─────────────────────────────────────────────────
+    Route::get('facturas', 'FacturaController@index')
+        ->name('facturas.index');
+    Route::get('facturas/generar', 'FacturaController@generar')
+        ->name('facturas.generar');
+    Route::post('facturas/preview', 'FacturaController@preview')
+        ->name('facturas.preview');
+    Route::post('facturas/buscar-cliente', 'FacturaController@buscarCliente')
+        ->name('facturas.buscar-cliente');
+    Route::post('facturas', 'FacturaController@store')
+        ->name('facturas.store');
+    Route::get('facturas/{id}', 'FacturaController@show')
+        ->name('facturas.show');
+    Route::post('facturas/{id}/pago', 'FacturaController@registrarPago')
+        ->name('facturas.pago');
+    Route::post('facturas/{id}/anular', 'FacturaController@anular')
+        ->name('facturas.anular');
+
+    // ── Otros Cobros ─────────────────────────────────────────────
+    Route::get('otros-cobros', 'OtrosCobrosController@index')
+        ->name('otros-cobros.index');
+    Route::post('otros-cobros', 'OtrosCobrosController@store')
+        ->name('otros-cobros.store');
+    Route::post('otros-cobros/{id}/anular', 'OtrosCobrosController@anular')
+        ->name('otros-cobros.anular');
+    Route::get('otros-cobros/buscar-cliente', 'OtrosCobrosController@buscarCliente')
+        ->name('otros-cobros.buscar-cliente');
+});

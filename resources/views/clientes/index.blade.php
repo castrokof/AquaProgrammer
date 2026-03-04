@@ -306,6 +306,22 @@ label.requerido::after { content: " *"; color: #f5576c; font-weight: 700; }
                             </div>
                         </div>
                     </div>
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="form-group">
+                                <label>Ruta de Lectura</label>
+                                <input type="text" name="ruta" class="form-control"
+                                       placeholder="Ej: RUTA-01, NORTE-A" id="inputRuta">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label>Consecutivo en Ruta</label>
+                                <input type="number" name="consecutivo" class="form-control"
+                                       placeholder="Ej: 15" min="1" id="inputConsecutivo">
+                            </div>
+                        </div>
+                    </div>
 
                     <p class="form-section-title"><i class="fa fa-tachometer"></i> Medidor</p>
                     <div class="row">

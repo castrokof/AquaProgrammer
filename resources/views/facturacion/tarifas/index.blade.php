@@ -338,7 +338,7 @@ $('#btnGuardarRangos').on('click', function () {
             servicio:   servicio,
             estrato_id: $(this).data('estrato'),
             tipo:       tipo,
-            rango_desde:$(rangosConfig[tipo].desde),
+            rango_desde:rangosConfig[tipo].desde,
             rango_hasta:rangosConfig[tipo].hasta,
             precio_m3:  $(this).val()
         });

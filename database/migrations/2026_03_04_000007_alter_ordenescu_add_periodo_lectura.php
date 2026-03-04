@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
@@ -8,6 +9,9 @@ class AlterOrdenescuAddPeriodoLectura extends Migration
 {
     public function up()
     {
+        // Deshabilitar modo estricto para tolerar fechas '0000-00-00' heredadas
+        DB::statement("SET SESSION sql_mode = ''");
+
         Schema::table('ordenescu', function (Blueprint $table) {
             // FK al período de lectura formal (gestión de ciclos)
             $table->unsignedBigInteger('periodo_lectura_id')->nullable()

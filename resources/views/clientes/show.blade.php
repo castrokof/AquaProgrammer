@@ -409,11 +409,18 @@
                         </thead>
                         <tbody>
                             @foreach($ordenes as $orden)
+                            @php
+                                $fEjec = (isset($orden->fecha_de_ejecucion) && $orden->fecha_de_ejecucion && $orden->fecha_de_ejecucion != '0000-00-00 00:00:00') ? $orden->fecha_de_ejecucion : null;
+                                $per   = (string)$orden->Periodo;
+                                $pYear = substr($per,0,4);
+                                $pMon  = strlen($per) >= 6 ? substr($per,4,2) : str_pad(substr($per,4),2,'0',STR_PAD_LEFT);
+                                $dataOrder = $fEjec ? \Carbon\Carbon::parse($fEjec)->format('Y-m-d H:i:s') : $per;
+                            @endphp
                             <tr>
-                                <td>
-                                    <strong>{{ substr($orden->Periodo,4,2) }}/{{ substr($orden->Periodo,0,4) }}</strong>
-                                    @if($orden->fecha_de_ejecucion && $orden->fecha_de_ejecucion != '0000-00-00 00:00:00')
-                                    <br><small style="color:#a0aec0;">{{ \Carbon\Carbon::parse($orden->fecha_de_ejecucion)->format('d/m/Y') }}</small>
+                                <td data-order="{{ $dataOrder }}">
+                                    <strong>{{ $pMon }}/{{ $pYear }}</strong>
+                                    @if($fEjec)
+                                    <br><small style="color:#a0aec0;">{{ \Carbon\Carbon::parse($fEjec)->format('d/m/Y') }}</small>
                                     @endif
                                 </td>
                                 <td style="font-family:monospace;font-size:0.75rem;color:#11998e;">
@@ -459,11 +466,18 @@
                                 </td>
                                 <td>
                                     @if($orden->Latitud && $orden->Longitud)
-                                        <a href="https://www.google.com/maps?q={{ $orden->Latitud }},{{ $orden->Longitud }}"
-                                           target="_blank" title="Ver en mapa: {{ $orden->Latitud }}, {{ $orden->Longitud }}"
-                                           style="text-decoration:none;">
-                                            <i class="fas fa-map-marker-alt ico-geo"></i>
-                                        </a>
+                                        <button type="button" class="btn btn-sm btn-link p-0"
+                                            onclick="abrirMapa(
+                                                {{ $orden->Latitud }}, {{ $orden->Longitud }},
+                                                '{{ addslashes($orden->Suscriptor) }}',
+                                                '{{ addslashes(trim(($orden->Nombre ?? '').' '.($orden->Apell ?? ''))) }}',
+                                                '{{ addslashes($orden->Direccion ?? '') }}',
+                                                '{{ $orden->Lect_Actual ?? '' }}',
+                                                '{{ addslashes($fEjec ?? '') }}',
+                                                '{{ $orden->foto1 ? asset($orden->foto1) : '' }}'
+                                            )" title="Ver GPS: {{ $orden->Latitud }}, {{ $orden->Longitud }}" style="color:#4facfe;">
+                                            <i class="fas fa-map-marker-alt" style="font-size:1.1rem;"></i>
+                                        </button>
                                     @else
                                         <span style="color:#e2e8f0;">—</span>
                                     @endif
@@ -517,6 +531,24 @@
     </div>
 </div>
 
+{{-- MODAL MAPA LEAFLET GPS --}}
+<div class="modal fade" id="modalMapa" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content" style="border-radius:16px;border:none;overflow:hidden;">
+            <div class="modal-header" style="background:linear-gradient(135deg,#2e50e4,#2b0c49);border:none;padding:14px 20px;">
+                <h5 class="modal-title" style="color:white;font-weight:700;">
+                    <i class="fas fa-map-marker-alt"></i> Posicionamiento GPS
+                    <span id="mapaSubtitulo" style="font-size:0.8rem;font-weight:400;margin-left:8px;opacity:.8;"></span>
+                </h5>
+                <button type="button" class="close" data-dismiss="modal" style="color:white;opacity:.8;">&times;</button>
+            </div>
+            <div class="modal-body" style="padding:0;">
+                <div id="leafletMap" style="height:420px;width:100%;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
 {{-- MODAL AGREGAR FOTO --}}
 <div class="modal fade modal-modern" id="modalAgregarFoto" tabindex="-1" role="dialog">
     <div class="modal-dialog" role="document">
@@ -556,7 +588,7 @@
 
 {{-- MODAL EDITAR DATOS --}}
 <div class="modal fade modal-modern" id="modalEditarCliente" tabindex="-1" role="dialog">
-    <div class="modal-dialog" role="document">
+    <div class="modal-dialog modal-xl" role="document">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title"><i class="fa fa-edit"></i> Editar Datos del Cliente</h5>
@@ -690,6 +722,22 @@
                         </div>
                     </div>
                     <div class="row">
+                        <div class="col-md-8">
+                            <div class="form-group">
+                                <label style="font-weight:600;color:#4a5568;font-size:0.8rem;text-transform:uppercase;">Ruta de Lectura</label>
+                                <input type="text" name="ruta" class="form-control"
+                                       value="{{ $cliente->ruta }}" placeholder="Ej: RUTA-01, NORTE-A">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label style="font-weight:600;color:#4a5568;font-size:0.8rem;text-transform:uppercase;">Consecutivo en Ruta</label>
+                                <input type="number" name="consecutivo" class="form-control"
+                                       value="{{ $cliente->consecutivo }}" min="1" placeholder="Ej: 15">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label style="font-weight:600;color:#4a5568;font-size:0.8rem;text-transform:uppercase;">Estado del Suscriptor</label>
@@ -718,30 +766,105 @@
 
 @section('scriptsPlugins')
 <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap4.min.css">
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap4.min.js"></script>
 @endsection
 
 @section('scripts')
 <script>
+// ── Ver foto grande ───────────────────────────────────────────────────────────
 function verFotoGrande(url) {
     document.getElementById('imgGrande').src = url;
     $('#modalFotoGrande').modal('show');
 }
 
+// ── DataTables ────────────────────────────────────────────────────────────────
+$(function() {
+    if ($('#tblOrdenes').length) {
+        $('#tblOrdenes').DataTable({
+            order: [[0, 'desc']],   // columna 0 = Período (data-order con fecha real)
+            pageLength: 10,
+            lengthMenu: [10, 25, 50],
+            language: {
+                url: 'https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json'
+            },
+            columnDefs: [
+                { orderable: false, targets: [8, 9] }  // Geo y Fotos no ordenables
+            ]
+        });
+    }
+});
+
+// ── Mapa Leaflet ──────────────────────────────────────────────────────────────
+var leafletMapInstance = null;
+
+function abrirMapa(lat, lng, suscriptor, nombre, direccion, lectura, fecha, fotoUrl) {
+    $('#mapaSubtitulo').text(suscriptor ? '— ' + suscriptor : '');
+    $('#modalMapa').modal('show');
+
+    $('#modalMapa').on('shown.bs.modal.leaflet', function() {
+        if (leafletMapInstance) {
+            leafletMapInstance.remove();
+            leafletMapInstance = null;
+        }
+
+        leafletMapInstance = L.map('leafletMap').setView([lat, lng], 17);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; <a href="https://openstreetmap.org/copyright">OpenStreetMap</a>'
+        }).addTo(leafletMapInstance);
+
+        var popupHtml = '<div style="min-width:220px;font-family:sans-serif;">';
+        if (fotoUrl) {
+            popupHtml += '<div style="margin-bottom:10px;border-radius:8px;overflow:hidden;cursor:pointer;" onclick="verFotoGrande(\'' + fotoUrl + '\')">'
+                       + '<img src="' + fotoUrl + '" style="width:100%;height:auto;display:block;">'
+                       + '<div style="font-size:10px;color:#999;text-align:center;padding:3px;">Clic para ampliar</div></div>';
+        }
+        popupHtml += '<div style="background:linear-gradient(135deg,#667eea,#764ba2);padding:10px;border-radius:8px;color:white;margin-bottom:6px;">'
+                   + '<strong>Susc: ' + suscriptor + '</strong></div>';
+        if (nombre)    popupHtml += '<div style="padding:5px;"><strong>Nombre:</strong> ' + nombre + '</div>';
+        if (direccion) popupHtml += '<div style="padding:5px;"><strong>Dir:</strong> ' + direccion + '</div>';
+        if (lectura)   popupHtml += '<div style="padding:5px;"><strong>Lectura:</strong> ' + lectura + ' m³</div>';
+        if (fecha)     popupHtml += '<div style="padding:5px;"><strong>Fecha:</strong> ' + fecha + '</div>';
+        popupHtml += '</div>';
+
+        L.marker([lat, lng]).addTo(leafletMapInstance)
+            .bindPopup(popupHtml, { maxWidth: 280 }).openPopup();
+
+        leafletMapInstance.invalidateSize();
+    });
+}
+
+$('#modalMapa').on('hidden.bs.modal', function() {
+    $('#modalMapa').off('shown.bs.modal.leaflet');
+});
+
 // ── Gráfico de tendencia de consumo ──────────────────────────────────────────
 @php
-    $chartData = $ordenes->filter(function($o) {
-        return $o->Cons_Act !== null;
-    })->take(12)->reverse()->values();
+    $chartData = $ordenes->filter(function($o) { return $o->Cons_Act !== null; })
+                         ->take(12)->reverse()->values();
 @endphp
 @if($chartData->count() > 1)
 (function() {
     var ctx = document.getElementById('chartConsumo');
     if (!ctx) return;
-    var labels = {!! json_encode($chartData->map(function($o) {
-        return substr($o->Periodo,4,2).'/'.substr($o->Periodo,0,4);
+
+    var labels   = {!! json_encode($chartData->map(function($o) {
+        $per = (string)$o->Periodo;
+        $mon = strlen($per) >= 6 ? substr($per,4,2) : str_pad(substr($per,4),2,'0',STR_PAD_LEFT);
+        return $mon.'/'.substr($per,0,4);
     })->values()) !!};
-    var consumos = {!! json_encode($chartData->pluck('Cons_Act')->values()) !!};
-    var promedio = {{ $cliente->promedio_consumo ?? 0 }};
+    var consumos = {!! json_encode($chartData->pluck('Cons_Act')->map(function($v) { return (float)$v; })->values()) !!};
+
+    // Promedio: del cliente si está disponible, si no se calcula de las órdenes
+    var promedioCliente = {{ $cliente->promedio_consumo ?? 0 }};
+    var promedioCalc    = consumos.length
+        ? consumos.reduce(function(a,b){ return a+b; }, 0) / consumos.length
+        : 0;
+    var promedio = promedioCliente > 0 ? promedioCliente : promedioCalc;
 
     new Chart(ctx, {
         type: 'line',
@@ -761,10 +884,10 @@ function verFotoGrande(url) {
                 },
                 {
                     label: 'Promedio',
-                    data: labels.map(function() { return promedio; }),
+                    data: labels.map(function() { return Math.round(promedio * 10) / 10; }),
                     borderColor: '#f5576c',
                     borderWidth: 1.5,
-                    borderDash: [6,4],
+                    borderDash: [6, 4],
                     pointRadius: 0,
                     fill: false,
                 }

@@ -256,7 +256,7 @@ $('#btnGuardarTarifa').on('click', function () {
         url: '/facturacion/tarifas', method: 'POST',
         data: {
             nombre: $('#tNombre').val(), numero_resolucion: $('#tResolucion').val(),
-            vigente_desde: $('#tDesde').val(), vigente_hasta: $('#tHasta').val() || null,
+            vigente_desde: $('#tDesde').val(), vigente_hasta: $('#tHasta').val() || '',
             activo: $('#tActivo').is(':checked') ? 1 : 0,
             observaciones: $('#tObs').val(), _token: CSRF
         },
@@ -269,7 +269,14 @@ $('#btnGuardarTarifa').on('click', function () {
         },
         error: function (xhr) {
             var err = xhr.responseJSON || {};
-            Swal.fire('Validación', err.mensaje || 'Verifique los campos requeridos.', 'warning');
+            var msg = err.mensaje || err.message || 'Verifique los campos requeridos.';
+            if (err.errors) {
+                var msgs = [];
+                $.each(err.errors, function(k, v) { msgs.push(v[0]); });
+                Swal.fire({ icon:'warning', title:'Validación', html: msgs.join('<br>') });
+            } else {
+                Swal.fire('Validación', msg, 'warning');
+            }
         }
     });
 });

@@ -18,15 +18,29 @@ class Cliente extends Model
         'telefono',
         'direccion',
         'serie_medidor',
+        // Campos de facturación
+        'estrato_id',
+        'servicios',
+        'tipo_uso',
+        'tiene_medidor',
+        'sector',
+        'promedio_consumo',
+        'estado',
+        'fecha_corte',
     ];
 
-    // ========================================
-    // RELACIONES
-    // ========================================
+    protected $casts = [
+        'tiene_medidor'    => 'boolean',
+        'promedio_consumo' => 'decimal:2',
+        'fecha_corte'      => 'date',
+    ];
 
-    // ========================================
-    // RELACIONES
-    // ========================================
+    // ── Relaciones ────────────────────────────────────────────────────────────
+
+    public function estrato()
+    {
+        return $this->belongsTo(Estrato::class, 'estrato_id');
+    }
 
     public function fotos()
     {
@@ -44,9 +58,22 @@ class Cliente extends Model
         return $this->hasMany(Ordenesmtl::class, 'Suscriptor', 'suscriptor');
     }
 
-    // ========================================
-    // SCOPES
-    // ========================================
+    public function facturas()
+    {
+        return $this->hasMany(Factura::class, 'cliente_id')->orderBy('periodo', 'desc');
+    }
+
+    public function otrosCobros()
+    {
+        return $this->hasMany(ClienteOtrosCobro::class, 'cliente_id');
+    }
+
+    public function historicoConsumos()
+    {
+        return $this->hasMany(ClienteHistoricoConsumo::class, 'cliente_id')->orderBy('periodo', 'desc');
+    }
+
+    // ── Scopes ────────────────────────────────────────────────────────────────
 
     public function scopeBuscar($query, $termino)
     {
@@ -58,12 +85,32 @@ class Cliente extends Model
         });
     }
 
-    // ========================================
-    // HELPERS
-    // ========================================
+    // ── Helpers ───────────────────────────────────────────────────────────────
+
+    /** Indica si la lectura está dentro del rango normal del promedio (±tolerance%) */
+    public function lecturaEsNormal(int $consumoM3, float $tolerancia = 0.50): bool
+    {
+        if ($this->promedio_consumo <= 0) {
+            return true; // Sin historial, se considera normal
+        }
+        $diff = abs($consumoM3 - $this->promedio_consumo) / $this->promedio_consumo;
+        return $diff <= $tolerancia;
+    }
+
+    /** Devuelve los 6 últimos consumos individuales como array [m1..m6] */
+    public function ultimosSeisMeses(): array
+    {
+        $rows = $this->historicoConsumos()->limit(6)->pluck('consumo_m3')->toArray();
+        while (count($rows) < 6) {
+            $rows[] = null;
+        }
+        return $rows;
+    }
+
+    // ── Helpers legados ───────────────────────────────────────────────────────
 
     /**
-     * Crea o actualiza el perfil del cliente.
+     * Crea o actualiza el perfil del cliente (helper legado).
      * Si el cliente es nuevo, auto-puebla nombre/dirección/teléfono/serie desde
      * la orden de lectura más reciente registrada en el sistema (Ordenesmtl).
      * Devuelve el modelo Cliente resultante.

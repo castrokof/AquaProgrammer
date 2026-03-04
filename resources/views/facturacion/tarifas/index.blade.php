@@ -20,11 +20,12 @@
 .tabla-cargos td { padding:8px; vertical-align:middle; }
 .tabla-cargos input[type=number] { border-radius:8px; border:1.5px solid #e2e8f0; padding:6px 10px; width:100%; text-align:right; font-size:.85rem; transition:border-color .2s; }
 .tabla-cargos input[type=number]:focus { border-color:#667eea; outline:none; box-shadow:0 0 0 3px rgba(102,126,234,.12); }
-.modal-modern .modal-content { border-radius:20px; border:none; overflow:hidden; }
-.modal-modern .modal-header { background:linear-gradient(135deg,#2e50e4 0%,#2b0c49 100%); border:none; padding:22px 28px; }
+.modal-modern .modal-content { border-radius:20px; border:none; }
+.modal-modern .modal-header { background:linear-gradient(135deg,#2e50e4 0%,#2b0c49 100%); border:none; padding:22px 28px; border-radius:20px 20px 0 0; }
 .modal-modern .modal-header .modal-title { color:white; font-weight:700; }
 .modal-modern .modal-header .close { color:white; opacity:.8; font-size:1.8rem; font-weight:300; }
-.modal-modern .modal-body { padding:24px; background:#fafbfc; }
+.modal-modern .modal-body { padding:24px; background:#fafbfc; max-height:65vh; overflow-y:auto; }
+.modal-modern .modal-footer { border-radius:0 0 20px 20px; border-top:2px solid #e2e8f0; padding:16px 24px; background:white; display:flex; justify-content:flex-end; gap:10px; }
 .modal-modern .form-group label { font-weight:600; color:#4a5568; font-size:.8rem; text-transform:uppercase; }
 .modal-modern .form-control { border-radius:10px; border:2px solid #e2e8f0; padding:10px 13px; }
 .modal-modern .form-control:focus { border-color:#667eea; box-shadow:0 0 0 4px rgba(102,126,234,.1); outline:none; }
@@ -262,13 +263,13 @@ $('#btnGuardarTarifa').on('click', function () {
         success: function (r) {
             if (r.ok) {
                 $('#modalNuevaTarifa').modal('hide');
-                Manteliviano.notificaciones(r.mensaje, 'Tarifas', 'success');
-                setTimeout(() => location.reload(), 1200);
+                Swal.fire({ icon:'success', title:'Guardado', text: r.mensaje, timer:1200, showConfirmButton:false })
+                    .then(function() { location.reload(); });
             }
         },
         error: function (xhr) {
-            var err = xhr.responseJSON;
-            Swal.fire('Validación', err?.mensaje || 'Verifique los campos.', 'warning');
+            var err = xhr.responseJSON || {};
+            Swal.fire('Validación', err.mensaje || 'Verifique los campos requeridos.', 'warning');
         }
     });
 });
@@ -307,7 +308,7 @@ $('#btnGuardarCargos').on('click', function () {
         url: '/facturacion/tarifas/' + tarifaSelId + '/cargos', method: 'POST',
         contentType: 'application/json',
         data: JSON.stringify({ cargos: cargos, _token: CSRF }),
-        success: function (r) { if (r.ok) Manteliviano.notificaciones(r.mensaje, 'Tarifas', 'success'); },
+        success: function (r) { if (r.ok) Swal.fire({ icon:'success', title:'Guardado', text:r.mensaje, timer:1200, showConfirmButton:false }); },
         error: function ()    { Swal.fire('Error', 'No se pudieron guardar los cargos.', 'error'); }
     });
 });
@@ -337,7 +338,7 @@ $('#btnGuardarRangos').on('click', function () {
         url: '/facturacion/tarifas/' + tarifaSelId + '/rangos', method: 'POST',
         contentType: 'application/json',
         data: JSON.stringify({ rangos: rangos, _token: CSRF }),
-        success: function (r) { if (r.ok) Manteliviano.notificaciones(r.mensaje, 'Tarifas', 'success'); },
+        success: function (r) { if (r.ok) Swal.fire({ icon:'success', title:'Guardado', text:r.mensaje, timer:1200, showConfirmButton:false }); },
         error: function ()    { Swal.fire('Error', 'No se pudieron guardar los rangos.', 'error'); }
     });
 });
@@ -349,7 +350,10 @@ function activarTarifa(id) {
     }).then(function (r) {
         if (!r.value) return;
         $.post('/facturacion/tarifas/' + id + '/activar', { _token: CSRF }, function (res) {
-            if (res.ok) { Manteliviano.notificaciones(res.mensaje, 'Tarifas', 'success'); setTimeout(() => location.reload(), 1200); }
+            if (res.ok) {
+                Swal.fire({ icon:'success', title:'Activada', text:res.mensaje, timer:1200, showConfirmButton:false })
+                    .then(function() { location.reload(); });
+            }
         });
     });
 }

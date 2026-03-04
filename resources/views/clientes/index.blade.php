@@ -176,7 +176,7 @@ label.requerido::after { content: " *"; color: #f5576c; font-weight: 700; }
 
 {{-- MODAL NUEVO CLIENTE --}}
 <div class="modal fade modal-modern" id="modalNuevoCliente" tabindex="-1" role="dialog">
-    <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-dialog modal-xl" role="document">
         <div class="modal-content">
             <div class="modal-header">
                 <h4 class="modal-title"><i class="fa fa-user-plus"></i> Nuevo Perfil de Cliente</h4>

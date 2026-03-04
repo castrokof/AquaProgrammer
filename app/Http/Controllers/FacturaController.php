@@ -52,7 +52,7 @@ class FacturaController extends Controller
     /** Ajax: busca cliente por suscriptor y devuelve sus datos + últimos m³ */
     public function buscarCliente(Request $request)
     {
-        $cliente = Cliente::with(['estrato', 'historicoConsumos' => fn($q) => $q->limit(6)])
+        $cliente = Cliente::with(['estrato', 'historicoConsumos' => function ($q) { $q->limit(6); }])
             ->where('suscriptor', $request->suscriptor)
             ->first();
 
@@ -74,10 +74,10 @@ class FacturaController extends Controller
                 'promedio_consumo' => $cliente->promedio_consumo,
                 'estado'           => $cliente->estado,
             ],
-            'historial' => $cliente->historicoConsumos->map(fn($h) => [
+            'historial' => $cliente->historicoConsumos->map(function ($h) { return [
                 'periodo'   => $h->periodo,
                 'consumo'   => $h->consumo_m3,
-            ]),
+            ]; }),
         ]);
     }
 

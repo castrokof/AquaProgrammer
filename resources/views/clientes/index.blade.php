@@ -307,7 +307,14 @@ label.requerido::after { content: " *"; color: #f5576c; font-weight: 700; }
                         </div>
                     </div>
                     <div class="row">
-                        <div class="col-md-8">
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label>ID Ruta (Grupo)</label>
+                                <input type="number" name="id_ruta" class="form-control"
+                                       placeholder="Ej: 5" min="1" id="inputIdRuta">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
                             <div class="form-group">
                                 <label>Ruta de Lectura</label>
                                 <input type="text" name="ruta" class="form-control"

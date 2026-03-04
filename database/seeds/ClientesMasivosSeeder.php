@@ -43,6 +43,7 @@ class ClientesMasivosSeeder extends Seeder
                 'o.Telefono',
                 'o.Ref_Medidor',
                 'o.Ruta',
+                'o.id_Ruta',
                 'o.consecutivoRuta'
             )
             ->get();
@@ -76,6 +77,7 @@ class ClientesMasivosSeeder extends Seeder
                 'telefono'     => $r->Telefono    ?? null,
                 'serie_medidor'=> $r->Ref_Medidor ?? null,
                 'ruta'         => $r->Ruta        ?? null,
+                'id_ruta'      => $r->id_Ruta     ?? null,
                 'consecutivo'  => $r->consecutivoRuta ?? null,
                 'servicios'    => 'AG-AL',
                 'tipo_uso'     => 'RESIDENCIAL',

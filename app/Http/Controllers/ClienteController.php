@@ -84,6 +84,7 @@ class ClienteController extends Controller
             'tiene_medidor'  => 'nullable',
             'sector'         => 'nullable|string|max:100',
             'ruta'           => 'nullable|string|max:100',
+            'id_ruta'        => 'nullable|integer|min:1',
             'consecutivo'    => 'nullable|integer|min:1',
             'estado'         => 'nullable|in:ACTIVO,SUSPENDIDO,CORTADO,INACTIVO',
         ]);
@@ -100,6 +101,7 @@ class ClienteController extends Controller
             'tipo_uso'      => $request->input('tipo_uso'),
             'sector'        => $request->input('sector'),
             'ruta'          => $request->input('ruta'),
+            'id_ruta'       => $request->input('id_ruta') ?: null,
             'consecutivo'   => $request->input('consecutivo') ?: null,
             'estado'        => $request->input('estado') ?: 'ACTIVO',
         ], fn($v) => $v !== null && $v !== '');

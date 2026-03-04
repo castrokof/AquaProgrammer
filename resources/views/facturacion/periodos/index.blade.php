@@ -21,7 +21,7 @@
 .modal-modern .modal-header { background: linear-gradient(135deg, #2e50e4 0%, #2b0c49 100%); border: none; padding: 22px 28px; }
 .modal-modern .modal-header .modal-title { color: white; font-weight: 700; }
 .modal-modern .modal-header .close { color: white; opacity: 0.8; font-size: 1.8rem; font-weight: 300; }
-.modal-modern .modal-body { padding: 28px; background: #fafbfc; }
+.modal-modern .modal-body { padding: 28px; background: #fafbfc; max-height: 70vh; overflow-y: auto; }
 .modal-modern .modal-footer { padding: 16px 28px; border-top: 2px solid #e2e8f0; background: white; }
 .modal-modern .form-group label { font-weight: 600; color: #4a5568; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; }
 .modal-modern .form-control { border-radius: 10px; border: 2px solid #e2e8f0; padding: 10px 13px; transition: all 0.3s ease; }

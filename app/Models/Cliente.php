@@ -24,6 +24,8 @@ class Cliente extends Model
         'tipo_uso',
         'tiene_medidor',
         'sector',
+        'ruta',
+        'consecutivo',
         'promedio_consumo',
         'estado',
         'fecha_corte',

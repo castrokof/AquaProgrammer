@@ -34,7 +34,7 @@ class FacturaController extends Controller
         if ($s = $request->suscriptor) $query->where('suscriptor', 'like', "%{$s}%");
         if ($e = $request->estado) $query->where('estado', $e);
 
-        $facturas = $query->paginate(25)->withQueryString();
+        $facturas = $query->paginate(25)->appends(request()->query());
 
         return view('facturacion.facturas.index', compact('facturas', 'periodos'));
     }
@@ -67,7 +67,7 @@ class FacturaController extends Controller
                 'nombre'           => trim($cliente->nombre . ' ' . $cliente->apellido),
                 'direccion'        => $cliente->direccion,
                 'serie_medidor'    => $cliente->serie_medidor,
-                'estrato'          => $cliente->estrato?->nombre ?? 'Sin estrato',
+                'estrato'          => optional($cliente->estrato)->nombre ?? 'Sin estrato',
                 'servicios'        => $cliente->servicios,
                 'tipo_uso'         => $cliente->tipo_uso,
                 'tiene_medidor'    => $cliente->tiene_medidor,

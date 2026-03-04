@@ -23,7 +23,7 @@ class OtrosCobrosController extends Controller
             $query->where('estado', $e);
         }
 
-        $cobros = $query->paginate(20)->withQueryString();
+        $cobros = $query->paginate(20)->appends(request()->query());
 
         return view('facturacion.otros-cobros.index', compact('cobros', 'catalogo'));
     }

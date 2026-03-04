@@ -91,7 +91,7 @@ class FacturacionService
             'suscriptor'              => $cliente->suscriptor,
             'cliente_id'              => $cliente->id,
             'periodo_lectura_id'      => $periodo->id,
-            'tarifa_periodo_id'       => $tarifa?->id,
+            'tarifa_periodo_id'       => optional($tarifa)->id,
             'periodo'                 => $periodo->codigo,
             'mes_cuenta'              => $periodo->nombre,
             'fecha_del'               => $periodo->fecha_inicio_lectura,
@@ -102,7 +102,7 @@ class FacturacionService
             // Predio snapshot
             'serie_medidor'           => $cliente->serie_medidor,
             'sector'                  => $cliente->sector,
-            'estrato_snapshot'        => $cliente->estrato?->numero,
+            'estrato_snapshot'        => optional($cliente->estrato)->numero,
             'clase_uso'               => $cliente->tipo_uso,
             'tiene_medidor_snapshot'  => $cliente->tiene_medidor,
             'servicios_snapshot'      => $servicios,

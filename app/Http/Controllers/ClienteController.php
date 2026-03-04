@@ -81,6 +81,8 @@ class ClienteController extends Controller
             'tipo_uso'       => 'nullable|in:RESIDENCIAL,COMERCIAL,INDUSTRIAL,OFICIAL',
             'tiene_medidor'  => 'nullable',
             'sector'         => 'nullable|string|max:100',
+            'ruta'           => 'nullable|string|max:100',
+            'consecutivo'    => 'nullable|integer|min:1',
             'estado'         => 'nullable|in:ACTIVO,SUSPENDIDO,CORTADO,INACTIVO',
         ]);
 
@@ -95,6 +97,8 @@ class ClienteController extends Controller
             'servicios'     => $request->input('servicios'),
             'tipo_uso'      => $request->input('tipo_uso'),
             'sector'        => $request->input('sector'),
+            'ruta'          => $request->input('ruta'),
+            'consecutivo'   => $request->input('consecutivo') ?: null,
             'estado'        => $request->input('estado') ?: 'ACTIVO',
         ], fn($v) => $v !== null && $v !== '');
         $billing['tiene_medidor'] = $request->input('tiene_medidor', '1') === '0' ? false : true;

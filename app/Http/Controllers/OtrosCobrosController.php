@@ -17,7 +17,9 @@ class OtrosCobrosController extends Controller
             ->orderBy('created_at', 'desc');
 
         if ($s = $request->suscriptor) {
-            $query->whereHas('cliente', fn($q) => $q->where('suscriptor', 'like', "%{$s}%"));
+            $query->whereHas('cliente', function ($q) use ($s) {
+                $q->where('suscriptor', 'like', "%{$s}%");
+            });
         }
         if ($e = $request->estado) {
             $query->where('estado', $e);
@@ -78,9 +80,11 @@ class OtrosCobrosController extends Controller
             ->limit(10)
             ->get(['id', 'suscriptor', 'nombre', 'apellido', 'direccion']);
 
-        return response()->json($clientes->map(fn($c) => [
-            'id'   => $c->id,
-            'text' => "{$c->suscriptor} — " . trim($c->nombre . ' ' . $c->apellido),
-        ]));
+        return response()->json($clientes->map(function ($c) {
+            return [
+                'id'   => $c->id,
+                'text' => "{$c->suscriptor} — " . trim($c->nombre . ' ' . $c->apellido),
+            ];
+        }));
     }
 }

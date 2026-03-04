@@ -26,10 +26,16 @@
 .badge-tipo-medidor { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); color: white; padding: 2px 8px; border-radius: 8px; font-size: 0.68rem; font-weight: 700; }
 .badge-tipo-predio  { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; padding: 2px 8px; border-radius: 8px; font-size: 0.68rem; font-weight: 700; }
 /* Historial órdenes */
-#tblOrdenes { font-size: 0.82rem; }
-#tblOrdenes thead th { background: linear-gradient(135deg, #3d57ceff 0%, #776a84ff 100%); color: white; font-weight: 600; font-size: 0.72rem; text-transform: uppercase; padding: 11px 9px; border: none; text-align: center; }
-#tblOrdenes tbody td { padding: 9px; vertical-align: middle; border-bottom: 1px solid #f0f0f0; text-align: center; }
+#tblOrdenes { font-size: 0.80rem; }
+#tblOrdenes thead th { background: linear-gradient(135deg, #3d57ceff 0%, #776a84ff 100%); color: white; font-weight: 600; font-size: 0.70rem; text-transform: uppercase; padding: 10px 7px; border: none; text-align: center; white-space:nowrap; }
+#tblOrdenes tbody td { padding: 8px 7px; vertical-align: middle; border-bottom: 1px solid #f0f0f0; text-align: center; }
 #tblOrdenes tbody tr:hover { background: #f8f9ff; }
+/* Gráfico tendencia */
+#chartConsumo { max-height: 200px; }
+/* Thumbnail fotos lectura */
+.thumb-lectura { width:36px; height:36px; object-fit:cover; border-radius:6px; cursor:pointer; border:2px solid #e2e8f0; transition:transform .2s; }
+.thumb-lectura:hover { transform:scale(1.15); border-color:#667eea; }
+.ico-geo { color:#4facfe; font-size:1rem; }
 /* Historial series */
 #tblSeries { font-size: 0.82rem; }
 #tblSeries thead th { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); color: white; font-weight: 600; font-size: 0.72rem; text-transform: uppercase; padding: 11px 9px; border: none; text-align: center; }
@@ -365,56 +371,124 @@
             <div class="modern-card">
                 <div class="card-header">
                     <h4><i class="fa fa-history"></i> Historial de Lecturas</h4>
-                    <span style="color:rgba(255,255,255,0.7);font-size:0.82rem;">Últimas 24 órdenes</span>
+                    <span style="color:rgba(255,255,255,0.7);font-size:0.82rem;">Últimas 24 órdenes · más reciente primero</span>
                 </div>
-                <div class="card-body" style="padding:0;overflow-x:auto;">
+                <div class="card-body">
+
                     @if($ordenes->count() > 0)
+                    {{-- GRÁFICO TENDENCIA DE CONSUMO --}}
+                    @php
+                        $periodosTendencia = $ordenes->filter(function($o) {
+                            return $o->Cons_Act !== null;
+                        })->take(12)->reverse()->values();
+                    @endphp
+                    @if($periodosTendencia->count() > 1)
+                    <div style="margin-bottom:18px;">
+                        <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;color:#a0aec0;margin-bottom:8px;">
+                            <i class="fa fa-chart-line"></i> Tendencia de Consumo (m³)
+                        </div>
+                        <canvas id="chartConsumo"></canvas>
+                    </div>
+                    @endif
+
+                    <div style="overflow-x:auto;">
                     <table id="tblOrdenes" class="table" style="margin:0;">
                         <thead>
                             <tr>
                                 <th>Período</th>
-                                <th>Serie / Ref. Medidor</th>
-                                <th>L. Anterior</th>
-                                <th>L. Actual</th>
-                                <th>Consumo</th>
+                                <th>Ref. Medidor</th>
+                                <th>L. Ant.</th>
+                                <th>L. Act.</th>
+                                <th>Consumo m³</th>
                                 <th>Promedio</th>
+                                <th>Crítica</th>
                                 <th>Estado</th>
+                                <th>Geo</th>
+                                <th>Fotos</th>
                             </tr>
                         </thead>
                         <tbody>
                             @foreach($ordenes as $orden)
                             <tr>
-                                <td><strong>{{ $orden->Periodo }}</strong></td>
-                                <td style="font-family:monospace;font-size:0.78rem;color:#11998e;">
-                                    {{ $orden->Ref_Medidor ?? '—' }}
-                                    @if($orden->new_medidor)
-                                        <br><span style="color:#f5576c;font-size:0.68rem;" title="Medidor nuevo registrado">
-                                            <i class="fa fa-exchange"></i> Nuevo: {{ $orden->new_medidor }}
-                                        </span>
+                                <td>
+                                    <strong>{{ substr($orden->Periodo,4,2) }}/{{ substr($orden->Periodo,0,4) }}</strong>
+                                    @if($orden->fecha_de_ejecucion && $orden->fecha_de_ejecucion != '0000-00-00 00:00:00')
+                                    <br><small style="color:#a0aec0;">{{ \Carbon\Carbon::parse($orden->fecha_de_ejecucion)->format('d/m/Y') }}</small>
                                     @endif
                                 </td>
-                                <td>{{ number_format($orden->LA ?? 0) }}</td>
+                                <td style="font-family:monospace;font-size:0.75rem;color:#11998e;">
+                                    {{ $orden->Ref_Medidor ?? '—' }}
+                                    @if($orden->new_medidor)
+                                    <br><span style="color:#f5576c;font-size:0.67rem;"><i class="fa fa-exchange"></i> {{ $orden->new_medidor }}</span>
+                                    @endif
+                                </td>
+                                <td>{{ $orden->LA !== null ? number_format($orden->LA) : '—' }}</td>
                                 <td>
                                     @if($orden->Lect_Actual)
                                         <strong>{{ number_format($orden->Lect_Actual) }}</strong>
                                     @else
-                                        <span style="color:#a0aec0;">Pendiente</span>
+                                        <span style="color:#a0aec0;">Pend.</span>
                                     @endif
                                 </td>
-                                <td>{{ $orden->Cons_Act !== null ? number_format($orden->Cons_Act) : '—' }}</td>
-                                <td>{{ number_format($orden->Promedio ?? 0) }}</td>
+                                <td>
+                                    @if($orden->Cons_Act !== null)
+                                        <strong style="color:{{ $orden->Cons_Act > ($orden->Promedio * 1.5) ? '#e53e3e' : '#2d3748' }}">
+                                            {{ number_format($orden->Cons_Act) }}
+                                        </strong>
+                                    @else
+                                        <span style="color:#a0aec0;">—</span>
+                                    @endif
+                                </td>
+                                <td style="color:#718096;">{{ number_format($orden->Promedio ?? 0) }}</td>
+                                <td style="font-size:0.72rem;max-width:120px;text-align:left;">
+                                    @if($orden->Critica)
+                                        <span style="background:#fed7d7;color:#742a2a;padding:2px 6px;border-radius:6px;font-size:0.68rem;">
+                                            {{ Str::limit($orden->Critica, 30) }}
+                                        </span>
+                                    @else
+                                        <span style="color:#c6f6d5;">—</span>
+                                    @endif
+                                </td>
                                 <td>
                                     @php $est = intval($orden->Estado ?? 0); @endphp
                                     @if($est === 1) <span class="badge-estado-1">Normal</span>
                                     @elseif($est === 2) <span class="badge-estado-2">Alerta</span>
                                     @elseif($est >= 3) <span class="badge-estado-3">Crítica</span>
-                                    @else <span style="color:#a0aec0;">Sin leer</span>
+                                    @else <span style="color:#a0aec0;font-size:0.75rem;">Sin leer</span>
+                                    @endif
+                                </td>
+                                <td>
+                                    @if($orden->Latitud && $orden->Longitud)
+                                        <a href="https://www.google.com/maps?q={{ $orden->Latitud }},{{ $orden->Longitud }}"
+                                           target="_blank" title="Ver en mapa: {{ $orden->Latitud }}, {{ $orden->Longitud }}"
+                                           style="text-decoration:none;">
+                                            <i class="fas fa-map-marker-alt ico-geo"></i>
+                                        </a>
+                                    @else
+                                        <span style="color:#e2e8f0;">—</span>
+                                    @endif
+                                </td>
+                                <td style="white-space:nowrap;">
+                                    @if($orden->foto1)
+                                        <img src="{{ asset($orden->foto1) }}" class="thumb-lectura"
+                                             onclick="verFotoGrande('{{ asset($orden->foto1) }}')"
+                                             title="Foto 1 — período {{ $orden->Periodo }}">
+                                    @endif
+                                    @if($orden->foto2)
+                                        <img src="{{ asset($orden->foto2) }}" class="thumb-lectura"
+                                             onclick="verFotoGrande('{{ asset($orden->foto2) }}')"
+                                             title="Foto 2 — período {{ $orden->Periodo }}">
+                                    @endif
+                                    @if(!$orden->foto1 && !$orden->foto2)
+                                        <span style="color:#e2e8f0;font-size:0.72rem;">—</span>
                                     @endif
                                 </td>
                             </tr>
                             @endforeach
                         </tbody>
                     </table>
+                    </div>
+
                     @else
                         <div style="text-align:center;padding:28px;color:#a0aec0;">
                             <i class="fa fa-inbox" style="font-size:2rem;margin-bottom:10px;display:block;"></i>
@@ -642,11 +716,73 @@
 
 @endsection
 
+@section('scriptsPlugins')
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+@endsection
+
 @section('scripts')
 <script>
 function verFotoGrande(url) {
     document.getElementById('imgGrande').src = url;
     $('#modalFotoGrande').modal('show');
 }
+
+// ── Gráfico de tendencia de consumo ──────────────────────────────────────────
+@php
+    $chartData = $ordenes->filter(function($o) {
+        return $o->Cons_Act !== null;
+    })->take(12)->reverse()->values();
+@endphp
+@if($chartData->count() > 1)
+(function() {
+    var ctx = document.getElementById('chartConsumo');
+    if (!ctx) return;
+    var labels = {!! json_encode($chartData->map(function($o) {
+        return substr($o->Periodo,4,2).'/'.substr($o->Periodo,0,4);
+    })->values()) !!};
+    var consumos = {!! json_encode($chartData->pluck('Cons_Act')->values()) !!};
+    var promedio = {{ $cliente->promedio_consumo ?? 0 }};
+
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Consumo m³',
+                    data: consumos,
+                    borderColor: '#667eea',
+                    backgroundColor: 'rgba(102,126,234,0.12)',
+                    borderWidth: 2.5,
+                    pointRadius: 5,
+                    pointBackgroundColor: '#667eea',
+                    tension: 0.3,
+                    fill: true,
+                },
+                {
+                    label: 'Promedio',
+                    data: labels.map(function() { return promedio; }),
+                    borderColor: '#f5576c',
+                    borderWidth: 1.5,
+                    borderDash: [6,4],
+                    pointRadius: 0,
+                    fill: false,
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { position: 'top', labels: { font: { size: 11 } } },
+                tooltip: { mode: 'index', intersect: false }
+            },
+            scales: {
+                y: { beginAtZero: true, ticks: { font: { size: 10 } } },
+                x: { ticks: { font: { size: 10 } } }
+            }
+        }
+    });
+})();
+@endif
 </script>
 @endsection

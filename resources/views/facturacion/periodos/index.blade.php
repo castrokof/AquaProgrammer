@@ -86,7 +86,7 @@
                     <td style="text-align:center;">{{ $p->ciclo }}</td>
                     <td>
                         @if($p->tarifa)
-                            <span style="font-size:0.78rem;color:#4a5568;">{{ Str::limit($p->tarifa->nombre, 30) }}</span>
+                            <span style="font-size:0.78rem;color:#4a5568;">{{\Illuminate\Support\Str::limit($p->tarifa->nombre, 30) }}</span>
                         @else
                             <span style="color:#a0aec0;font-style:italic;">Sin asignar</span>
                         @endif
@@ -217,22 +217,31 @@
                 <div class="form-group">
                     <label>Observaciones</label>
                     <textarea class="form-control" id="pObs" rows="2" placeholder="Observaciones opcionales..."></textarea>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal" style="border-radius:12px;">Cancelar</button>
+                    <button type="button" class="btn btn-grad" id="btnGuardarPeriodo">
+                        <i class="fa fa-save"></i> Guardar
+                    </button>
+                
+                </div>
+                <div class="modal-footer">
+               
                 </div>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal" style="border-radius:12px;">Cancelar</button>
-                <button type="button" class="btn btn-grad" id="btnGuardarPeriodo">
-                    <i class="fa fa-save"></i> Guardar
-                </button>
-            </div>
+            
         </div>
     </div>
 </div>
+
+@php
+    // Generamos la ruta con un placeholder temporal
+    $routeGenerar = route('periodos.generar_ordenes', ['id' => '__ID__']);
+@endphp
 @endsection
 
 @section('scripts')
 <script>
 var CSRF = $("meta[name='csrf-token']").attr("content");
+
 
 // ── Nuevo período ──────────────────────────────────────────────────────────
 $('#btnNuevoPeriodo').on('click', function () {
@@ -280,7 +289,10 @@ $('#btnGuardarPeriodo').on('click', function () {
         _token: CSRF
     };
 
-    var url    = id ? '/facturacion/periodos/' + id : '/facturacion/periodos';
+    const baseUrl = '{{ route("periodos.store") }}';
+
+
+    var url    = id ? baseUrl + '/' + id : baseUrl;
     var method = id ? 'PUT' : 'POST';
 
     $.ajax({ url: url, method: method, data: data,
@@ -300,43 +312,47 @@ $('#btnGuardarPeriodo').on('click', function () {
 });
 
 // ── Generar órdenes de lectura ────────────────────────────────────────────
-$(document).on('click', '.btn-generar-ordenes', function () {
-    var id     = $(this).data('id');
-    var codigo = $(this).data('codigo');
+const ROUTE_GENERAR_ORDENES = '{{ $routeGenerar }}'; // Ej: /facturacion/periodos/__ID__/generar-ordenes
 
-    Swal.fire({
-        title: '¿Generar órdenes de lectura?',
-        html:  'Se crearán las órdenes pendientes para el período <b>' + codigo + '</b>.<br>' +
-               '<small>Clientes con medidor → PENDIENTE en orden CU.<br>' +
-               'Clientes sin medidor → factura automática por promedio.</small>',
-        icon:  'question',
-        showCancelButton: true,
-        confirmButtonText: 'Sí, generar',
-        cancelButtonText: 'Cancelar',
-    }).then(function (res) {
-        if (!res.value) return;
-        $.ajax({
-            url:    '/facturacion/periodos/' + id + '/generar-ordenes',
-            method: 'POST',
-            data:   { _token: CSRF },
-            success: function (r) {
-                if (r.ok) {
-                    Swal.fire({
-                        title: 'Órdenes generadas',
-                        html: r.mensaje,
-                        icon: 'success'
-                    }).then(function () { location.reload(); });
-                } else {
-                    Swal.fire('Aviso', r.mensaje, 'warning');
+    $(document).on('click', '.btn-generar-ordenes', function () {
+        var id     = $(this).data('id');
+        var codigo = $(this).data('codigo');
+
+        Swal.fire({
+            title: '¿Generar órdenes de lectura?',
+            html:  'Se crearán las órdenes pendientes para el período <b>' + codigo + '</b>.<br>' +
+                   '<small>Clientes con medidor → PENDIENTE en orden CU.<br>' +
+                   'Clientes sin medidor → factura automática por promedio.</small>',
+            icon:  'question',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, generar',
+            cancelButtonText: 'Cancelar',
+        }).then(function (res) {
+            if (!res.value) return;
+
+            $.ajax({
+                // 👇 Reemplazamos el placeholder por el id real
+                url:    ROUTE_GENERAR_ORDENES.replace('__ID__', id),
+                method: 'POST',
+                data:   { _token: CSRF },
+                success: function (r) {
+                    if (r.ok) {
+                        Swal.fire({
+                            title: 'Órdenes generadas',
+                            html: r.mensaje,
+                            icon: 'success'
+                        }).then(function () { location.reload(); });
+                    } else {
+                        Swal.fire('Aviso', r.mensaje, 'warning');
+                    }
+                },
+                error: function (xhr) {
+                    var msg = xhr.responseJSON ? xhr.responseJSON.mensaje : 'Error al generar órdenes.';
+                    Swal.fire('Error', msg, 'error');
                 }
-            },
-            error: function (xhr) {
-                var msg = xhr.responseJSON ? xhr.responseJSON.mensaje : 'Error al generar órdenes.';
-                Swal.fire('Error', msg, 'error');
-            }
+            });
         });
     });
-});
 
 // ── Avanzar estado ─────────────────────────────────────────────────────────
 var flujoLabel = {
@@ -362,7 +378,7 @@ $(document).on('click', '.btn-avanzar', function () {
     }).then(function (res) {
         if (!res.value) return;
         $.ajax({
-            url:    '/facturacion/periodos/' + id + '/estado',
+            url:    'facturacion/periodos/' + id + '/estado',
             method: 'POST',
             data:   { _token: CSRF },
             success: function (r) {

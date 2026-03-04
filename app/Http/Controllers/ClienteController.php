@@ -6,6 +6,7 @@ use App\Models\Cliente;
 use App\Models\ClienteFoto;
 use App\Models\ClienteSerie;
 use App\Models\Admin\Ordenesmtl;
+use App\Models\Estrato;
 use Illuminate\Http\Request;
 
 /**
@@ -33,8 +34,9 @@ class ClienteController extends Controller
         }
 
         $clientes = $query->orderBy('updated_at', 'desc')->paginate(25);
+        $estratos = Estrato::where('activo', true)->orderBy('numero')->get();
 
-        return view('clientes.index', compact('clientes'));
+        return view('clientes.index', compact('clientes', 'estratos'));
     }
 
     // ────────────────────────────────────────────────
@@ -71,12 +73,30 @@ class ClienteController extends Controller
             'serie_medidor'  => 'nullable|string|max:100',
             'foto'           => 'nullable|image|max:5120',
             'tipo_foto'      => 'nullable|string|in:documento,medidor,predio',
+            // Facturación
+            'estrato_id'     => 'nullable|exists:estratos,id',
+            'servicios'      => 'nullable|in:AG,AL,AG-AL',
+            'tipo_uso'       => 'nullable|in:RESIDENCIAL,COMERCIAL,INDUSTRIAL,OFICIAL',
+            'tiene_medidor'  => 'nullable',
+            'sector'         => 'nullable|string|max:100',
+            'estado'         => 'nullable|in:ACTIVO,SUSPENDIDO,CORTADO,INACTIVO',
         ]);
 
         $cliente = Cliente::upsertDesdeDatos($request->only([
             'suscriptor', 'nuip', 'tipo_documento', 'nombre', 'apellido',
             'telefono', 'direccion', 'serie_medidor',
         ]));
+
+        // Guardar campos de facturación si vienen en el request
+        $billing = array_filter([
+            'estrato_id'    => $request->input('estrato_id'),
+            'servicios'     => $request->input('servicios'),
+            'tipo_uso'      => $request->input('tipo_uso'),
+            'sector'        => $request->input('sector'),
+            'estado'        => $request->input('estado') ?: 'ACTIVO',
+        ], fn($v) => $v !== null && $v !== '');
+        $billing['tiene_medidor'] = $request->input('tiene_medidor', '1') === '0' ? false : true;
+        $cliente->update($billing);
 
         // Registrar serie en el historial si viene informada
         if ($request->filled('serie_medidor')) {

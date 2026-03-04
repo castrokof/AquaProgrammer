@@ -102,6 +102,13 @@
                         </span>
                     </td>
                     <td style="white-space:nowrap;">
+                        @if(in_array($p->estado, ['PLANIFICADO','ACTIVO']))
+                        <button class="btn btn-primary btn-sm btn-generar-ordenes"
+                                title="Generar órdenes de lectura"
+                                data-id="{{ $p->id }}" data-codigo="{{ $p->codigo }}">
+                            <i class="fa fa-list-ol"></i>
+                        </button>
+                        @endif
                         @if($p->estado !== 'CERRADO')
                         <button class="btn btn-success btn-sm btn-avanzar" title="Avanzar estado"
                                 data-id="{{ $p->id }}" data-estado="{{ $p->estado }}">
@@ -289,6 +296,45 @@ $('#btnGuardarPeriodo').on('click', function () {
             var msg = err && err.errors ? Object.values(err.errors).flat().join('<br>') : (err?.mensaje || 'Error al guardar.');
             Swal.fire({ title: 'Validación', html: msg, icon: 'warning' });
         }
+    });
+});
+
+// ── Generar órdenes de lectura ────────────────────────────────────────────
+$(document).on('click', '.btn-generar-ordenes', function () {
+    var id     = $(this).data('id');
+    var codigo = $(this).data('codigo');
+
+    Swal.fire({
+        title: '¿Generar órdenes de lectura?',
+        html:  'Se crearán las órdenes pendientes para el período <b>' + codigo + '</b>.<br>' +
+               '<small>Clientes con medidor → PENDIENTE en orden CU.<br>' +
+               'Clientes sin medidor → factura automática por promedio.</small>',
+        icon:  'question',
+        showCancelButton: true,
+        confirmButtonText: 'Sí, generar',
+        cancelButtonText: 'Cancelar',
+    }).then(function (res) {
+        if (!res.value) return;
+        $.ajax({
+            url:    '/facturacion/periodos/' + id + '/generar-ordenes',
+            method: 'POST',
+            data:   { _token: CSRF },
+            success: function (r) {
+                if (r.ok) {
+                    Swal.fire({
+                        title: 'Órdenes generadas',
+                        html: r.mensaje,
+                        icon: 'success'
+                    }).then(function () { location.reload(); });
+                } else {
+                    Swal.fire('Aviso', r.mensaje, 'warning');
+                }
+            },
+            error: function (xhr) {
+                var msg = xhr.responseJSON ? xhr.responseJSON.mensaje : 'Error al generar órdenes.';
+                Swal.fire('Error', msg, 'error');
+            }
+        });
     });
 });
 

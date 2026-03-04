@@ -210,6 +210,8 @@ Route::group(['middleware' => 'auth', 'prefix' => 'facturacion'], function () {
         ->name('periodos.store');
     Route::put('periodos/{id}', 'PeriodoLecturaController@update')
         ->name('periodos.update');
+    Route::post('periodos/{id}/generar-ordenes', 'PeriodoLecturaController@generarOrdenes')
+        ->name('periodos.generar_ordenes');
     Route::post('periodos/{id}/estado', 'PeriodoLecturaController@cambiarEstado')
         ->name('periodos.estado');
     Route::get('periodos/{id}', 'PeriodoLecturaController@show')

@@ -17,12 +17,12 @@
 #tblPeriodos thead th { background: linear-gradient(135deg, #3d57ce 0%, #776a84 100%); color: white; font-weight: 600; font-size: 0.75rem; text-transform: uppercase; padding: 14px 10px; border: none; white-space: nowrap; }
 #tblPeriodos tbody td { padding: 12px 10px; vertical-align: middle; border-bottom: 1px solid #f0f0f0; font-size: 0.83rem; }
 #tblPeriodos tbody tr:hover { background: #f8f9ff; }
-.modal-modern .modal-content { border-radius: 20px; border: none; box-shadow: 0 20px 60px rgba(0,0,0,0.3); overflow: hidden; }
-.modal-modern .modal-header { background: linear-gradient(135deg, #2e50e4 0%, #2b0c49 100%); border: none; padding: 22px 28px; }
+.modal-modern .modal-content { border-radius: 20px; border: none; box-shadow: 0 20px 60px rgba(0,0,0,0.3); overflow: hidden; display: flex; flex-direction: column; max-height: calc(100vh - 60px); }
+.modal-modern .modal-header { background: linear-gradient(135deg, #2e50e4 0%, #2b0c49 100%); border: none; padding: 22px 28px; flex-shrink: 0; }
 .modal-modern .modal-header .modal-title { color: white; font-weight: 700; }
 .modal-modern .modal-header .close { color: white; opacity: 0.8; font-size: 1.8rem; font-weight: 300; }
-.modal-modern .modal-body { padding: 28px; background: #fafbfc; max-height: 70vh; overflow-y: auto; }
-.modal-modern .modal-footer { padding: 16px 28px; border-top: 2px solid #e2e8f0; background: white; }
+.modal-modern .modal-body { padding: 28px; background: #fafbfc; overflow-y: auto; flex: 1 1 auto; }
+.modal-modern .modal-footer { padding: 16px 28px; border-top: 2px solid #e2e8f0; background: white; flex-shrink: 0; }
 .modal-modern .form-group label { font-weight: 600; color: #4a5568; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; }
 .modal-modern .form-control { border-radius: 10px; border: 2px solid #e2e8f0; padding: 10px 13px; transition: all 0.3s ease; }
 .modal-modern .form-control:focus { border-color: #667eea; box-shadow: 0 0 0 4px rgba(102,126,234,0.1); outline: none; }

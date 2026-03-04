@@ -45,7 +45,7 @@ class ClienteController extends Controller
 
     public function show($id)
     {
-        $cliente = Cliente::with('fotos', 'series')->findOrFail($id);
+        $cliente = Cliente::with('fotos', 'series', 'estrato')->findOrFail($id);
 
         // Historial de lecturas/órdenes del suscriptor
         $ordenes = Ordenesmtl::where('Suscriptor', $cliente->suscriptor)
@@ -53,7 +53,9 @@ class ClienteController extends Controller
             ->limit(24)
             ->get();
 
-        return view('clientes.show', compact('cliente', 'ordenes'));
+        $estratos = Estrato::where('activo', true)->orderBy('numero')->get();
+
+        return view('clientes.show', compact('cliente', 'ordenes', 'estratos'));
     }
 
     // ────────────────────────────────────────────────

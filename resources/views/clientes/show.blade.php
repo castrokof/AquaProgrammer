@@ -110,6 +110,68 @@
                         <span class="dato-valor serie">{{ $cliente->serie_medidor ?: 'No registrada' }}</span>
                     </div>
 
+                    <p class="section-title" style="margin-top:18px;"><i class="fa fa-file-invoice-dollar"></i> Facturación</p>
+                    <div class="dato-row">
+                        <span class="dato-label">Estrato</span>
+                        <span class="dato-valor">
+                            @if($cliente->estrato)
+                                <span style="background:#e0f2fe;color:#0369a1;padding:2px 10px;border-radius:8px;font-weight:700;font-size:.88rem;">
+                                    E{{ $cliente->estrato->numero }} — {{ $cliente->estrato->nombre }}
+                                </span>
+                            @else
+                                <span style="color:#a0aec0;">No asignado</span>
+                            @endif
+                        </span>
+                    </div>
+                    <div class="dato-row">
+                        <span class="dato-label">Servicios</span>
+                        <span class="dato-valor">
+                            @php $srv = $cliente->servicios ?? '—'; @endphp
+                            @if($srv === 'AG-AL')
+                                <span style="background:#c6f6d5;color:#22543d;padding:2px 10px;border-radius:8px;font-weight:700;font-size:.85rem;">Acueducto + Alcantarillado</span>
+                            @elseif($srv === 'AG')
+                                <span style="background:#bee3f8;color:#2c5282;padding:2px 10px;border-radius:8px;font-weight:700;font-size:.85rem;">Solo Acueducto</span>
+                            @elseif($srv === 'AL')
+                                <span style="background:#e9d8fd;color:#553c9a;padding:2px 10px;border-radius:8px;font-weight:700;font-size:.85rem;">Solo Alcantarillado</span>
+                            @else
+                                <span style="color:#a0aec0;">—</span>
+                            @endif
+                        </span>
+                    </div>
+                    <div class="dato-row">
+                        <span class="dato-label">Tipo de Uso</span>
+                        <span class="dato-valor">{{ $cliente->tipo_uso ?? '—' }}</span>
+                    </div>
+                    <div class="dato-row">
+                        <span class="dato-label">Sector</span>
+                        <span class="dato-valor">{{ $cliente->sector ?? '—' }}</span>
+                    </div>
+                    <div class="dato-row">
+                        <span class="dato-label">Medidor</span>
+                        <span class="dato-valor">
+                            @if($cliente->tiene_medidor)
+                                <span style="color:#22543d;font-weight:700;"><i class="fa fa-check-circle"></i> Con medidor</span>
+                            @else
+                                <span style="color:#c05621;font-weight:700;"><i class="fa fa-times-circle"></i> Sin medidor</span>
+                            @endif
+                        </span>
+                    </div>
+                    <div class="dato-row">
+                        <span class="dato-label">Estado</span>
+                        <span class="dato-valor">
+                            @php $est = $cliente->estado ?? 'ACTIVO'; @endphp
+                            @if($est === 'ACTIVO')
+                                <span style="background:#c6f6d5;color:#22543d;padding:2px 10px;border-radius:8px;font-weight:700;font-size:.82rem;">ACTIVO</span>
+                            @elseif($est === 'SUSPENDIDO')
+                                <span style="background:#fef3c7;color:#92400e;padding:2px 10px;border-radius:8px;font-weight:700;font-size:.82rem;">SUSPENDIDO</span>
+                            @elseif($est === 'CORTADO')
+                                <span style="background:#fed7d7;color:#742a2a;padding:2px 10px;border-radius:8px;font-weight:700;font-size:.82rem;">CORTADO</span>
+                            @else
+                                <span style="background:#e2e8f0;color:#718096;padding:2px 10px;border-radius:8px;font-weight:700;font-size:.82rem;">{{ $est }}</span>
+                            @endif
+                        </span>
+                    </div>
+
                     <p class="section-title" style="margin-top:18px;"><i class="fa fa-clock-o"></i> Control</p>
                     <div class="dato-row">
                         <span class="dato-label">Última act.</span>
@@ -485,12 +547,85 @@
                     <p style="font-size:0.7rem;font-weight:700;text-transform:uppercase;color:#a0aec0;border-bottom:2px solid #e2e8f0;padding-bottom:5px;margin: 16px 0 14px;">
                         Medidor
                     </p>
-                    <div class="form-group">
-                        <label style="font-weight:600;color:#4a5568;font-size:0.8rem;text-transform:uppercase;">Serie del Medidor</label>
-                        <input type="text" name="serie_medidor" class="form-control"
-                               value="{{ $cliente->serie_medidor }}"
-                               placeholder="Número de serie">
-                        <small style="color:#718096;">Al actualizar la serie se registrará en el historial del período actual.</small>
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="form-group">
+                                <label style="font-weight:600;color:#4a5568;font-size:0.8rem;text-transform:uppercase;">Serie del Medidor</label>
+                                <input type="text" name="serie_medidor" class="form-control"
+                                       value="{{ $cliente->serie_medidor }}"
+                                       placeholder="Número de serie">
+                                <small style="color:#718096;">Al actualizar la serie se registrará en el historial del período actual.</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label style="font-weight:600;color:#4a5568;font-size:0.8rem;text-transform:uppercase;">¿Tiene medidor?</label>
+                                <select name="tiene_medidor" class="form-control">
+                                    <option value="1" {{ $cliente->tiene_medidor ? 'selected' : '' }}>Sí</option>
+                                    <option value="0" {{ !$cliente->tiene_medidor ? 'selected' : '' }}>No</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <p style="font-size:0.7rem;font-weight:700;text-transform:uppercase;color:#a0aec0;border-bottom:2px solid #e2e8f0;padding-bottom:5px;margin: 16px 0 14px;">
+                        Facturación
+                    </p>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label style="font-weight:600;color:#4a5568;font-size:0.8rem;text-transform:uppercase;">Estrato</label>
+                                <select name="estrato_id" class="form-control">
+                                    <option value="">— Sin asignar —</option>
+                                    @foreach($estratos as $e)
+                                        <option value="{{ $e->id }}" {{ $cliente->estrato_id == $e->id ? 'selected' : '' }}>
+                                            E{{ $e->numero }} — {{ $e->nombre }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label style="font-weight:600;color:#4a5568;font-size:0.8rem;text-transform:uppercase;">Servicios</label>
+                                <select name="servicios" class="form-control">
+                                    <option value="AG-AL" {{ $cliente->servicios === 'AG-AL' ? 'selected' : '' }}>Acueducto + Alcantarillado</option>
+                                    <option value="AG"    {{ $cliente->servicios === 'AG'    ? 'selected' : '' }}>Solo Acueducto</option>
+                                    <option value="AL"    {{ $cliente->servicios === 'AL'    ? 'selected' : '' }}>Solo Alcantarillado</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label style="font-weight:600;color:#4a5568;font-size:0.8rem;text-transform:uppercase;">Tipo de Uso</label>
+                                <select name="tipo_uso" class="form-control">
+                                    @foreach(['RESIDENCIAL','COMERCIAL','INDUSTRIAL','OFICIAL'] as $tu)
+                                        <option value="{{ $tu }}" {{ $cliente->tipo_uso === $tu ? 'selected' : '' }}>{{ $tu }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label style="font-weight:600;color:#4a5568;font-size:0.8rem;text-transform:uppercase;">Sector</label>
+                                <input type="text" name="sector" class="form-control"
+                                       value="{{ $cliente->sector }}" placeholder="Sector o zona">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label style="font-weight:600;color:#4a5568;font-size:0.8rem;text-transform:uppercase;">Estado del Suscriptor</label>
+                                <select name="estado" class="form-control">
+                                    @foreach(['ACTIVO','SUSPENDIDO','CORTADO','INACTIVO'] as $es)
+                                        <option value="{{ $es }}" {{ ($cliente->estado ?? 'ACTIVO') === $es ? 'selected' : '' }}>{{ $es }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer" style="border-top:2px solid #e2e8f0;padding:14px 26px;">

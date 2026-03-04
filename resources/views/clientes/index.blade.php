@@ -243,6 +243,70 @@ label.requerido::after { content: " *"; color: #f5576c; font-weight: 700; }
                         </div>
                     </div>
 
+                    <p class="form-section-title"><i class="fa fa-cogs"></i> Datos de Servicio</p>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label>Estrato</label>
+                                <select name="estrato_id" class="form-control">
+                                    <option value="">— Seleccione —</option>
+                                    @foreach($estratos as $e)
+                                        <option value="{{ $e->id }}">{{ $e->numero }} — {{ $e->nombre }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label>Servicios</label>
+                                <select name="servicios" class="form-control">
+                                    <option value="AG-AL">Acueducto + Alcantarillado</option>
+                                    <option value="AG">Solo Acueducto</option>
+                                    <option value="AL">Solo Alcantarillado</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label>Tipo de Uso</label>
+                                <select name="tipo_uso" class="form-control">
+                                    <option value="RESIDENCIAL">Residencial</option>
+                                    <option value="COMERCIAL">Comercial</option>
+                                    <option value="INDUSTRIAL">Industrial</option>
+                                    <option value="OFICIAL">Oficial</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label>¿Tiene Medidor?</label>
+                                <select name="tiene_medidor" class="form-control">
+                                    <option value="1">Sí — Con medidor</option>
+                                    <option value="0">No — Se factura por promedio</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label>Sector / Zona (CU)</label>
+                                <input type="text" name="sector" class="form-control" placeholder="Ej: CENTRO, NORTE, CU-01">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label>Estado del Servicio</label>
+                                <select name="estado" class="form-control">
+                                    <option value="ACTIVO">Activo</option>
+                                    <option value="SUSPENDIDO">Suspendido</option>
+                                    <option value="CORTADO">Cortado</option>
+                                    <option value="INACTIVO">Inactivo</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
                     <p class="form-section-title"><i class="fa fa-tachometer"></i> Medidor</p>
                     <div class="row">
                         <div class="col-md-6">

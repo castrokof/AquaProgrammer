@@ -101,6 +101,8 @@ label.requerido::after { content: " *"; color: #f5576c; font-weight: 700; }
                     <th>Nombre Completo</th>
                     <th>Serie Medidor</th>
                     <th>Teléfono</th>
+                    <th>ID Ruta</th>
+                    <th>Consecutivo</th>
                     <th>Fotos</th>
                     <th>Última Act.</th>
                     <th>Acciones</th>
@@ -130,6 +132,8 @@ label.requerido::after { content: " *"; color: #f5576c; font-weight: 700; }
                         @endif
                     </td>
                     <td>{{ $c->telefono ?? '—' }}</td>
+                    <td>{{ $c->id_ruta ?? '—' }}</td>
+                    <td>{{ $c->consecutivo ?? '—' }}</td>
                     <td>
                         @php
                             $nFotos = $c->fotos->count();
@@ -156,7 +160,7 @@ label.requerido::after { content: " *"; color: #f5576c; font-weight: 700; }
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="10" style="text-align:center;padding:40px;color:#a0aec0;">
+                    <td colspan="12" style="text-align:center;padding:40px;color:#a0aec0;">
                         <i class="fa fa-users" style="font-size:2rem;margin-bottom:10px;display:block;"></i>
                         No se encontraron clientes.
                         @if(request('buscar'))
@@ -380,4 +384,31 @@ label.requerido::after { content: " *"; color: #f5576c; font-weight: 700; }
     </div>
 </div>
 
+@endsection
+
+@section('scriptsPlugins')
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap4.min.css">
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap4.min.js"></script>
+@endsection
+
+@section('scripts')
+<script>
+$(function () {
+    $('#tblClientes').DataTable({
+        paging:   false,
+        order:    [[10, 'desc']],
+        language: {
+            search:      'Filtrar en página:',
+            zeroRecords: 'No se encontraron resultados',
+            info:        'Mostrando _START_ a _END_ de _TOTAL_ clientes',
+            infoEmpty:   'Sin registros',
+            infoFiltered:'(filtrados de _MAX_ en total)'
+        },
+        columnDefs: [
+            { orderable: false, targets: [11] }
+        ]
+    });
+});
+</script>
 @endsection

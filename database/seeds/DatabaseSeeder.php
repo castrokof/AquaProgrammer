@@ -13,22 +13,17 @@ class DatabaseSeeder extends Seeder
     public function run()
     {
         $this->truncateTablas([
+            //'rol',
+            //'permiso',
+            //'usuario',
+            //'usuario_rol'
+        ]);
 
-            'rol',
-            'permiso',
-            'usuario',
-            'usuario_rol'
-
-        ]
-
-
-        );
-     
         // $this->call(UsersTableSeeder::class);
-    
-            $this->call(RolTablaSeeder::class);
-            $this->call(PermisoTablaSeeder::class);
-            $this->call(UsuarioAdministradorSeeder::class);
+        // $this->call(RolTablaSeeder::class);
+        // $this->call(PermisoTablaSeeder::class);
+        // $this->call(UsuarioAdministradorSeeder::class);
+        $this->call(FacturacionMenuSeeder::class);
     }
 
     protected function truncateTablas(array $tablas){

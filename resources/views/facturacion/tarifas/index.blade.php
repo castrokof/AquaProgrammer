@@ -249,11 +249,13 @@
 <script>
 var CSRF = $("meta[name='csrf-token']").attr("content");
 var tarifaSelId = null;
+var ROUTE_TARIFAS_STORE  = '{{ route("tarifas.store") }}';
+var ROUTE_TARIFAS_BASE   = '{{ url("facturacion/tarifas") }}';
 
 // ── Crear resolución ───────────────────────────────────────────────────────
 $('#btnGuardarTarifa').on('click', function () {
     $.ajax({
-        url: '/facturacion/tarifas', method: 'POST',
+        url: ROUTE_TARIFAS_STORE, method: 'POST',
         data: {
             nombre: $('#tNombre').val(), numero_resolucion: $('#tResolucion').val(),
             vigente_desde: $('#tDesde').val(), vigente_hasta: $('#tHasta').val() || '',
@@ -284,7 +286,7 @@ $('#btnGuardarTarifa').on('click', function () {
 // ── Cargar cargos y rangos de una tarifa ──────────────────────────────────
 function cargarTarifa(id) {
     tarifaSelId = id;
-    $.getJSON('/facturacion/tarifas/' + id + '/detalle', function (data) {
+    $.getJSON(ROUTE_TARIFAS_BASE + '/' + id + '/detalle', function (data) {
         // Cargos fijos
         $.each(data.cargos, function (_, c) {
             $('input.inp-cargo[data-servicio="' + c.servicio + '"][data-estrato="' + c.estrato_id + '"]').val(c.cargo_fijo);
@@ -312,7 +314,7 @@ $('#btnGuardarCargos').on('click', function () {
         cargos.push({ servicio: $(this).data('servicio'), estrato_id: $(this).data('estrato'), cargo_fijo: $(this).val() });
     });
     $.ajax({
-        url: '/facturacion/tarifas/' + tarifaSelId + '/cargos', method: 'POST',
+        url: ROUTE_TARIFAS_BASE + '/' + tarifaSelId + '/cargos', method: 'POST',
         contentType: 'application/json',
         data: JSON.stringify({ cargos: cargos, _token: CSRF }),
         success: function (r) { if (r.ok) Swal.fire({ icon:'success', title:'Guardado', text:r.mensaje, timer:1200, showConfirmButton:false }); },
@@ -342,7 +344,7 @@ $('#btnGuardarRangos').on('click', function () {
         });
     });
     $.ajax({
-        url: '/facturacion/tarifas/' + tarifaSelId + '/rangos', method: 'POST',
+        url: ROUTE_TARIFAS_BASE + '/' + tarifaSelId + '/rangos', method: 'POST',
         contentType: 'application/json',
         data: JSON.stringify({ rangos: rangos, _token: CSRF }),
         success: function (r) { if (r.ok) Swal.fire({ icon:'success', title:'Guardado', text:r.mensaje, timer:1200, showConfirmButton:false }); },
@@ -356,7 +358,7 @@ function activarTarifa(id) {
         showCancelButton: true, confirmButtonText: 'Activar', cancelButtonText: 'Cancelar'
     }).then(function (r) {
         if (!r.value) return;
-        $.post('/facturacion/tarifas/' + id + '/activar', { _token: CSRF }, function (res) {
+        $.post(ROUTE_TARIFAS_BASE + '/' + id + '/activar', { _token: CSRF }, function (res) {
             if (res.ok) {
                 Swal.fire({ icon:'success', title:'Activada', text:res.mensaje, timer:1200, showConfirmButton:false })
                     .then(function() { location.reload(); });

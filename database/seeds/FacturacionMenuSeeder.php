@@ -80,6 +80,12 @@ class FacturacionMenuSeeder extends Seeder
                 'icono'  => 'fas fa-receipt',
                 'orden'  => 6,
             ],
+            [
+                'nombre' => 'Pagos',
+                'url'    => 'facturacion/pagos',
+                'icono'  => 'fas fa-money-bill-wave',
+                'orden'  => 7,
+            ],
         ];
 
         $idsPorNombre = [];

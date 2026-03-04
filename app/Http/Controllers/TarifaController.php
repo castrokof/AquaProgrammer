@@ -26,14 +26,16 @@ class TarifaController extends Controller
             'vigente_hasta'     => 'nullable|date|after_or_equal:vigente_desde',
         ]);
 
+        $activo = (bool) $request->input('activo', false);
+
         // Si se activa como vigente, desactivar las anteriores
-        if ($request->boolean('activo')) {
+        if ($activo) {
             TarifaPeriodo::where('activo', true)->update(['activo' => false]);
         }
 
         $tarifa = TarifaPeriodo::create($request->only([
             'nombre', 'numero_resolucion', 'vigente_desde', 'vigente_hasta', 'observaciones',
-        ]) + ['activo' => $request->boolean('activo')]);
+        ]) + ['activo' => $activo]);
 
         return response()->json(['ok' => true, 'id' => $tarifa->id, 'mensaje' => 'Resolución tarifaria creada.']);
     }

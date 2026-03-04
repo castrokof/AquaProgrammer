@@ -249,6 +249,10 @@ Route::group(['middleware' => 'auth', 'prefix' => 'facturacion'], function () {
     Route::post('facturas/{id}/anular', 'FacturaController@anular')
         ->name('facturas.anular');
 
+    // ── Pagos ─────────────────────────────────────────────────────
+    Route::get('pagos', 'PagoController@index')
+        ->name('pagos.index');
+
     // ── Otros Cobros ─────────────────────────────────────────────
     Route::get('otros-cobros', 'OtrosCobrosController@index')
         ->name('otros-cobros.index');

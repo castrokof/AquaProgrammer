@@ -20,13 +20,14 @@
 #tblClientes tbody tr:hover { background: linear-gradient(90deg, #f8f9ff 0%, #fff 100%); transform: scale(1.005); box-shadow: 0 4px 12px rgba(102,126,234,0.1); }
 .badge-fotos { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 700; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; }
 .badge-sin-foto { background: #e2e8f0; color: #718096; }
-.modal-modern .modal-content { border-radius: 20px; border: none; box-shadow: 0 20px 60px rgba(0,0,0,0.3); overflow: hidden; }
-.modal-modern .modal-header { background: linear-gradient(135deg, #2e50e4ff 0%, #2b0c49ff 100%); border: none; padding: 24px 30px; }
+.modal-modern .modal-content { border-radius: 20px; border: none; box-shadow: 0 20px 60px rgba(0,0,0,0.3); overflow: hidden; display: flex; flex-direction: column; max-height: calc(100vh - 60px); }
+.modal-modern .modal-header { background: linear-gradient(135deg, #2e50e4ff 0%, #2b0c49ff 100%); border: none; padding: 24px 30px; flex-shrink: 0; }
 .modal-modern .modal-header .modal-title { color: white; font-weight: 700; font-size: 1.3rem; }
 .modal-modern .modal-header .close { color: white; opacity: 0.8; text-shadow: none; font-size: 1.8rem; font-weight: 300; transition: all 0.3s ease; }
 .modal-modern .modal-header .close:hover { opacity: 1; transform: rotate(90deg); }
-.modal-modern .modal-body { padding: 30px; background: #fafbfc; max-height: 70vh; overflow-y: auto; }
-.modal-modern .modal-footer { padding: 18px 30px; border-top: 2px solid #e2e8f0; background: white; }
+.modal-modern .modal-body { padding: 30px; background: #fafbfc; overflow-y: auto; flex: 1 1 auto; }
+.modal-modern .modal-footer { padding: 18px 30px; border-top: 2px solid #e2e8f0; background: white; flex-shrink: 0; }
+.modal-modern form { display: flex; flex-direction: column; flex: 1 1 auto; overflow: hidden; }
 .modal-modern .form-group label { font-weight: 600; color: #4a5568; font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.5px; }
 .modal-modern .form-control { border-radius: 10px; border: 2px solid #e2e8f0; padding: 11px 14px; transition: all 0.3s ease; }
 .modal-modern .form-control:focus { border-color: #667eea; box-shadow: 0 0 0 4px rgba(102,126,234,0.1); outline: none; }

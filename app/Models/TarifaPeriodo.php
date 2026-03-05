@@ -76,26 +76,41 @@ class TarifaPeriodo extends Model
             ->get();
 
         $resultado = [];
-        $restante = $consumoM3;
+        $consumoRestante = $consumoM3;
 
         foreach ($rangos as $rango) {
-            if ($restante <= 0) break;
+            if ($consumoRestante <= 0) break;
 
-            $limite = is_null($rango->rango_hasta)
-                ? $restante
-                : ($rango->rango_hasta - $rango->rango_desde);
+            // Calcular el tamaño máximo del rango
+            $tamanoRango = is_null($rango->rango_hasta)
+                ? PHP_INT_MAX  // Ilimitado para suntuario
+                : ($rango->rango_hasta - $rango->rango_desde + 1);
 
-            $m3 = min($restante, $limite);
-            $valor = round($m3 * $rango->precio_m3, 2);
+            // Calcular cuántos m³ del consumo restante caen en este rango
+            // El consumo ya consumido es: consumoM3 - consumoRestante
+            $consumoYaAsignado = $consumoM3 - $consumoRestante;
+            
+            // Si el consumo ya asignado supera el rango desde, empezamos desde donde quedamos
+            $inicioEnRango = max(0, $consumoYaAsignado - $rango->rango_desde);
+            
+            // Los m³ que realmente corresponden a este rango
+            $m3EnEsteRango = min($consumoRestante, $tamanoRango - $inicioEnRango);
+            
+            // Asegurar que no sea negativo
+            $m3EnEsteRango = max(0, $m3EnEsteRango);
 
-            $resultado[] = [
-                'tipo'      => $rango->tipo,
-                'm3'        => $m3,
-                'precio_m3' => (float) $rango->precio_m3,
-                'valor'     => $valor,
-            ];
+            if ($m3EnEsteRango > 0) {
+                $valor = round($m3EnEsteRango * $rango->precio_m3, 2);
 
-            $restante -= $m3;
+                $resultado[] = [
+                    'tipo'      => $rango->tipo,
+                    'm3'        => $m3EnEsteRango,
+                    'precio_m3' => (float) $rango->precio_m3,
+                    'valor'     => $valor,
+                ];
+
+                $consumoRestante -= $m3EnEsteRango;
+            }
         }
 
         return $resultado;

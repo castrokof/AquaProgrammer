@@ -77,26 +77,23 @@ class TarifaPeriodo extends Model
 
         $resultado = [];
         $consumoRestante = $consumoM3;
+        $consumoAcumulado = 0;
 
         foreach ($rangos as $rango) {
             if ($consumoRestante <= 0) break;
 
-            // Calcular el tamaño máximo del rango
-            $tamanoRango = is_null($rango->rango_hasta)
-                ? PHP_INT_MAX  // Ilimitado para suntuario
-                : ($rango->rango_hasta - $rango->rango_desde + 1);
-
-            // Calcular cuántos m³ del consumo restante caen en este rango
-            // El consumo ya consumido es: consumoM3 - consumoRestante
-            $consumoYaAsignado = $consumoM3 - $consumoRestante;
+            // Límites del rango
+            $desde = $rango->rango_desde;
+            $hasta = is_null($rango->rango_hasta) ? PHP_INT_MAX : $rango->rango_hasta;
             
-            // Si el consumo ya asignado supera el rango desde, empezamos desde donde quedamos
-            $inicioEnRango = max(0, $consumoYaAsignado - $rango->rango_desde);
+            // Cuánto consumo puede entrar en este rango
+            $capacidadRango = $hasta - $desde + 1;
             
-            // Los m³ que realmente corresponden a este rango
-            $m3EnEsteRango = min($consumoRestante, $tamanoRango - $inicioEnRango);
+            // Cuánto del consumo ya fue asignado a rangos anteriores
+            $yaAsignadoAntesDeEsteRango = max(0, $consumoAcumulado - $desde);
             
-            // Asegurar que no sea negativo
+            // Consumo que realmente corresponde a este rango
+            $m3EnEsteRango = min($consumoRestante, $capacidadRango - $yaAsignadoAntesDeEsteRango);
             $m3EnEsteRango = max(0, $m3EnEsteRango);
 
             if ($m3EnEsteRango > 0) {
@@ -110,6 +107,7 @@ class TarifaPeriodo extends Model
                 ];
 
                 $consumoRestante -= $m3EnEsteRango;
+                $consumoAcumulado += $m3EnEsteRango;
             }
         }
 

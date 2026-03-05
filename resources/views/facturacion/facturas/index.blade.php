@@ -104,7 +104,7 @@
                     <td>
                         <strong>{{ $f->suscriptor }}</strong>
                         @if($f->cliente)
-                        <br><span style="font-size:.75rem;color:#718096;">{{ Str::limit(trim($f->cliente->nombre . ' ' . $f->cliente->apellido), 20) }}</span>
+                        <br><span style="font-size:.75rem;color:#718096;">{{ \Illuminate\Support\Str::limit(trim($f->cliente->nombre . ' ' . $f->cliente->apellido), 20) }}</span>
                         @endif
                     </td>
                     <td>{{ $f->periodo }}</td>

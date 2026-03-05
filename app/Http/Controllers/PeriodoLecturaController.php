@@ -164,7 +164,7 @@ class PeriodoLecturaController extends Controller
                     'consecutivo_int' => $cliente->consecutivo,
                     'LA'              => $lecturaPrev['Lect_Actual'],
                     'Promedio'        => $lecturaPrev['Promedio'],
-                    'Tope'            => 10, // valor por defecto
+                    'Tope'            => 6, // valor por defecto
                     'estrato'         => $cliente->estrato ?? null,
                     'id_lectura'      => $nextOrdenescuId++, // se puede actualizar después
                     // 👇 Agrega aquí cualquier otro campo NOT NULL de tu tabla entrada
@@ -194,7 +194,10 @@ class PeriodoLecturaController extends Controller
                     'idDivision'         => $cliente->id_ruta,
                     'id_Ruta'            => $cliente->id_ruta,
                     'Consecutivo'        => $cliente->consecutivo,
+                    'recorrido'        => $cliente->consecutivo,
                     'consecutivoRuta'    => $cliente->consecutivo, // 👈 Incrementa solo aquí
+                    'fecha_de_ejecucion' => null, // 👈 Incrementa solo aquí
+                    'Tope'            => 6,
                     'id_lectura'         => $entrada->id, // 👈 Mismo ID si es tu lógica
                     // 👇 Agrega aquí cualquier otro campo NOT NULL de ordenescu
                 ]);

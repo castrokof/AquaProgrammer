@@ -34,17 +34,37 @@ class FacturacionService
         ?int $lecturaAnterior = null,
         ?int $lecturaActual   = null
     ): array {
+        \Illuminate\Support\Facades\Log::info('=== INICIO FacturacionService::calcular ===', [
+            'cliente_id' => $cliente->id,
+            'suscriptor' => $cliente->suscriptor,
+            'consumoM3' => $consumoM3,
+            'periodo' => $periodo->codigo,
+            'tiene_medidor' => $cliente->tiene_medidor,
+            'estrato_id' => $cliente->estrato_id,
+            'servicios' => $cliente->servicios,
+        ]);
+
         // Sin medidor → se factura con el promedio de los últimos 6 meses.
         // Si tampoco hay historial se usa 1 m³ como mínimo facturable.
         if (!$cliente->tiene_medidor) {
             $consumoM3       = max(1, (int) round($cliente->promedio_consumo));
             $lecturaAnterior = null;
             $lecturaActual   = null;
+            \Illuminate\Support\Facades\Log::info('Cliente sin medidor, se usa promedio', [
+                'promedio_consumo' => $cliente->promedio_consumo,
+                'consumoM3_nuevo' => $consumoM3,
+            ]);
         }
 
         $tarifa    = $periodo->tarifa ?? TarifaPeriodo::vigente();
         $estratoId = $cliente->estrato_id;
         $servicios = $cliente->servicios ?? 'AG-AL';
+
+        \Illuminate\Support\Facades\Log::info('Datos iniciales para calculo', [
+            'tarifa_id' => optional($tarifa)->id,
+            'estratoId' => $estratoId,
+            'servicios' => $servicios,
+        ]);
 
         // ── Historial de consumo (6 meses) ───────────────────────────────────
         $historial = ClienteHistoricoConsumo::promedioYDetalle($cliente->id, 6);
@@ -175,12 +195,35 @@ class FacturacionService
         ?TarifaPeriodo $tarifa,
         bool $activo
     ): array {
+        \Illuminate\Support\Facades\Log::info('=== INICIO calcularServicio ===', [
+            'servicio' => $servicio,
+            'consumoM3' => $consumoM3,
+            'estratoId' => $estratoId,
+            'tarifa_id' => optional($tarifa)->id,
+            'activo' => $activo,
+        ]);
+
         if (!$activo || !$estratoId || !$tarifa) {
+            \Illuminate\Support\Facades\Log::info('Servicio vacio por condiciones no cumplidas', [
+                'activo' => $activo,
+                'estratoId' => $estratoId,
+                'tarifa' => $tarifa,
+            ]);
             return $this->servicioVacio();
         }
 
         $cargoFijo = $tarifa->cargoFijo($servicio, $estratoId);
-        $desglose  = $tarifa->calcularConsumo($consumoM3, $servicio, $estratoId);
+        \Illuminate\Support\Facades\Log::info('Cargo fijo obtenido', [
+            'servicio' => $servicio,
+            'estratoId' => $estratoId,
+            'cargoFijo' => $cargoFijo,
+        ]);
+
+        $desglose = $tarifa->calcularConsumo($consumoM3, $servicio, $estratoId);
+        \Illuminate\Support\Facades\Log::info('Desglose de consumo', [
+            'consumoM3' => $consumoM3,
+            'desglose' => $desglose,
+        ]);
 
         $datos = [
             'cargo_fijo'           => $cargoFijo,
@@ -196,6 +239,12 @@ class FacturacionService
         }
 
         $subtotal = $cargoFijo + $datos['basico_valor'] + $datos['complementario_valor'] + $datos['suntuario_valor'];
+
+        \Illuminate\Support\Facades\Log::info('=== FIN calcularServicio ===', [
+            'servicio' => $servicio,
+            'datos_finales' => $datos,
+            'subtotal' => $subtotal,
+        ]);
 
         return array_merge($datos, ['subtotal' => round($subtotal, 2), 'total' => round($subtotal, 2)]);
     }

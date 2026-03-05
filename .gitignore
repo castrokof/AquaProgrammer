@@ -1,1 +1,49 @@
-Nothing should be ignored in this case, as the only change is a modification to a PHP source file (`app/Models/TarifaPeriodo.php`), which is a regular source code file that should be tracked by Git. There are no build artifacts, dependencies, temporary files, or other items that need to be ignored based on the provided change list.
+```php
+# Compiled and build artifacts
+*.pyc
+__pycache__/
+*.o
+*.obj
+dist/
+build/
+*.class
+*.jar
+*.war
+*.ear
+target/
+
+# Dependencies
+node_modules/
+vendor/
+composer.lock
+*.lock
+.env
+.env.local
+.env.*
+
+# Logs and temp files
+*.log
+*.tmp
+*.swp
+*.swo
+*.out
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Coverage reports
+coverage/
+htmlcov/
+.coverage
+
+# PHP specific
+.php_cs.cache
+.phpunit.result.cache
+```

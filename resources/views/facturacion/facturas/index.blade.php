@@ -30,9 +30,14 @@
     <div class="modern-card">
         <div class="card-header">
             <h3><i class="fa fa-file-invoice-dollar"></i> Facturas</h3>
-            <a href="{{ route('facturas.generar') }}" class="btn btn-light" style="border-radius:12px;font-weight:700;">
-                <i class="fa fa-plus"></i> Generar Factura Manual
-            </a>
+            <div style="display:flex;gap:10px;">
+                <a href="{{ route('facturas.masiva') }}" class="btn btn-primary" style="border-radius:12px;font-weight:700;background:linear-gradient(135deg,#667eea,#764ba2);border:none;">
+                    <i class="fa fa-bolt"></i> Facturación Masiva
+                </a>
+                <a href="{{ route('facturas.generar') }}" class="btn btn-light" style="border-radius:12px;font-weight:700;">
+                    <i class="fa fa-plus"></i> Generar Factura Manual
+                </a>
+            </div>
         </div>
     </div>
 

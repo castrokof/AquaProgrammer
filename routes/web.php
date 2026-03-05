@@ -249,6 +249,14 @@ Route::group(['middleware' => 'auth', 'prefix' => 'facturacion'], function () {
     Route::post('facturas/{id}/anular', 'FacturaController@anular')
         ->name('facturas.anular');
 
+    // ── Facturación Masiva ────────────────────────────────────────
+    Route::get('facturas/masiva', 'FacturacionMasivaController@index')
+        ->name('facturas.masiva');
+    Route::post('facturas/masiva/procesar', 'FacturacionMasivaController@procesar')
+        ->name('facturas.masiva.procesar');
+    Route::get('facturas/masiva/resumen', 'FacturacionMasivaController@resumen')
+        ->name('facturas.masiva.resumen');
+
     // ── Pagos ─────────────────────────────────────────────────────
     Route::get('pagos', 'PagoController@index')
         ->name('pagos.index');

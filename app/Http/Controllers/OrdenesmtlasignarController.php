@@ -516,6 +516,7 @@ class  OrdenesmtlasignarController extends Controller
                 'Nombre', 'Apell', 'LA', 'Promedio', 'Año', 'id_Ruta', 
                 'Ruta', 'consecutivoRuta', 'Usuario', 'Estado', 'Tope', 'Suscriptor'
             )
+            ->orderBy('id_Ruta')->orderBy('consecutivoRuta')
             ->get();
 
         if ($medidores->count() > 0) {

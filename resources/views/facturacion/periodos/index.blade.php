@@ -235,6 +235,7 @@
 @php
     // Generamos la ruta con un placeholder temporal
     $routeGenerar = route('periodos.generar_ordenes', ['id' => '__ID__']);
+    $routeEstado = route('periodos.estado', ['id' => '__ID__']);
 @endphp
 @endsection
 
@@ -362,40 +363,45 @@ var flujoLabel = {
     FACTURADO:       'CERRADO',
 };
 
-$(document).on('click', '.btn-avanzar', function () {
-    var id     = $(this).data('id');
-    var estado = $(this).data('estado');
-    var sig    = flujoLabel[estado] || '?';
-    var $btn   = $(this);
+ const ROUTE_PERIODO_ESTADO = '{{ $routeEstado }}'; 
+    // Ej: /AquaProgrammerData/facturacion/periodos/__ID__/estado
 
-    Swal.fire({
-        title: '¿Avanzar período?',
-        html:  'El período pasará de <b>' + estado.replace('_',' ') + '</b> a <b>' + sig + '</b>.',
-        icon:  'question',
-        showCancelButton: true,
-        confirmButtonText: 'Sí, avanzar',
-        cancelButtonText: 'Cancelar',
-    }).then(function (res) {
-        if (!res.value) return;
-        $.ajax({
-            url:    'facturacion/periodos/' + id + '/estado',
-            method: 'POST',
-            data:   { _token: CSRF },
-            success: function (r) {
-                if (r.ok) {
-                    var badge = $('#badge-' + id);
-                    badge.attr('class', 'badge-estado badge-' + r.nuevo_estado);
-                    badge.text(r.nuevo_estado.replace('_',' '));
-                    $btn.data('estado', r.nuevo_estado);
-                    if (r.nuevo_estado === 'CERRADO') $btn.remove();
-                    Manteliviano.notificaciones(r.mensaje, 'Períodos', 'success');
+    $(document).on('click', '.btn-avanzar', function () {
+        var id     = $(this).data('id');
+        var estado = $(this).data('estado');
+        var sig    = flujoLabel[estado] || '?';
+        var $btn   = $(this);
+
+        Swal.fire({
+            title: '¿Avanzar período?',
+            html:  'El período pasará de <b>' + estado.replace('_',' ') + '</b> a <b>' + sig + '</b>.',
+            icon:  'question',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, avanzar',
+            cancelButtonText: 'Cancelar',
+        }).then(function (res) {
+            if (!res.value) return;
+            
+            $.ajax({
+                // 👇 Reemplazar placeholder por el id real
+                url:    ROUTE_PERIODO_ESTADO.replace('__ID__', id),
+                method: 'POST',
+                data:   { _token: CSRF },
+                success: function (r) {
+                    if (r.ok) {
+                        var badge = $('#badge-' + id);
+                        badge.attr('class', 'badge-estado badge-' + r.nuevo_estado);
+                        badge.text(r.nuevo_estado.replace('_',' '));
+                        $btn.data('estado', r.nuevo_estado);
+                        if (r.nuevo_estado === 'CERRADO') $btn.remove();
+                        Manteliviano.notificaciones(r.mensaje, 'Períodos', 'success');
+                    }
+                },
+                error: function () {
+                    Swal.fire('Error', 'No se pudo cambiar el estado.', 'error');
                 }
-            },
-            error: function () {
-                Swal.fire('Error', 'No se pudo cambiar el estado.', 'error');
-            }
+            });
         });
     });
-});
 </script>
 @endsection

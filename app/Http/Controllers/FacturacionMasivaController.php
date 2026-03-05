@@ -152,8 +152,11 @@ class FacturacionMasivaController extends Controller
                             $lecturaActual
                         );
 
-                        // Descontar cuotas de otros cobros
-                        ClienteOtrosCobro::where('cliente_id', $cliente->id)->activo()->each->pagarCuota();
+                        // Descontar cuotas de otros cobros - CORRECCIÓN: usar bucle foreach en lugar de each
+                        $otrosCobros = ClienteOtrosCobro::where('cliente_id', $cliente->id)->activo()->get();
+                        foreach ($otrosCobros as $cobro) {
+                            $cobro->pagarCuota();
+                        }
 
                         $resultado['facturadas_automaticas']++;
                         $resultado['detalles'][] = [

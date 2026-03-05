@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Log;
 use App\Models\Admin\Photos;
 use App\Models\Admin\Orden_ejecutada;
 use Illuminate\Support\Facades\Storage;
+use App\Models\Admin\Ordenesmtl;
 use App\Models\Cliente;
 use App\Models\Factura;
 use App\Models\PeriodoLectura;
@@ -261,7 +262,7 @@ class OrdenEjecutadaController extends Controller
      * Procesa la facturación automática luego de recibir una lectura desde el móvil.
      *
      * Reglas:
-     *  - Normal (Critica='54-NORMAL' o dentro del ±50% del promedio) → Factura con consumo real.
+     *  - Normal (Critica='NORMAL-54' o '54-NORMAL') → Factura con consumo real.
      *  - Crítica CON causa  → Factura con el promedio del cliente (según tipo de causa).
      *  - Crítica SIN causa  → No factura; queda pendiente de revisión manual.
      *
@@ -275,7 +276,8 @@ class OrdenEjecutadaController extends Controller
         $causa
     ): void {
         try {
-            $orden = DB::table('ordenescu')->where('id', $idOrden)->first();
+            // Usar el modelo Eloquent para obtener la orden con todos sus datos
+            $orden = Ordenesmtl::where('id', $idOrden)->first();
 
             if (!$orden || empty($orden->periodo_lectura_id)) {
                 Log::info("procesarFacturacion: orden {$idOrden} sin periodo_lectura_id, sin facturar.");
@@ -305,33 +307,42 @@ class OrdenEjecutadaController extends Controller
             }
 
             $esNormal = (
-                strtoupper(trim($critica)) === '54-NORMAL'
-                || strtoupper(trim($critica)) === 'NORMAL'
-                || $cliente->lecturaEsNormal($consumoM3)
+                strtoupper(trim($critica)) === 'NORMAL-54'
+                || strtoupper(trim($critica)) === '54-NORMAL'
             );
 
             $facturacionService = new FacturacionService();
+            
+            // Obtener lectura anterior desde la tabla ordenescu (campo LA)
             $lecturaAnterior    = isset($orden->LA) ? (int) $orden->LA : null;
             $consumoFacturado   = null;
 
             if ($esNormal) {
                 // Lectura normal → factura con consumo real
+                Log::info("procesarFacturacion: {$cliente->suscriptor} NORMAL-54 detectada. Consumo: {$consumoM3}, Lectura Anterior: " . json_encode($lecturaAnterior) . ", Lectura Actual: {$lectActual}");
+                
+                // Verificar que tenemos lectura anterior para calcular correctamente
+                if ($lecturaAnterior === null || $lecturaAnterior === 0) {
+                    Log::warning("procesarFacturacion: {$cliente->suscriptor} sin lectura anterior (LA=0 o NULL). No se puede facturar.");
+                    return;
+                }
+                
                 $datos           = $facturacionService->calcular($cliente, $consumoM3, $periodo, $lecturaAnterior, $lectActual);
                 $consumoFacturado = $consumoM3;
-                Factura::create($datos);
-                Log::info("procesarFacturacion: {$cliente->suscriptor} NORMAL → facturado {$consumoM3} m³.");
-
-            } elseif (!empty($causa)) {
-                // Crítica con causa → factura con promedio según causa
-                $consumoProm     = max(1, (int) round($cliente->promedio_consumo));
-                $datos           = $facturacionService->calcular($cliente, $consumoProm, $periodo);
-                $consumoFacturado = $consumoProm;
-                Factura::create($datos);
-                Log::info("procesarFacturacion: {$cliente->suscriptor} CRÍTICA+CAUSA → facturado promedio {$consumoProm} m³.");
+                
+                Log::info("procesarFacturacion: Datos calculados para factura: " . json_encode(array_keys($datos)));
+                
+                try {
+                    $factura = Factura::create($datos);
+                    Log::info("procesarFacturacion: {$cliente->suscriptor} NORMAL → factura creada ID: {$factura->id}, número: {$factura->numero_factura}");
+                } catch (\Exception $e) {
+                    Log::error("procesarFacturacion: Error al crear factura NORMAL: " . $e->getMessage());
+                    throw $e;
+                }
 
             } else {
-                // Crítica sin causa → no facturar, queda en revisión
-                Log::info("procesarFacturacion: {$cliente->suscriptor} CRÍTICA sin causa → pendiente de revisión.");
+                // Crítica → no facturar automáticamente, queda en revisión manual
+                Log::info("procesarFacturacion: {$cliente->suscriptor} CRÍTICA ({$critica}) → pendiente de revisión manual. NO se factura automáticamente.");
                 return;
             }
 

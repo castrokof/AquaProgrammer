@@ -198,9 +198,13 @@ label.lbl { font-weight:600; color:#4a5568; font-size:.8rem; text-transform:uppe
         </div>
     </div>
 </div>
+@endsection
 
+@section('scripts')
 <script>
+
 $(document).ready(function() {
+
     let periodoSeleccionado = null;
 
     // Habilitar botón cargar resumen cuando seleccione período

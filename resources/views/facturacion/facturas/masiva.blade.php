@@ -278,15 +278,12 @@ label.lbl { font-weight:600; color:#4a5568; font-size:.8rem; text-transform:uppe
             </div>
         </div>
     </div>
-</div>
-@endsection
-
 @section('scripts')
 <script>
-
 $(document).ready(function() {
-
     let periodoSeleccionado = null;
+    let lecturasData = [];
+    let dataTable = null;
 
     // Habilitar botón cargar resumen cuando seleccione período
     $('#selPeriodo').on('change', function() {
@@ -295,7 +292,8 @@ $(document).ready(function() {
             periodoSeleccionado = id;
             $('#btnCargarResumen').prop('disabled', false);
             $('#resumenPeriodo').hide();
-            $('#btnProcesar').hide();
+            $('#panelLecturas').hide();
+            $('#rowAccionesMasivas').hide();
             $('#panelResultados').hide();
             $('#mensajeInicial').show();
         } else {
@@ -304,97 +302,281 @@ $(document).ready(function() {
         }
     });
 
-    // Cargar resumen
+    // Cargar resumen y lecturas
     $('#btnCargarResumen').on('click', function() {
         if (!periodoSeleccionado) return;
 
         $.ajax({
-            url: '{{ route("facturas.masiva.resumen") }}',
+            url: '{{ route("facturas.masiva.obtenerLecturas") }}',
             method: 'GET',
             data: { periodo_lectura_id: periodoSeleccionado },
             success: function(res) {
                 if (res.ok) {
-                    const r = res.resumen;
-                    $('#rTotal').text(r.total_lecturas);
-                    $('#rNormales').text(r.normales_54);
-                    $('#rOtras').text(r.otras_criticas);
-                    $('#rFacturadas').text(r.ya_facturadas);
-                    $('#rPendientes').text(r.pendientes_facturar);
+                    lecturasData = res.lecturas;
                     
+                    // Calcular resumen
+                    const total = lecturasData.length;
+                    const normales = lecturasData.filter(l => l.es_normal).length;
+                    const otras = total - normales;
+                    const facturadas = lecturasData.filter(l => l.tiene_factura).length;
+                    const pendientes = lecturasData.filter(l => !l.tiene_factura && !l.tiene_revision).length;
+                    const conRevision = lecturasData.filter(l => l.tiene_revision).length;
+
+                    $('#rTotal').text(total);
+                    $('#rNormales').text(normales);
+                    $('#rOtras').text(otras);
+                    $('#rFacturadas').text(facturadas);
+                    $('#rPendientes').text(pendientes);
+                    $('#rRevisiones').text(conRevision);
+
                     $('#resumenPeriodo').slideDown();
-                    $('#btnProcesar').show();
-                    $('#btnProcesar').prop('disabled', false);
+                    
+                    // Cargar DataTable
+                    cargarDataTable(lecturasData);
+                    $('#panelLecturas').slideDown();
+                    $('#rowAccionesMasivas').slideDown();
+                    $('#mensajeInicial').hide();
                 } else {
-                    alert('Error al cargar resumen: ' + res.mensaje);
+                    alert('Error al cargar lecturas: ' + res.mensaje);
                 }
             },
             error: function(xhr) {
-                alert('Error en la solicitud');
+                alert('Error en la solicitud: ' + xhr.responseText);
             }
         });
     });
 
-    // Ejecutar facturación masiva
-    $('#btnProcesar').on('click', function() {
-        if (!periodoSeleccionado) return;
+    // Inicializar DataTable
+    function cargarDataTable(lecturas) {
+        if (dataTable) {
+            dataTable.destroy();
+        }
 
-        if (!confirm('¿Está seguro de ejecutar la facturación masiva?\n\nSolo las lecturas NORMAL-54 se facturarán automáticamente.\nLas demás quedarán pendientes de revisión.')) {
+        const tbody = $('#tblLecturasBody');
+        tbody.empty();
+
+        lecturas.forEach(function(lectura, index) {
+            let badgeClass = lectura.es_normal ? 'badge-critica NORMAL' : 'badge-critica OTRA';
+            let estadoText = '';
+            let estadoClass = '';
+            
+            if (lectura.tiene_factura) {
+                estadoText = 'FACTURADO';
+                estadoClass = 'badge-estado FACTURADO';
+            } else if (lectura.tiene_revision) {
+                estadoText = 'EN REVISIÓN';
+                estadoClass = 'badge-estado REVISION_CREADA';
+            } else {
+                estadoText = 'PENDIENTE';
+                estadoClass = 'badge-estado OMITIDA';
+            }
+
+            const row = `
+                <tr>
+                    <td>
+                        <input type="checkbox" class="chk-lectura checkbox-modern" 
+                               data-id="${lectura.id}" 
+                               data-suscriptor="${lectura.suscriptor}"
+                               ${lectura.tiene_factura || lectura.tiene_revision ? 'disabled' : ''}>
+                    </td>
+                    <td>${lectura.id}</td>
+                    <td><strong>${lectura.suscriptor}</strong></td>
+                    <td>${lectura.cliente}</td>
+                    <td>${lectura.lectura_anterior}</td>
+                    <td>${lectura.lectura_actual}</td>
+                    <td><strong>${lectura.consumo}</strong></td>
+                    <td><span class="${badgeClass}">${lectura.critica}</span></td>
+                    <td><span class="${estadoClass}">${estadoText}</span></td>
+                    <td>
+                        ${!lectura.tiene_factura && !lectura.tiene_revision ? 
+                            `<button class="btn btn-sm btn-success btn-facturar-individual" data-id="${lectura.id}" data-suscriptor="${lectura.suscriptor}">
+                                <i class="fa fa-file-invoice"></i> Facturar
+                            </button>` : 
+                            '<span style="color:#718096;font-size:.8rem;">—</span>'
+                        }
+                    </td>
+                </tr>
+            `;
+            tbody.append(row);
+        });
+
+        // Inicializar DataTable
+        dataTable = $('#tblLecturas').DataTable({
+            dom: 'Bfrtip',
+            buttons: [
+                { extend: 'copyHtml5', className: 'btn-sm' },
+                { extend: 'excelHtml5', className: 'btn-sm' },
+                { extend: 'pdfHtml5', className: 'btn-sm', orientation: 'landscape' },
+                { extend: 'print', className: 'btn-sm' }
+            ],
+            language: {
+                url: '//cdn.datatables.net/plug-ins/1.10.21/i18n/Spanish.json'
+            },
+            pageLength: 25,
+            order: [[1, 'asc']]
+        });
+
+        // Actualizar estado de botones
+        actualizarEstadoBotones();
+    }
+
+    // Checkbox "Seleccionar todos"
+    $('#chkTodos').on('change', function() {
+        const checked = $(this).prop('checked');
+        $('.chk-lectura:not(:disabled)').prop('checked', checked);
+        actualizarEstadoBotones();
+    });
+
+    // Checkboxes individuales
+    $(document).on('change', '.chk-lectura', function() {
+        actualizarEstadoBotones();
+        
+        // Actualizar checkbox "todos"
+        const total = $('.chk-lectura:not(:disabled)').length;
+        const checked = $('.chk-lectura:not(:disabled):checked').length;
+        $('#chkTodos').prop('checked', total === checked && total > 0);
+    });
+
+    // Botón seleccionar todos
+    $('#btnSeleccionarTodos').on('click', function() {
+        $('.chk-lectura:not(:disabled)').prop('checked', true);
+        $('#chkTodos').prop('checked', true);
+        actualizarEstadoBotones();
+    });
+
+    // Botón deseleccionar todos
+    $('#btnDeseleccionarTodos').on('click', function() {
+        $('.chk-lectura:not(:disabled)').prop('checked', false);
+        $('#chkTodos').prop('checked', false);
+        actualizarEstadoBotones();
+    });
+
+    // Actualizar estado de botones
+    function actualizarEstadoBotones() {
+        const seleccionados = $('.chk-lectura:checked').length;
+        $('#btnFacturarSeleccionadas').prop('disabled', seleccionados === 0);
+    }
+
+    // Facturar seleccionadas
+    $('#btnFacturarSeleccionadas').on('click', function() {
+        const seleccionados = [];
+        $('.chk-lectura:checked').each(function() {
+            seleccionados.push($(this).data('id'));
+        });
+
+        if (seleccionados.length === 0) {
+            alert('Seleccione al menos una lectura');
             return;
         }
 
-        $('#btnProcesar').prop('disabled', true);
-        $('#btnCargarResumen').prop('disabled', true);
+        if (!confirm(`¿Está seguro de facturar ${seleccionados.length} lecturas seleccionadas?`)) {
+            return;
+        }
+
+        procesarFacturacion(seleccionados, 'selectiva');
+    });
+
+    // Facturar individual
+    $(document).on('click', '.btn-facturar-individual', function() {
+        const id = $(this).data('id');
+        const suscriptor = $(this).data('suscriptor');
+
+        if (!confirm(`¿Está seguro de facturar al suscriptor ${suscriptor}?`)) {
+            return;
+        }
+
+        procesarFacturacion([id], 'selectiva');
+    });
+
+    // Facturar Normales (54) automáticamente
+    $('#btnProcesarNormales').on('click', function() {
+        if (!confirm('¿Está seguro de facturar AUTOMÁTICAMENTE todas las lecturas con crítica NORMAL-54?')) {
+            return;
+        }
+
+        procesarFacturacion([], 'automatica');
+    });
+
+    // Facturar Críticas Confirmadas
+    $('#btnProcesarCriticas').on('click', function() {
+        if (!confirm('¿Está seguro de facturar todas las lecturas críticas que han sido confirmadas en revisiones?')) {
+            return;
+        }
+
+        procesarFacturacion([], 'criticas_confirmadas');
+    });
+
+    // Procesar facturación
+    function procesarFacturacion(lecturasIds, tipo) {
         $('#spinnerProceso').show();
         $('#panelResultados').hide();
-        $('#mensajeInicial').hide();
+
+        let url = '';
+        let data = {
+            periodo_lectura_id: periodoSeleccionado,
+            _token: '{{ csrf_token() }}'
+        };
+
+        if (tipo === 'selectiva') {
+            url = '{{ route("facturas.masiva.procesarSeleccionadas") }}';
+            data.lecturas_ids = lecturasIds;
+        } else if (tipo === 'automatica') {
+            url = '{{ route("facturas.masiva.procesar") }}';
+        } else if (tipo === 'criticas_confirmadas') {
+            url = '{{ route("facturas.masiva.procesarCriticasConfirmadas") }}';
+        }
 
         $.ajax({
-            url: '{{ route("facturas.masiva.procesar") }}',
+            url: url,
             method: 'POST',
-            data: { 
-                periodo_lectura_id: periodoSeleccionado,
-                _token: '{{ csrf_token() }}'
-            },
+            data: data,
             success: function(res) {
                 $('#spinnerProceso').hide();
-                
+
                 if (res.ok) {
                     mostrarResultados(res.resultado);
+                    // Recargar lecturas para actualizar estados
+                    setTimeout(function() {
+                        $('#btnCargarResumen').click();
+                    }, 2000);
                 } else {
+                    $('#spinnerProceso').hide();
                     alert('Error en el proceso: ' + res.mensaje);
-                    $('#btnCargarResumen').prop('disabled', false);
                 }
             },
             error: function(xhr) {
                 $('#spinnerProceso').hide();
                 alert('Error en la solicitud: ' + xhr.responseText);
-                $('#btnCargarResumen').prop('disabled', false);
             }
         });
-    });
+    }
 
+    // Mostrar resultados
     function mostrarResultados(resultado) {
-        $('#resProcesadas').text(resultado.procesadas);
-        $('#resFacturadas').text(resultado.facturadas_automaticas);
-        $('#resPendientes').text(resultado.pendientes_revision);
-        $('#resErrores').text(resultado.errores);
+        $('#resProcesadas').text(resultado.procesadas || 0);
+        $('#resFacturadas').text(resultado.facturadas_automaticas || resultado.facturadas || 0);
+        $('#resPendientes').text(resultado.pendientes_revision || 0);
+        $('#resErrores').text(resultado.errores || 0);
 
         // Llenar tabla
         let html = '';
-        resultado.detalles.forEach(function(d) {
-            const badgeClass = d.estado || 'SALTEADO';
-            html += '<tr>';
-            html += '<td><strong>' + d.suscriptor + '</strong></td>';
-            html += '<td><span class="badge-estado ' + badgeClass + '">' + d.estado + '</span></td>';
-            html += '<td>' + (d.consumo !== undefined ? d.consumo + ' m³' : '—') + '</td>';
-            html += '<td>' + (d.critica || '—') + '</td>';
-            html += '<td>' + (d.mensaje || '') + '</td>';
-            html += '</tr>';
-        });
+        if (resultado.detalles && resultado.detalles.length > 0) {
+            resultado.detalles.forEach(function(d) {
+                const badgeClass = d.estado || 'SALTEADO';
+                html += '<tr>';
+                html += '<td><strong>' + d.suscriptor + '</strong></td>';
+                html += '<td><span class="badge-estado ' + badgeClass + '">' + d.estado + '</span></td>';
+                html += '<td>' + (d.consumo !== undefined ? d.consumo + ' m³' : '—') + '</td>';
+                html += '<td>' + (d.critica || '—') + '</td>';
+                html += '<td>' + (d.mensaje || '') + '</td>';
+                html += '</tr>';
+            });
+        } else {
+            html = '<tr><td colspan="5" style="text-align:center;">No hay detalles</td></tr>';
+        }
         $('#tablaDetallesBody').html(html);
 
         $('#panelResultados').slideDown();
-        $('#btnCargarResumen').prop('disabled', false);
     }
 });
 </script>

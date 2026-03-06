@@ -145,13 +145,10 @@ label.lbl { font-weight:600; color:#4a5568; font-size:.8rem; text-transform:uppe
     <div id="panelLecturas" style="display:none;">
         <div class="datatable-container">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-                <h5 style="font-weight:700;color:#2d3748;margin:0;"><i class="fa fa-list"></i> Lecturas del Período - Selección Manual</h5>
+                <h5 style="font-weight:700;color:#2d3748;margin:0;"><i class="fa fa-list"></i> Lecturas del Período - Selección Manual para Facturar</h5>
                 <div>
                     <button class="btn btn-success btn-sm" id="btnFacturarSeleccionadas" disabled style="border-radius:10px;font-weight:700;">
                         <i class="fa fa-file-invoice-dollar"></i> Facturar Seleccionadas
-                    </button>
-                    <button class="btn btn-warning btn-sm" id="btnGenerarRevisiones" disabled style="border-radius:10px;font-weight:700;color:white;">
-                        <i class="fa fa-clipboard-check"></i> Enviar a Revisión
                     </button>
                     <button class="btn btn-info btn-sm" id="btnSeleccionarTodos" style="border-radius:10px;font-weight:700;">
                         <i class="fa fa-check-square"></i> Seleccionar Todos
@@ -200,7 +197,8 @@ label.lbl { font-weight:600; color:#4a5568; font-size:.8rem; text-transform:uppe
                     <i class="fa fa-info-circle" style="color:#3182ce;"></i>
                     <strong>Información:</strong>
                     <ul style="margin:8px 0 0 20px;padding:0;">
-                        <li><strong>Selección Manual:</strong> Marque las lecturas que desea facturar o enviar a revisión y use los botones superiores</li>
+                        <li><strong>Selección Manual:</strong> Marque las lecturas que desea facturar y use el botón "Facturar Seleccionadas"</li>
+                        <li><strong>Enviar a Revisión:</strong> Para enviar lecturas a revisión, use el módulo de Revisiones desde el menú principal</li>
                         <li><strong>Facturar Normales (54):</strong> Genera facturas automáticamente para TODAS las lecturas con crítica NORMAL-54</li>
                         <li><strong>Facturar Críticas Confirmadas:</strong> Genera facturas para lecturas que fueron revisadas y confirmadas con nueva lectura</li>
                     </ul>

@@ -36,6 +36,289 @@ class FacturacionMasivaController extends Controller
     }
 
     /**
+     * Obtener lecturas de un período para selección manual
+     */
+    public function obtenerLecturas(Request $request)
+    {
+        $request->validate([
+            'periodo_lectura_id' => 'required|exists:periodos_lectura,id',
+        ]);
+
+        $periodo = PeriodoLectura::findOrFail($request->periodo_lectura_id);
+
+        // Obtener todas las lecturas del período
+        $lecturas = Ordenesmtl::where('periodo_lectura_id', $request->periodo_lectura_id)
+            ->whereNotNull('Lect_Actual')
+            ->whereNotNull('LA')
+            ->with(['cliente' => function($q) {
+                $q->select('id', 'suscriptor', 'nombre', 'apellido');
+            }])
+            ->get()
+            ->map(function($lectura) {
+                $consumo = intval($lectura->Lect_Actual ?? 0) - intval($lectura->LA ?? 0);
+                $tieneFactura = Factura::where('suscriptor', $lectura->Suscriptor)
+                    ->where('periodo_lectura_id', $lectura->periodo_lectura_id)
+                    ->exists();
+                
+                $tieneRevision = OrdenRevision::where('lectura_id', $lectura->id)
+                    ->whereIn('estado_orden', ['PENDIENTE', 'EN_PROGRESO'])
+                    ->exists();
+
+                return [
+                    'id' => $lectura->id,
+                    'suscriptor' => $lectura->Suscriptor,
+                    'cliente' => $lectura->cliente ? trim($lectura->cliente->nombre . ' ' . $lectura->cliente->apellido) : 'N/A',
+                    'lectura_anterior' => intval($lectura->LA ?? 0),
+                    'lectura_actual' => intval($lectura->Lect_Actual ?? 0),
+                    'consumo' => $consumo,
+                    'critica' => trim($lectura->Critica ?? ''),
+                    'tiene_factura' => $tieneFactura,
+                    'tiene_revision' => $tieneRevision,
+                    'es_normal' => in_array(strtoupper(trim($lectura->Critica ?? '')), ['NORMAL-54', '54-NORMAL']),
+                ];
+            });
+
+        return response()->json([
+            'ok' => true,
+            'lecturas' => $lecturas,
+        ]);
+    }
+
+    /**
+     * Generar facturas para lecturas seleccionadas manualmente
+     */
+    public function procesarSeleccionadas(Request $request)
+    {
+        $request->validate([
+            'periodo_lectura_id' => 'required|exists:periodos_lectura,id',
+            'lecturas_ids' => 'required|array|min:1',
+            'lecturas_ids.*' => 'required|exists:ordenesmtl,id',
+        ]);
+
+        $periodo = PeriodoLectura::findOrFail($request->periodo_lectura_id);
+        
+        if (!in_array($periodo->estado, ['LECTURA_CERRADA', 'FACTURADO'])) {
+            return response()->json([
+                'ok' => false,
+                'mensaje' => 'El período debe estar en estado LECTURA_CERRADA o FACTURADO.'
+            ], 422);
+        }
+
+        $resultado = [
+            'procesadas' => 0,
+            'facturadas' => 0,
+            'errores' => 0,
+            'detalles' => [],
+        ];
+
+        DB::beginTransaction();
+        try {
+            foreach ($request->lecturas_ids as $lecturaId) {
+                $resultado['procesadas']++;
+
+                try {
+                    $lectura = Ordenesmtl::findOrFail($lecturaId);
+
+                    // Verificar si ya existe factura
+                    $existeFactura = Factura::where('suscriptor', $lectura->Suscriptor)
+                        ->where('periodo_lectura_id', $request->periodo_lectura_id)
+                        ->exists();
+
+                    if ($existeFactura) {
+                        $resultado['detalles'][] = [
+                            'suscriptor' => $lectura->Suscriptor,
+                            'estado' => 'SALTEADO',
+                            'mensaje' => 'Ya tiene factura',
+                        ];
+                        continue;
+                    }
+
+                    // Buscar cliente
+                    $cliente = Cliente::where('suscriptor', $lectura->Suscriptor)->first();
+                    if (!$cliente) {
+                        $resultado['errores']++;
+                        $resultado['detalles'][] = [
+                            'suscriptor' => $lectura->Suscriptor,
+                            'estado' => 'ERROR',
+                            'mensaje' => 'Cliente no encontrado',
+                        ];
+                        continue;
+                    }
+
+                    // Calcular consumo
+                    $lecturaAnterior = intval($lectura->LA ?? 0);
+                    $lecturaActual = intval($lectura->Lect_Actual ?? 0);
+                    $consumo = $lecturaActual - $lecturaAnterior;
+
+                    if ($consumo < 0) {
+                        $resultado['errores']++;
+                        $resultado['detalles'][] = [
+                            'suscriptor' => $lectura->Suscriptor,
+                            'estado' => 'ERROR',
+                            'mensaje' => 'Consumo negativo (' . $consumo . ')',
+                        ];
+                        continue;
+                    }
+
+                    // Facturar
+                    $calculo = $this->svc->calcular(
+                        $cliente,
+                        $consumo,
+                        $periodo,
+                        $lecturaAnterior,
+                        $lecturaActual
+                    );
+
+                    $calculo['observaciones'] = 'Facturación manual selectiva';
+                    $calculo['usuario_id'] = auth()->id();
+                    $calculo['es_automatica'] = false;
+                    $calculo['suscriptor'] = $lectura->Suscriptor;
+                    $calculo['periodo_lectura_id'] = $periodo->id;
+
+                    $factura = Factura::create($calculo);
+
+                    // Registrar en historial
+                    ClienteHistoricoConsumo::registrarYActualizarPromedio(
+                        $cliente->id,
+                        $cliente->suscriptor,
+                        $periodo->codigo,
+                        $calculo['consumo_m3'],
+                        $lecturaAnterior,
+                        $lecturaActual
+                    );
+
+                    // Descontar cuotas de otros cobros
+                    $otrosCobros = ClienteOtrosCobro::where('cliente_id', $cliente->id)->activo()->get();
+                    foreach ($otrosCobros as $cobro) {
+                        $cobro->pagarCuota();
+                    }
+
+                    $resultado['facturadas']++;
+                    $resultado['detalles'][] = [
+                        'suscriptor' => $lectura->Suscriptor,
+                        'estado' => 'FACTURADO',
+                        'mensaje' => 'Factura #' . $factura->numero_factura,
+                        'consumo' => $consumo,
+                    ];
+
+                } catch (\Exception $e) {
+                    $resultado['errores']++;
+                    $resultado['detalles'][] = [
+                        'suscriptor' => $lectura->Suscriptor ?? 'N/A',
+                        'estado' => 'ERROR',
+                        'mensaje' => $e->getMessage(),
+                    ];
+                    Log::error('Error en facturación selectiva: ' . $e->getMessage(), [
+                        'lectura_id' => $lecturaId,
+                    ]);
+                }
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'ok' => true,
+                'resultado' => $resultado,
+                'mensaje' => 'Proceso completado. ' . $resultado['facturadas'] . ' facturas generadas.',
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error grave en facturación selectiva: ' . $e->getMessage());
+            
+            return response()->json([
+                'ok' => false,
+                'mensaje' => 'Error durante el proceso: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Generar órdenes de revisión para lecturas seleccionadas
+     */
+    public function generarRevisiones(Request $request)
+    {
+        $request->validate([
+            'periodo_lectura_id' => 'required|exists:periodos_lectura,id',
+            'lecturas_ids' => 'required|array|min:1',
+            'lecturas_ids.*' => 'required|exists:ordenesmtl,id',
+        ]);
+
+        $resultado = [
+            'procesadas' => 0,
+            'revisiones_creadas' => 0,
+            'omitidas' => 0,
+            'errores' => 0,
+            'detalles' => [],
+        ];
+
+        DB::beginTransaction();
+        try {
+            foreach ($request->lecturas_ids as $lecturaId) {
+                $resultado['procesadas']++;
+
+                try {
+                    $lectura = Ordenesmtl::findOrFail($lecturaId);
+
+                    // Verificar si ya tiene revisión pendiente
+                    $revisionExistente = OrdenRevision::where('lectura_id', $lectura->id)
+                        ->whereIn('estado_orden', ['PENDIENTE', 'EN_PROGRESO'])
+                        ->exists();
+
+                    if ($revisionExistente) {
+                        $resultado['omitidas']++;
+                        $resultado['detalles'][] = [
+                            'suscriptor' => $lectura->Suscriptor,
+                            'estado' => 'OMITIDA',
+                            'mensaje' => 'Ya tiene revisión pendiente',
+                        ];
+                        continue;
+                    }
+
+                    // Crear orden de revisión
+                    $revision = OrdenRevision::crearDesdeLectura($lectura, auth()->id(), 'REVISION_MANUAL');
+
+                    $resultado['revisiones_creadas']++;
+                    $resultado['detalles'][] = [
+                        'suscriptor' => $lectura->Suscriptor,
+                        'estado' => 'REVISION_CREADA',
+                        'mensaje' => 'Revisión #' . $revision->id,
+                        'critica' => trim($lectura->Critica ?? ''),
+                    ];
+
+                } catch (\Exception $e) {
+                    $resultado['errores']++;
+                    $resultado['detalles'][] = [
+                        'suscriptor' => $lectura->Suscriptor ?? 'N/A',
+                        'estado' => 'ERROR',
+                        'mensaje' => $e->getMessage(),
+                    ];
+                    Log::error('Error al crear revisión: ' . $e->getMessage(), [
+                        'lectura_id' => $lecturaId,
+                    ]);
+                }
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'ok' => true,
+                'resultado' => $resultado,
+                'mensaje' => 'Proceso completado. ' . $resultado['revisiones_creadas'] . ' revisiones creadas.',
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error grave al generar revisiones: ' . $e->getMessage());
+            
+            return response()->json([
+                'ok' => false,
+                'mensaje' => 'Error durante el proceso: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
      * Ejecutar facturación masiva para un período
      * Solo factura automáticamente las lecturas con crítica NORMAL-54
      * Las demás críticas se marcan para revisión

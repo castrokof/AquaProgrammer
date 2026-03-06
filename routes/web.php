@@ -261,6 +261,8 @@ Route::group(['middleware' => 'auth', 'prefix' => 'facturacion'], function () {
     Route::post('facturas/descargar-masivo', 'FacturacionMasivaController@descargarMasivo')->name('facturas.descargar_masivo');
      // Nueva ruta para exportar ZIP
     Route::post('facturas/exportar-masivo', 'FacturaController@exportarMasivo')->name('facturas.exportar-masivo');
+    Route::post('facturas/exportar-seleccionadas', 'FacturaController@exportarSeleccionadas')
+    ->name('facturas.exportar_seleccionadas');
 
    
 

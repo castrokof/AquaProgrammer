@@ -44,69 +44,86 @@ class FacturaController extends Controller
     // }
 
     public function index(Request $request)
-    {
-        $periodos = PeriodoLectura::orderBy('codigo', 'desc')->get(['id', 'codigo', 'nombre']);
+{
+    $periodos = PeriodoLectura::orderBy('codigo', 'desc')->get(['codigo', 'nombre']);
+    
+    // Iniciamos la consulta
+    $query = Factura::with(['cliente', 'periodoLectura'])
+        ->select('facturas.*'); // Seleccionar explícitamente columnas de facturas
 
-        // Construir consulta base
-        $query = Factura::with(['cliente', 'periodoLectura']);
-
-        // Filtros
-        if ($request->filled('periodo')) {
-            $query->where('periodo', $request->periodo);
-        }
-
-        if ($request->filled('suscriptor')) {
-            $query->where('suscriptor', 'LIKE', "%{$request->suscriptor}%");
-        }
-
-        if ($request->filled('estado')) {
-            $query->where('estado', $request->estado);
-        }
-
-        // Filtro por ID Ruta (Viene de la tabla ordenescu relacionada al cliente o factura)
-        // Asumiendo que guardaste id_ruta en clientes o puedes cruzar con ordenes
-        if ($request->filled('id_ruta')) {
-            $query->whereHas('cliente', function($q) use ($request) {
-                $q->where('id_ruta', $request->id_ruta);
-            });
-        }
-
-        // Filtro por Crítica (Requiere unir con la lectura original del período)
-        // La crítica está en ordenescu, vinculamos vía suscriptor y período
-        if ($request->filled('critica')) {
-            $query->whereHas('cliente', function($q) use ($request) {
-                $q->whereHas('ordenes', function($sq) use ($request) {
-                    $sq->where('Critica', 'LIKE', "%{$request->critica}%")
-                       // Opcional: filtrar también por el período seleccionado para mayor precisión
-                       ->when($request->filled('periodo'), function($sub) use ($request) {
-                           return $sub->where('Periodo', $request->periodo);
-                       });
-                });
-            });
-        }
-
-        // Ordenamiento por defecto
-        $query->orderBy('created_at', 'desc');
-
-        $facturas = $query->paginate(50);
-
-        // Cálculo de KPIs basados en los filtros actuales
-        $kpiTotal = $facturas->total(); 
-        // Nota: Para KPIs exactos de toda la BD filtrada sin paginación, clonar query:
-        $baseQuery = clone $query;
-        $stats = [
-            'total' => $baseQuery->count(),
-            'pendiente' => (clone $baseQuery)->where('estado', 'PENDIENTE')->sum('total_a_pagar'),
-            'pagada' => (clone $baseQuery)->where('estado', 'PAGADA')->sum('total_a_pagar'),
-            'anulada' => (clone $baseQuery)->where('estado', 'ANULADA')->count(),
-        ];
-
-        // Obtener lista única de críticas para el select (opcional, mejora UX)
-        // Esto puede ser costoso, se deja comentado o se limita si hay muchos datos
-        // $criticas = ... 
-
-        return view('facturacion.facturas.index', compact('facturas', 'periodos', 'stats'));
+    // Aplicar Filtros
+    if ($request->filled('periodo')) {
+        $query->where('periodo', $request->periodo);
     }
+    if ($request->filled('suscriptor')) {
+        $query->where('suscriptor', 'like', '%' . $request->suscriptor . '%');
+    }
+    if ($request->filled('estado')) {
+        $query->where('estado', $request->estado);
+    }
+    // NUEVOS FILTROS
+    if ($request->filled('id_ruta')) {
+        // Unimos con la tabla ordenescu para filtrar por ruta histórica o usamos el snapshot si lo guardaste
+        // Opción A: Si guardaste id_ruta en facturas (recomendado verificar si existe en tu BD)
+        if (\Schema::hasColumn('facturas', 'id_ruta')) {
+            $query->where('id_ruta', $request->id_ruta);
+        } else {
+            // Opción B: Filtrar por suscriptores que pertenezcan a esa ruta en la última lectura
+            $suscriptoresRuta = \App\Models\Admin\Ordenesmtl::where('id_Ruta', $request->id_ruta)
+                ->pluck('Suscriptor');
+            $query->whereIn('suscriptor', $suscriptoresRuta);
+        }
+    }
+    
+    if ($request->filled('critica')) {
+        // Similar a ruta, la crítica viene de la orden de lectura
+        $suscriptoresCritica = \App\Models\Admin\Ordenesmtl::where('Critica', $request->critica)
+            ->pluck('Suscriptor');
+        $query->whereIn('suscriptor', $suscriptoresCritica);
+    }
+
+    // Ordenamiento por defecto
+    $query->orderBy('fecha_expedicion', 'desc');
+
+    // Obtenemos TODOS los resultados para que DataTables funcione bien con filtros y exportación
+    // Si son demasiados miles, considera implementar Server-side processing, pero para < 5000 esto es ideal.
+    $facturas = $query->get();
+
+    // KPIs Dinámicos basados en los filtros aplicados
+    $kpiTotal = $facturas->count();
+    $kpiPendiente = $facturas->where('estado', 'PENDIENTE')->sum('total_a_pagar');
+    $kpiPagada = $facturas->where('estado', 'PAGADA')->sum('total_a_pagar');
+    
+    // Agrupación por Crítica (para las tarjetas extra)
+    // Nota: Esto requiere unir con ordenes nuevamente para obtener la crítica actual de cada factura
+    $facturasConCritica = $facturas->map(function($f) {
+        $orden = \App\Models\Admin\Ordenesmtl::where('Suscriptor', $f->suscriptor)
+            ->where('periodo_lectura_id', $f->periodo_lectura_id)
+            ->first();
+        return [
+            'factura' => $f,
+            'critica' => $orden ? $orden->Critica : 'N/A',
+            'id_ruta' => $orden ? $orden->id_Ruta : 'N/A'
+        ];
+    });
+
+    $agrupadoPorCritica = collect($facturasConCritica)->groupBy('critica')->map(function($items, $key) {
+        return [
+            'cantidad' => $items->count(),
+            'total_valor' => $items->sum(fn($i) => $i['factura']->total_a_pagar)
+        ];
+    });
+
+    return view('facturacion.facturas.index', compact(
+        'facturas', 
+        'facturasConCritica', // Pasamos la colección enriquecida para la vista
+        'periodos', 
+        'kpiTotal', 
+        'kpiPendiente', 
+        'kpiPagada',
+        'agrupadoPorCritica'
+    ));
+}
 
     /**
      * Exportar masivamente las facturas del resultado actual en un ZIP
@@ -159,6 +176,42 @@ class FacturaController extends Controller
 
         return redirect()->back()->with('error', 'Error creando el archivo ZIP.');
     }
+
+    // Nuevo método para exportar seleccionadas
+public function exportarSeleccionadas(Request $request)
+{
+    $request->validate(['ids' => 'required|array']);
+    
+    $facturas = Factura::with(['cliente', 'periodoLectura'])
+        ->whereIn('id', $request->ids)
+        ->get();
+
+    if ($facturas->isEmpty()) {
+        return back()->with('error', 'No se seleccionaron facturas válidas.');
+    }
+
+    // Lógica para generar ZIP con PDFs
+    // Usamos la misma lógica del servicio o controlador masivo
+    $zip = new \ZipArchive();
+    $nombreArchivo = 'facturas_' . date('Y-m-d_H-i-s') . '.zip';
+    $rutaTemporal = storage_path('app/public/' . $nombreArchivo);
+
+    if ($zip->open($rutaTemporal, \ZipArchive::CREATE) !== TRUE) {
+        return back()->with('error', 'No se pudo crear el archivo ZIP.');
+    }
+
+    foreach ($facturas as $f) {
+        // Generar PDF individual (usando tu servicio existente)
+        $pdf = \PDF::loadView('facturacion.facturas.pdf', compact('f')); // Ajusta la vista según tu proyecto
+        $nombrePdf = "Factura_{$f->numero_factura}_{$f->suscriptor}.pdf";
+        
+        $zip->addFromString($nombrePdf, $pdf->output());
+    }
+
+    $zip->close();
+
+    return response()->download($rutaTemporal)->deleteFileAfterSend(true);
+}
 
     // ── Generar (formulario + preview Ajax) ──────────────────────────────────
 

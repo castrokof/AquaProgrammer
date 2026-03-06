@@ -176,12 +176,13 @@
                     <textarea class="form-control" id="anularMotivo" rows="3" placeholder="Describa el motivo..."
                               style="border-radius:10px;border:2px solid #e2e8f0;"></textarea>
                 </div>
-            </div>
-            <div class="modal-footer" style="border-top:2px solid #e2e8f0;">
                 <button class="btn btn-secondary" data-dismiss="modal" style="border-radius:12px;">Cancelar</button>
                 <button class="btn btn-danger" id="btnConfirmarAnular" style="border-radius:12px;font-weight:700;">
                     <i class="fa fa-ban"></i> Anular
                 </button>
+            </div>
+            <div class="modal-footer" style="border-top:2px solid #e2e8f0;">
+                
             </div>
         </div>
     </div>

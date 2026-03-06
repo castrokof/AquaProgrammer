@@ -95,7 +95,7 @@ body { background:#f0f4f8; }
     {{-- FACTURA --}}
     <div class="fact-header">
         <div>
-            <div class="empresa">EMPRESA DE AGUA Y ALCANTARILLADO</div>
+            <div class="empresa">ACUEDUCTO ALTO LOS MANGOS</div>
             <div class="subempresa">Servicio Público Domiciliario</div>
             <div style="margin-top:12px;font-size:.78rem;opacity:.8;">
                 {{ $factura->mes_cuenta }}<br>
@@ -404,12 +404,13 @@ body { background:#f0f4f8; }
                     <label>Observaciones</label>
                     <textarea class="form-control" id="pObs" rows="2" style="border-radius:10px;border:2px solid #e2e8f0;"></textarea>
                 </div>
-            </div>
-            <div class="modal-footer" style="border-top:2px solid #e2e8f0;">
-                <button class="btn btn-secondary" data-dismiss="modal" style="border-radius:12px;">Cancelar</button>
+                 <button class="btn btn-secondary" data-dismiss="modal" style="border-radius:12px;">Cancelar</button>
                 <button class="btn btn-pagar" id="btnConfirmarPago">
                     <i class="fa fa-dollar-sign"></i> Registrar Pago
                 </button>
+            </div>
+            <div class="modal-footer" style="border-top:2px solid #e2e8f0;">
+               
             </div>
         </div>
     </div>
@@ -418,6 +419,8 @@ body { background:#f0f4f8; }
 
 @section('scripts')
 <script>
+
+
 var CSRF         = $("meta[name='csrf-token']").attr("content");
 var totalFactura = {{ $factura->total_a_pagar }};
 var totalPagado  = {{ $factura->pagos->sum('total_pago_realizado') }};
@@ -441,10 +444,13 @@ recalcularPago();
 
 // ── Confirmar pago ─────────────────────────────────────────────────────────
 $('#btnConfirmarPago').on('click', function () {
+    
     var btn = $(this);
+    var facturaId = '{{ $factura->id }}';
+
     btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Guardando...');
     $.ajax({
-        url:    '/facturacion/facturas/{{ $factura->id }}/pago',
+        url:    "{{ route('facturas.pago', ':id') }}".replace(':id', facturaId),
         method: 'POST',
         data: {
             fecha_pago:                       $('#pFecha').val(),
@@ -466,9 +472,12 @@ $('#btnConfirmarPago').on('click', function () {
         },
         error: function (xhr) {
             btn.prop('disabled', false).html('<i class="fa fa-dollar-sign"></i> Registrar Pago');
-            Swal.fire('Error', xhr.responseJSON?.mensaje || 'No se pudo registrar el pago.', 'error');
+            var err = xhr.responseJSON;
+            var msg = (err && err.mensaje) ? err.mensaje : 'No se pudo registrar el pago.';
+            Swal.fire('Error', msg, 'error');
         }
     });
 });
 </script>
+
 @endsection

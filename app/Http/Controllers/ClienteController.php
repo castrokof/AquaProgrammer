@@ -33,7 +33,7 @@ class ClienteController extends Controller
             $query->buscar($request->buscar);
         }
 
-        $clientes = $query->orderBy('updated_at', 'desc')->paginate(25);
+        $clientes = $query->orderBy('updated_at', 'desc')->get();
         $estratos = Estrato::where('activo', true)->orderBy('numero')->get();
 
         return view('clientes.index', compact('clientes', 'estratos'));

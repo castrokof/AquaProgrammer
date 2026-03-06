@@ -756,13 +756,14 @@
                             </div>
                         </div>
                     </div>
-                </div>
-                <div class="modal-footer" style="border-top:2px solid #e2e8f0;padding:14px 26px;">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal"
                             style="border-radius:10px;">Cancelar</button>
                     <button type="submit" class="btn btn-guardar">
                         <i class="fa fa-save"></i> Guardar Cambios
                     </button>
+                </div>
+                <div class="modal-footer" style="border-top:2px solid #e2e8f0;padding:14px 26px;">
+                    
                 </div>
             </form>
         </div>
@@ -775,9 +776,14 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap4.min.css">
-<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap4.min.js"></script>
+<script src="{{asset("assets/js/Control.FullScreen.js")}}" type="text/javascript"></script>
+<link href="{{asset("assets/$theme/plugins/datatables-bs4/css/dataTables.bootstrap4.css")}}" rel="stylesheet" type="text/css"/>   
+<script src="{{asset("assets/$theme/plugins/datatables/jquery.dataTables.js")}}" type="text/javascript"></script>
+<script src="{{asset("assets/$theme/plugins/datatables-bs4/js/dataTables.bootstrap4.js")}}" type="text/javascript"></script>
+<script src="{{asset("assets/$theme/plugins/select2/js/select2.full.min.js")}}" type="text/javascript"></script>
+<!-- <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap4.min.css"> -->
+<!-- <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap4.min.js"></script> -->
 @endsection
 
 @section('scripts')
@@ -794,13 +800,12 @@ $(function() {
         $('#tblOrdenes').DataTable({
             order: [[0, 'desc']],   // columna 0 = Período (data-order con fecha real)
             pageLength: 10,
-            lengthMenu: [10, 25, 50],
-            language: {
-                url: 'https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json'
-            },
+             lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "Mostrar Todo"]],
+             language: idioma_espanol,
             columnDefs: [
                 { orderable: false, targets: [8, 9] }  // Geo y Fotos no ordenables
-            ]
+            ],
+             dom: '<"row"<"col-md-9 form-inline"l><"col-xs-3 form-inline"B>>rt<"row"<"col-md-8 form-inline"i><"col-md-4 form-inline"p>>',
         });
     }
 });
@@ -914,5 +919,34 @@ $('#modalMapa').on('hidden.bs.modal', function() {
     });
 })();
 @endif
+
+var idioma_espanol = {
+    "sProcessing": "Procesando...",
+    "sLengthMenu": "Mostrar _MENU_ registros",
+    "sZeroRecords": "No se encontraron resultados",
+    "sEmptyTable": "Ningún dato disponible en esta tabla =(",
+    "sInfo": "Mostrando registros del _START_ al _END_ de un total de _TOTAL_ registros",
+    "sInfoEmpty": "Mostrando registros del 0 al 0 de un total de 0 registros",
+    "sInfoFiltered": "(filtrado de un total de _MAX_ registros)",
+    "sInfoPostFix": "",
+    "sSearch": "Buscar:",
+    "sUrl": "",
+    "sInfoThousands": ",",
+    "sLoadingRecords": "Cargando...",
+    "oPaginate": {
+        "sFirst": "Primero",
+        "sLast": "Último",
+        "sNext": "Siguiente",
+        "sPrevious": "Anterior"
+    },
+    "oAria": {
+        "sSortAscending": ": Activar para ordenar la columna de manera ascendente",
+        "sSortDescending": ": Activar para ordenar la columna de manera descendente"
+    },
+    "buttons": {
+        "copy": "Copiar",
+        "colvis": "Visibilidad"
+    }
+};
 </script>
 @endsection

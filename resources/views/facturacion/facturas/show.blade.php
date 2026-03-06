@@ -85,6 +85,10 @@ body { background:#f0f4f8; }
                 <i class="fa fa-dollar-sign"></i> Registrar Pago
             </button>
             @endif
+            <a href="{{ route('facturas.pdf', $factura->id) }}" class="btn btn-primary"
+               style="border-radius:12px;font-weight:700;" target="_blank">
+                <i class="fa fa-file-pdf"></i> Descargar PDF
+            </a>
             <button onclick="window.print()" class="btn btn-outline-secondary"
                     style="border-radius:12px;font-weight:700;">
                 <i class="fa fa-print"></i> Imprimir

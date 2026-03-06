@@ -244,6 +244,8 @@ Route::group(['middleware' => 'auth', 'prefix' => 'facturacion'], function () {
         ->name('facturas.store');
     Route::get('facturas/{id}', 'FacturaController@show')
         ->name('facturas.show');
+    Route::get('facturas/{id}/pdf', 'FacturaController@descargarPdf')
+        ->name('facturas.pdf');
     Route::post('facturas/{id}/pago', 'FacturaController@registrarPago')
         ->name('facturas.pago');
     Route::post('facturas/{id}/anular', 'FacturaController@anular')

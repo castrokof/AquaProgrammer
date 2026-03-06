@@ -33,12 +33,9 @@ label.lbl { font-weight:600; color:#4a5568; font-size:.8rem; text-transform:uppe
 
 .badge-estado { padding:4px 10px; border-radius:12px; font-size:.7rem; font-weight:700; text-transform:uppercase; }
 .badge-estado.FACTURADO_AUTOMATICO { background:#c6f6d5; color:#22543d; }
-.badge-estado.FACTURADO { background:#c6f6d5; color:#22543d; }
 .badge-estado.PENDIENTE_REVISION { background:#fed7d7; color:#742a2a; }
 .badge-estado.ERROR { background:#fed7d7; color:#742a2a; }
 .badge-estado.SALTEADO { background:#e2e8f0; color:#4a5568; }
-.badge-estado.REVISION_CREADA { background:#bee3f8; color:#2c5282; }
-.badge-estado.OMITIDA { background:#e2e8f0; color:#4a5568; }
 
 .btn-grad { border-radius:12px; padding:11px 32px; font-weight:700; border:none; background:linear-gradient(135deg,#667eea,#764ba2); color:white; box-shadow:0 4px 15px rgba(102,126,234,.4); font-size:.92rem; }
 .btn-grad:disabled { opacity:.5; cursor:not-allowed; }
@@ -53,21 +50,6 @@ label.lbl { font-weight:600; color:#4a5568; font-size:.8rem; text-transform:uppe
 .resumen-box .rb-row:last-child { margin-bottom:0; }
 .resumen-box .rb-lbl { opacity:.8; }
 .resumen-box .rb-val { font-weight:700; }
-
-/* Botones de acción */
-.acciones-box { background:#f7fafc; border-radius:14px; padding:16px; margin-top:20px; }
-.acciones-box h6 { font-weight:700; color:#2d3748; margin-bottom:12px; }
-.btn-accion { border-radius:10px; padding:10px 20px; font-weight:600; font-size:.85rem; margin-right:8px; margin-bottom:8px; }
-
-/* Estilos para DataTable */
-.datatable-container { background:white; border-radius:16px; padding:20px; box-shadow:0 10px 40px rgba(0,0,0,.08); overflow-x:auto; margin-bottom:20px; }
-#tblLecturas thead th { background:linear-gradient(135deg,#3d57ce 0%,#776a84 100%); color:white; font-weight:600; font-size:.73rem; text-transform:uppercase; padding:12px 8px; border:none; white-space:nowrap; text-align:center; }
-#tblLecturas tbody td { padding:10px 8px; vertical-align:middle; border-bottom:1px solid #f0f0f0; text-align:center; font-size:.82rem; }
-#tblLecturas tbody tr:hover { background:#f8f9ff; }
-.checkbox-modern { width:18px; height:18px; cursor:pointer; }
-.badge-critica { padding:3px 8px; border-radius:8px; font-size:.7rem; font-weight:700; }
-.badge-critica.NORMAL { background:#c6f6d5; color:#22543d; }
-.badge-critica.OTRA { background:#fed7d7; color:#742a2a; }
 </style>
 @endsection
 
@@ -84,32 +66,23 @@ label.lbl { font-weight:600; color:#4a5568; font-size:.8rem; text-transform:uppe
     </div>
 
     <div class="row">
-        <div class="col-md-12">
+        <div class="col-md-4">
             <div class="form-box">
                 <h5><i class="fa fa-cog"></i> Configuración del Proceso</h5>
                 
-                <div class="row align-items-end">
-                    <div class="col-md-4">
-                        <div class="form-group">
-                            <label class="lbl">Período de Lectura <span style="color:red">*</span></label>
-                            <select class="form-control form-control-gen" id="selPeriodo">
-                                <option value="">— Seleccione período —</option>
-                                @foreach($periodos as $p)
-                                <option value="{{ $p->id }}" data-nombre="{{ $p->nombre }}">
-                                    {{ $p->nombre }} — {{ $p->estado }}
-                                </option>
-                                @endforeach
-                            </select>
-                        </div>
-                    </div>
-                    <div class="col-md-8" style="margin-top:10px;">
-                        <button class="btn btn-grad" id="btnCargarResumen" disabled>
-                            <i class="fa fa-chart-bar"></i> Cargar Resumen y Lecturas
-                        </button>
-                    </div>
+                <div class="form-group">
+                    <label class="lbl">Período de Lectura <span style="color:red">*</span></label>
+                    <select class="form-control form-control-gen" id="selPeriodo">
+                        <option value="">— Seleccione período —</option>
+                        @foreach($periodos as $p)
+                        <option value="{{ $p->id }}" data-nombre="{{ $p->nombre }}">
+                            {{ $p->nombre }} — {{ $p->estado }}
+                        </option>
+                        @endforeach
+                    </select>
                 </div>
 
-                <div id="resumenPeriodo" style="display:none; margin-top:20px;">
+                <div id="resumenPeriodo" style="display:none;">
                     <div class="resumen-box">
                         <div class="rb-row">
                             <span class="rb-lbl">Total lecturas:</span>
@@ -131,81 +104,27 @@ label.lbl { font-weight:600; color:#4a5568; font-size:.8rem; text-transform:uppe
                             <span class="rb-lbl">Pendientes:</span>
                             <span class="rb-val" id="rPendientes">—</span>
                         </div>
-                        <div class="rb-row" style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,.3);">
-                            <span class="rb-lbl">Revisiones ejecutadas:</span>
-                            <span class="rb-val" id="rRevisiones">—</span>
-                        </div>
                     </div>
                 </div>
-            </div>
-        </div>
-    </div>
 
-    {{-- Tabla de lecturas con DataTable --}}
-    <div id="panelLecturas" style="display:none;">
-        <div class="datatable-container">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-                <h5 style="font-weight:700;color:#2d3748;margin:0;"><i class="fa fa-list"></i> Lecturas del Período - Selección Manual para Facturar</h5>
-                <div>
-                    <button class="btn btn-success btn-sm" id="btnFacturarSeleccionadas" disabled style="border-radius:10px;font-weight:700;">
-                        <i class="fa fa-file-invoice-dollar"></i> Facturar Seleccionadas
-                    </button>
-                    <button class="btn btn-info btn-sm" id="btnSeleccionarTodos" style="border-radius:10px;font-weight:700;">
-                        <i class="fa fa-check-square"></i> Seleccionar Todos
-                    </button>
-                    <button class="btn btn-secondary btn-sm" id="btnDeseleccionarTodos" style="border-radius:10px;font-weight:700;">
-                        <i class="fa fa-times-circle"></i> Deseleccionar Todos
-                    </button>
-                </div>
-            </div>
-            
-            <table id="tblLecturas" class="table table-hover" style="width:100%;">
-                <thead>
-                    <tr>
-                        <th style="width:40px;"><input type="checkbox" id="chkTodos" class="checkbox-modern"></th>
-                        <th>ID</th>
-                        <th>Suscriptor</th>
-                        <th>Cliente</th>
-                        <th>Lec. Ant.</th>
-                        <th>Lec. Act.</th>
-                        <th>Consumo</th>
-                        <th>Crítica</th>
-                        <th>Estado</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody id="tblLecturasBody">
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-    <div class="row" id="rowAccionesMasivas" style="display:none;">
-        <div class="col-md-12">
-            <div class="acciones-box">
-                <h6><i class="fa fa-bolt"></i> Acciones Masivas Automáticas</h6>
-                
-                <button class="btn btn-accion btn-success" id="btnProcesarNormales" style="background:#48bb78;border:none;">
-                    <i class="fa fa-bolt"></i> Facturar Normales (54) Automáticamente
-                </button>
-                
-                <button class="btn btn-accion btn-warning" id="btnProcesarCriticas" style="background:#ed8936;border:none;color:white;">
-                    <i class="fa fa-check-double"></i> Facturar Críticas Confirmadas
-                </button>
-
-                <div style="background:#ebf8ff;border-radius:10px;padding:14px;margin-top:16px;font-size:.82rem;color:#2c5282;">
+                <div style="background:#ebf8ff;border-radius:10px;padding:14px;margin-bottom:16px;font-size:.82rem;color:#2c5282;">
                     <i class="fa fa-info-circle" style="color:#3182ce;"></i>
                     <strong>Información:</strong>
                     <ul style="margin:8px 0 0 20px;padding:0;">
-                        <li><strong>Selección Manual:</strong> Marque las lecturas que desea facturar y use el botón "Facturar Seleccionadas"</li>
-                        <li><strong>Enviar a Revisión:</strong> Para enviar lecturas a revisión, use el módulo de Revisiones desde el menú principal</li>
-                        <li><strong>Facturar Normales (54):</strong> Genera facturas automáticamente para TODAS las lecturas con crítica NORMAL-54</li>
-                        <li><strong>Facturar Críticas Confirmadas:</strong> Genera facturas para lecturas que fueron revisadas y confirmadas con nueva lectura</li>
+                        <li>Solo se facturan automáticamente las lecturas con crítica <strong>NORMAL-54</strong></li>
+                        <li>Las demás críticas quedan pendientes para revisión manual</li>
+                        <li>Se crea una orden de revisión para cada lectura no normal</li>
                     </ul>
                 </div>
+
+                <button class="btn btn-grad w-100" id="btnCargarResumen" disabled>
+                    <i class="fa fa-chart-bar"></i> Cargar Resumen
+                </button>
+                <button class="btn btn-grad w-100 mt-2" id="btnProcesar" disabled style="display:none;">
+                    <i class="fa fa-play"></i> Ejecutar Facturación Masiva
+                </button>
             </div>
         </div>
-    </div>
 
         <div class="col-md-8">
             {{-- Spinner de proceso --}}
@@ -278,12 +197,15 @@ label.lbl { font-weight:600; color:#4a5568; font-size:.8rem; text-transform:uppe
             </div>
         </div>
     </div>
+</div>
+@endsection
+
 @section('scripts')
 <script>
+
 $(document).ready(function() {
+
     let periodoSeleccionado = null;
-    let lecturasData = [];
-    let dataTable = null;
 
     // Habilitar botón cargar resumen cuando seleccione período
     $('#selPeriodo').on('change', function() {
@@ -292,8 +214,7 @@ $(document).ready(function() {
             periodoSeleccionado = id;
             $('#btnCargarResumen').prop('disabled', false);
             $('#resumenPeriodo').hide();
-            $('#panelLecturas').hide();
-            $('#rowAccionesMasivas').hide();
+            $('#btnProcesar').hide();
             $('#panelResultados').hide();
             $('#mensajeInicial').show();
         } else {
@@ -302,281 +223,97 @@ $(document).ready(function() {
         }
     });
 
-    // Cargar resumen y lecturas
+    // Cargar resumen
     $('#btnCargarResumen').on('click', function() {
         if (!periodoSeleccionado) return;
 
         $.ajax({
-            url: '{{ route("facturas.masiva.obtenerLecturas") }}',
+            url: '{{ route("facturas.masiva.resumen") }}',
             method: 'GET',
             data: { periodo_lectura_id: periodoSeleccionado },
             success: function(res) {
                 if (res.ok) {
-                    lecturasData = res.lecturas;
+                    const r = res.resumen;
+                    $('#rTotal').text(r.total_lecturas);
+                    $('#rNormales').text(r.normales_54);
+                    $('#rOtras').text(r.otras_criticas);
+                    $('#rFacturadas').text(r.ya_facturadas);
+                    $('#rPendientes').text(r.pendientes_facturar);
                     
-                    // Calcular resumen
-                    const total = lecturasData.length;
-                    const normales = lecturasData.filter(l => l.es_normal).length;
-                    const otras = total - normales;
-                    const facturadas = lecturasData.filter(l => l.tiene_factura).length;
-                    const pendientes = lecturasData.filter(l => !l.tiene_factura && !l.tiene_revision).length;
-                    const conRevision = lecturasData.filter(l => l.tiene_revision).length;
-
-                    $('#rTotal').text(total);
-                    $('#rNormales').text(normales);
-                    $('#rOtras').text(otras);
-                    $('#rFacturadas').text(facturadas);
-                    $('#rPendientes').text(pendientes);
-                    $('#rRevisiones').text(conRevision);
-
                     $('#resumenPeriodo').slideDown();
-                    
-                    // Cargar DataTable
-                    cargarDataTable(lecturasData);
-                    $('#panelLecturas').slideDown();
-                    $('#rowAccionesMasivas').slideDown();
-                    $('#mensajeInicial').hide();
+                    $('#btnProcesar').show();
+                    $('#btnProcesar').prop('disabled', false);
                 } else {
-                    alert('Error al cargar lecturas: ' + res.mensaje);
+                    alert('Error al cargar resumen: ' + res.mensaje);
                 }
             },
             error: function(xhr) {
-                alert('Error en la solicitud: ' + xhr.responseText);
+                alert('Error en la solicitud');
             }
         });
     });
 
-    // Inicializar DataTable
-    function cargarDataTable(lecturas) {
-        if (dataTable) {
-            dataTable.destroy();
-        }
+    // Ejecutar facturación masiva
+    $('#btnProcesar').on('click', function() {
+        if (!periodoSeleccionado) return;
 
-        const tbody = $('#tblLecturasBody');
-        tbody.empty();
-
-        lecturas.forEach(function(lectura, index) {
-            let badgeClass = lectura.es_normal ? 'badge-critica NORMAL' : 'badge-critica OTRA';
-            let estadoText = '';
-            let estadoClass = '';
-            
-            if (lectura.tiene_factura) {
-                estadoText = 'FACTURADO';
-                estadoClass = 'badge-estado FACTURADO';
-            } else if (lectura.tiene_revision) {
-                estadoText = 'EN REVISIÓN';
-                estadoClass = 'badge-estado REVISION_CREADA';
-            } else {
-                estadoText = 'PENDIENTE';
-                estadoClass = 'badge-estado OMITIDA';
-            }
-
-            const row = `
-                <tr>
-                    <td>
-                        <input type="checkbox" class="chk-lectura checkbox-modern" 
-                               data-id="${lectura.id}" 
-                               data-suscriptor="${lectura.suscriptor}"
-                               ${lectura.tiene_factura || lectura.tiene_revision ? 'disabled' : ''}>
-                    </td>
-                    <td>${lectura.id}</td>
-                    <td><strong>${lectura.suscriptor}</strong></td>
-                    <td>${lectura.cliente}</td>
-                    <td>${lectura.lectura_anterior}</td>
-                    <td>${lectura.lectura_actual}</td>
-                    <td><strong>${lectura.consumo}</strong></td>
-                    <td><span class="${badgeClass}">${lectura.critica}</span></td>
-                    <td><span class="${estadoClass}">${estadoText}</span></td>
-                    <td>
-                        ${!lectura.tiene_factura && !lectura.tiene_revision ? 
-                            `<button class="btn btn-sm btn-success btn-facturar-individual" data-id="${lectura.id}" data-suscriptor="${lectura.suscriptor}">
-                                <i class="fa fa-file-invoice"></i> Facturar
-                            </button>` : 
-                            '<span style="color:#718096;font-size:.8rem;">—</span>'
-                        }
-                    </td>
-                </tr>
-            `;
-            tbody.append(row);
-        });
-
-        // Inicializar DataTable
-        dataTable = $('#tblLecturas').DataTable({
-            dom: 'Bfrtip',
-            buttons: [
-                { extend: 'copyHtml5', className: 'btn-sm' },
-                { extend: 'excelHtml5', className: 'btn-sm' },
-                { extend: 'pdfHtml5', className: 'btn-sm', orientation: 'landscape' },
-                { extend: 'print', className: 'btn-sm' }
-            ],
-            language: {
-                url: '//cdn.datatables.net/plug-ins/1.10.21/i18n/Spanish.json'
-            },
-            pageLength: 25,
-            order: [[1, 'asc']]
-        });
-
-        // Actualizar estado de botones
-        actualizarEstadoBotones();
-    }
-
-    // Checkbox "Seleccionar todos"
-    $('#chkTodos').on('change', function() {
-        const checked = $(this).prop('checked');
-        $('.chk-lectura:not(:disabled)').prop('checked', checked);
-        actualizarEstadoBotones();
-    });
-
-    // Checkboxes individuales
-    $(document).on('change', '.chk-lectura', function() {
-        actualizarEstadoBotones();
-        
-        // Actualizar checkbox "todos"
-        const total = $('.chk-lectura:not(:disabled)').length;
-        const checked = $('.chk-lectura:not(:disabled):checked').length;
-        $('#chkTodos').prop('checked', total === checked && total > 0);
-    });
-
-    // Botón seleccionar todos
-    $('#btnSeleccionarTodos').on('click', function() {
-        $('.chk-lectura:not(:disabled)').prop('checked', true);
-        $('#chkTodos').prop('checked', true);
-        actualizarEstadoBotones();
-    });
-
-    // Botón deseleccionar todos
-    $('#btnDeseleccionarTodos').on('click', function() {
-        $('.chk-lectura:not(:disabled)').prop('checked', false);
-        $('#chkTodos').prop('checked', false);
-        actualizarEstadoBotones();
-    });
-
-    // Actualizar estado de botones
-    function actualizarEstadoBotones() {
-        const seleccionados = $('.chk-lectura:checked').length;
-        $('#btnFacturarSeleccionadas').prop('disabled', seleccionados === 0);
-    }
-
-    // Facturar seleccionadas
-    $('#btnFacturarSeleccionadas').on('click', function() {
-        const seleccionados = [];
-        $('.chk-lectura:checked').each(function() {
-            seleccionados.push($(this).data('id'));
-        });
-
-        if (seleccionados.length === 0) {
-            alert('Seleccione al menos una lectura');
+        if (!confirm('¿Está seguro de ejecutar la facturación masiva?\n\nSolo las lecturas NORMAL-54 se facturarán automáticamente.\nLas demás quedarán pendientes de revisión.')) {
             return;
         }
 
-        if (!confirm(`¿Está seguro de facturar ${seleccionados.length} lecturas seleccionadas?`)) {
-            return;
-        }
-
-        procesarFacturacion(seleccionados, 'selectiva');
-    });
-
-    // Facturar individual
-    $(document).on('click', '.btn-facturar-individual', function() {
-        const id = $(this).data('id');
-        const suscriptor = $(this).data('suscriptor');
-
-        if (!confirm(`¿Está seguro de facturar al suscriptor ${suscriptor}?`)) {
-            return;
-        }
-
-        procesarFacturacion([id], 'selectiva');
-    });
-
-    // Facturar Normales (54) automáticamente
-    $('#btnProcesarNormales').on('click', function() {
-        if (!confirm('¿Está seguro de facturar AUTOMÁTICAMENTE todas las lecturas con crítica NORMAL-54?')) {
-            return;
-        }
-
-        procesarFacturacion([], 'automatica');
-    });
-
-    // Facturar Críticas Confirmadas
-    $('#btnProcesarCriticas').on('click', function() {
-        if (!confirm('¿Está seguro de facturar todas las lecturas críticas que han sido confirmadas en revisiones?')) {
-            return;
-        }
-
-        procesarFacturacion([], 'criticas_confirmadas');
-    });
-
-    // Procesar facturación
-    function procesarFacturacion(lecturasIds, tipo) {
+        $('#btnProcesar').prop('disabled', true);
+        $('#btnCargarResumen').prop('disabled', true);
         $('#spinnerProceso').show();
         $('#panelResultados').hide();
-
-        let url = '';
-        let data = {
-            periodo_lectura_id: periodoSeleccionado,
-            _token: '{{ csrf_token() }}'
-        };
-
-        if (tipo === 'selectiva') {
-            url = '{{ route("facturas.masiva.procesarSeleccionadas") }}';
-            data.lecturas_ids = lecturasIds;
-        } else if (tipo === 'automatica') {
-            url = '{{ route("facturas.masiva.procesar") }}';
-        } else if (tipo === 'criticas_confirmadas') {
-            url = '{{ route("facturas.masiva.procesarCriticasConfirmadas") }}';
-        }
+        $('#mensajeInicial').hide();
 
         $.ajax({
-            url: url,
+            url: '{{ route("facturas.masiva.procesar") }}',
             method: 'POST',
-            data: data,
+            data: { 
+                periodo_lectura_id: periodoSeleccionado,
+                _token: '{{ csrf_token() }}'
+            },
             success: function(res) {
                 $('#spinnerProceso').hide();
-
+                
                 if (res.ok) {
                     mostrarResultados(res.resultado);
-                    // Recargar lecturas para actualizar estados
-                    setTimeout(function() {
-                        $('#btnCargarResumen').click();
-                    }, 2000);
                 } else {
-                    $('#spinnerProceso').hide();
                     alert('Error en el proceso: ' + res.mensaje);
+                    $('#btnCargarResumen').prop('disabled', false);
                 }
             },
             error: function(xhr) {
                 $('#spinnerProceso').hide();
                 alert('Error en la solicitud: ' + xhr.responseText);
+                $('#btnCargarResumen').prop('disabled', false);
             }
         });
-    }
+    });
 
-    // Mostrar resultados
     function mostrarResultados(resultado) {
-        $('#resProcesadas').text(resultado.procesadas || 0);
-        $('#resFacturadas').text(resultado.facturadas_automaticas || resultado.facturadas || 0);
-        $('#resPendientes').text(resultado.pendientes_revision || 0);
-        $('#resErrores').text(resultado.errores || 0);
+        $('#resProcesadas').text(resultado.procesadas);
+        $('#resFacturadas').text(resultado.facturadas_automaticas);
+        $('#resPendientes').text(resultado.pendientes_revision);
+        $('#resErrores').text(resultado.errores);
 
         // Llenar tabla
         let html = '';
-        if (resultado.detalles && resultado.detalles.length > 0) {
-            resultado.detalles.forEach(function(d) {
-                const badgeClass = d.estado || 'SALTEADO';
-                html += '<tr>';
-                html += '<td><strong>' + d.suscriptor + '</strong></td>';
-                html += '<td><span class="badge-estado ' + badgeClass + '">' + d.estado + '</span></td>';
-                html += '<td>' + (d.consumo !== undefined ? d.consumo + ' m³' : '—') + '</td>';
-                html += '<td>' + (d.critica || '—') + '</td>';
-                html += '<td>' + (d.mensaje || '') + '</td>';
-                html += '</tr>';
-            });
-        } else {
-            html = '<tr><td colspan="5" style="text-align:center;">No hay detalles</td></tr>';
-        }
+        resultado.detalles.forEach(function(d) {
+            const badgeClass = d.estado || 'SALTEADO';
+            html += '<tr>';
+            html += '<td><strong>' + d.suscriptor + '</strong></td>';
+            html += '<td><span class="badge-estado ' + badgeClass + '">' + d.estado + '</span></td>';
+            html += '<td>' + (d.consumo !== undefined ? d.consumo + ' m³' : '—') + '</td>';
+            html += '<td>' + (d.critica || '—') + '</td>';
+            html += '<td>' + (d.mensaje || '') + '</td>';
+            html += '</tr>';
+        });
         $('#tablaDetallesBody').html(html);
 
         $('#panelResultados').slideDown();
+        $('#btnCargarResumen').prop('disabled', false);
     }
 });
 </script>

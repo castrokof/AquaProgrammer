@@ -162,6 +162,22 @@ class FacturaController extends Controller
         return view('facturacion.facturas.show', compact('factura'));
     }
 
+    // ── PDF ────────────────────────────────────────────────────────────────────
+
+    public function descargarPdf($id)
+    {
+        $factura = Factura::with(['cliente.estrato', 'periodoLectura', 'tarifaPeriodo', 'pagos'])->findOrFail($id);
+        
+        $pdf = \PDF::loadView('pdf.factura', compact('factura'));
+        
+        $filename = sprintf('Factura_%s_%s.pdf', 
+            $factura->numero_factura, 
+            $factura->suscriptor
+        );
+        
+        return $pdf->download($filename);
+    }
+
     // ── Pago ──────────────────────────────────────────────────────────────────
 
     public function registrarPago(Request $request, $id)

@@ -33,9 +33,12 @@ label.lbl { font-weight:600; color:#4a5568; font-size:.8rem; text-transform:uppe
 
 .badge-estado { padding:4px 10px; border-radius:12px; font-size:.7rem; font-weight:700; text-transform:uppercase; }
 .badge-estado.FACTURADO_AUTOMATICO { background:#c6f6d5; color:#22543d; }
+.badge-estado.FACTURADO { background:#c6f6d5; color:#22543d; }
 .badge-estado.PENDIENTE_REVISION { background:#fed7d7; color:#742a2a; }
 .badge-estado.ERROR { background:#fed7d7; color:#742a2a; }
 .badge-estado.SALTEADO { background:#e2e8f0; color:#4a5568; }
+.badge-estado.REVISION_CREADA { background:#bee3f8; color:#2c5282; }
+.badge-estado.OMITIDA { background:#e2e8f0; color:#4a5568; }
 
 .btn-grad { border-radius:12px; padding:11px 32px; font-weight:700; border:none; background:linear-gradient(135deg,#667eea,#764ba2); color:white; box-shadow:0 4px 15px rgba(102,126,234,.4); font-size:.92rem; }
 .btn-grad:disabled { opacity:.5; cursor:not-allowed; }
@@ -50,6 +53,21 @@ label.lbl { font-weight:600; color:#4a5568; font-size:.8rem; text-transform:uppe
 .resumen-box .rb-row:last-child { margin-bottom:0; }
 .resumen-box .rb-lbl { opacity:.8; }
 .resumen-box .rb-val { font-weight:700; }
+
+/* Botones de acción */
+.acciones-box { background:#f7fafc; border-radius:14px; padding:16px; margin-top:20px; }
+.acciones-box h6 { font-weight:700; color:#2d3748; margin-bottom:12px; }
+.btn-accion { border-radius:10px; padding:10px 20px; font-weight:600; font-size:.85rem; margin-right:8px; margin-bottom:8px; }
+
+/* Estilos para DataTable */
+.datatable-container { background:white; border-radius:16px; padding:20px; box-shadow:0 10px 40px rgba(0,0,0,.08); overflow-x:auto; margin-bottom:20px; }
+#tblLecturas thead th { background:linear-gradient(135deg,#3d57ce 0%,#776a84 100%); color:white; font-weight:600; font-size:.73rem; text-transform:uppercase; padding:12px 8px; border:none; white-space:nowrap; text-align:center; }
+#tblLecturas tbody td { padding:10px 8px; vertical-align:middle; border-bottom:1px solid #f0f0f0; text-align:center; font-size:.82rem; }
+#tblLecturas tbody tr:hover { background:#f8f9ff; }
+.checkbox-modern { width:18px; height:18px; cursor:pointer; }
+.badge-critica { padding:3px 8px; border-radius:8px; font-size:.7rem; font-weight:700; }
+.badge-critica.NORMAL { background:#c6f6d5; color:#22543d; }
+.badge-critica.OTRA { background:#fed7d7; color:#742a2a; }
 </style>
 @endsection
 
@@ -66,23 +84,32 @@ label.lbl { font-weight:600; color:#4a5568; font-size:.8rem; text-transform:uppe
     </div>
 
     <div class="row">
-        <div class="col-md-4">
+        <div class="col-md-12">
             <div class="form-box">
                 <h5><i class="fa fa-cog"></i> Configuración del Proceso</h5>
                 
-                <div class="form-group">
-                    <label class="lbl">Período de Lectura <span style="color:red">*</span></label>
-                    <select class="form-control form-control-gen" id="selPeriodo">
-                        <option value="">— Seleccione período —</option>
-                        @foreach($periodos as $p)
-                        <option value="{{ $p->id }}" data-nombre="{{ $p->nombre }}">
-                            {{ $p->nombre }} — {{ $p->estado }}
-                        </option>
-                        @endforeach
-                    </select>
+                <div class="row align-items-end">
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label class="lbl">Período de Lectura <span style="color:red">*</span></label>
+                            <select class="form-control form-control-gen" id="selPeriodo">
+                                <option value="">— Seleccione período —</option>
+                                @foreach($periodos as $p)
+                                <option value="{{ $p->id }}" data-nombre="{{ $p->nombre }}">
+                                    {{ $p->nombre }} — {{ $p->estado }}
+                                </option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-8" style="margin-top:10px;">
+                        <button class="btn btn-grad" id="btnCargarResumen" disabled>
+                            <i class="fa fa-chart-bar"></i> Cargar Resumen y Lecturas
+                        </button>
+                    </div>
                 </div>
 
-                <div id="resumenPeriodo" style="display:none;">
+                <div id="resumenPeriodo" style="display:none; margin-top:20px;">
                     <div class="resumen-box">
                         <div class="rb-row">
                             <span class="rb-lbl">Total lecturas:</span>
@@ -104,27 +131,81 @@ label.lbl { font-weight:600; color:#4a5568; font-size:.8rem; text-transform:uppe
                             <span class="rb-lbl">Pendientes:</span>
                             <span class="rb-val" id="rPendientes">—</span>
                         </div>
+                        <div class="rb-row" style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,.3);">
+                            <span class="rb-lbl">Revisiones ejecutadas:</span>
+                            <span class="rb-val" id="rRevisiones">—</span>
+                        </div>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
 
-                <div style="background:#ebf8ff;border-radius:10px;padding:14px;margin-bottom:16px;font-size:.82rem;color:#2c5282;">
+    {{-- Tabla de lecturas con DataTable --}}
+    <div id="panelLecturas" style="display:none;">
+        <div class="datatable-container">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+                <h5 style="font-weight:700;color:#2d3748;margin:0;"><i class="fa fa-list"></i> Lecturas del Período - Selección Manual para Facturar</h5>
+                <div>
+                    <button class="btn btn-success btn-sm" id="btnFacturarSeleccionadas" disabled style="border-radius:10px;font-weight:700;">
+                        <i class="fa fa-file-invoice-dollar"></i> Facturar Seleccionadas
+                    </button>
+                    <button class="btn btn-info btn-sm" id="btnSeleccionarTodos" style="border-radius:10px;font-weight:700;">
+                        <i class="fa fa-check-square"></i> Seleccionar Todos
+                    </button>
+                    <button class="btn btn-secondary btn-sm" id="btnDeseleccionarTodos" style="border-radius:10px;font-weight:700;">
+                        <i class="fa fa-times-circle"></i> Deseleccionar Todos
+                    </button>
+                </div>
+            </div>
+            
+            <table id="tblLecturas" class="table table-hover" style="width:100%;">
+                <thead>
+                    <tr>
+                        <th style="width:40px;"><input type="checkbox" id="chkTodos" class="checkbox-modern"></th>
+                        <th>ID</th>
+                        <th>Suscriptor</th>
+                        <th>Cliente</th>
+                        <th>Lec. Ant.</th>
+                        <th>Lec. Act.</th>
+                        <th>Consumo</th>
+                        <th>Crítica</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="tblLecturasBody">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="row" id="rowAccionesMasivas" style="display:none;">
+        <div class="col-md-12">
+            <div class="acciones-box">
+                <h6><i class="fa fa-bolt"></i> Acciones Masivas Automáticas</h6>
+                
+                <button class="btn btn-accion btn-success" id="btnProcesarNormales" style="background:#48bb78;border:none;">
+                    <i class="fa fa-bolt"></i> Facturar Normales (54) Automáticamente
+                </button>
+                
+                <button class="btn btn-accion btn-warning" id="btnProcesarCriticas" style="background:#ed8936;border:none;color:white;">
+                    <i class="fa fa-check-double"></i> Facturar Críticas Confirmadas
+                </button>
+
+                <div style="background:#ebf8ff;border-radius:10px;padding:14px;margin-top:16px;font-size:.82rem;color:#2c5282;">
                     <i class="fa fa-info-circle" style="color:#3182ce;"></i>
                     <strong>Información:</strong>
                     <ul style="margin:8px 0 0 20px;padding:0;">
-                        <li>Solo se facturan automáticamente las lecturas con crítica <strong>NORMAL-54</strong></li>
-                        <li>Las demás críticas quedan pendientes para revisión manual</li>
-                        <li>Se crea una orden de revisión para cada lectura no normal</li>
+                        <li><strong>Selección Manual:</strong> Marque las lecturas que desea facturar y use el botón "Facturar Seleccionadas"</li>
+                        <li><strong>Enviar a Revisión:</strong> Para enviar lecturas a revisión, use el módulo de Revisiones desde el menú principal</li>
+                        <li><strong>Facturar Normales (54):</strong> Genera facturas automáticamente para TODAS las lecturas con crítica NORMAL-54</li>
+                        <li><strong>Facturar Críticas Confirmadas:</strong> Genera facturas para lecturas que fueron revisadas y confirmadas con nueva lectura</li>
                     </ul>
                 </div>
-
-                <button class="btn btn-grad w-100" id="btnCargarResumen" disabled>
-                    <i class="fa fa-chart-bar"></i> Cargar Resumen
-                </button>
-                <button class="btn btn-grad w-100 mt-2" id="btnProcesar" disabled style="display:none;">
-                    <i class="fa fa-play"></i> Ejecutar Facturación Masiva
-                </button>
             </div>
         </div>
+    </div>
 
         <div class="col-md-8">
             {{-- Spinner de proceso --}}

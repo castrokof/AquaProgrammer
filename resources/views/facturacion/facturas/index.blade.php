@@ -138,9 +138,13 @@
                         <a href="{{ route('facturas.show', $f->id) }}" class="btn btn-info btn-sm" title="Ver detalle">
                             <i class="fa fa-eye"></i>
                         </a>
+                        <a href="{{ route('facturas.pdf', $f->id) }}" class="btn btn-primary btn-sm" 
+                           title="Descargar PDF" target="_blank" style="margin-left:4px;">
+                            <i class="fa fa-file-pdf"></i>
+                        </a>
                         @if($f->estado !== 'ANULADA')
                         <button class="btn btn-danger btn-sm btn-anular"
-                                data-id="{{ $f->id }}" title="Anular factura">
+                                data-id="{{ $f->id }}" title="Anular factura" style="margin-left:4px;">
                             <i class="fa fa-ban"></i>
                         </button>
                         @endif

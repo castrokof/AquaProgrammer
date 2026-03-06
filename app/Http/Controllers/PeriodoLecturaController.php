@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\PeriodoLectura;
 use App\Models\TarifaPeriodo;
 use App\Models\Cliente;
+use App\Models\ClienteHistoricoConsumo;
 use App\Models\Factura;
 use App\Models\Admin\Ordenesmtl;
 use App\Services\FacturacionService;

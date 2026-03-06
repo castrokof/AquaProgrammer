@@ -259,11 +259,18 @@ Route::group(['middleware' => 'auth', 'prefix' => 'facturacion'], function () {
     Route::get('facturas/masiva/lecturas-no-normales', 'FacturacionMasivaController@lecturasNoNormales')->name('facturas.masiva.lecturas-no-normales');
     Route::post('facturas/masiva/facturar-seleccionadas', 'FacturacionMasivaController@facturarSeleccionadas')->name('facturas.masiva.facturar-seleccionadas');
     Route::post('facturas/descargar-masivo', 'FacturacionMasivaController@descargarMasivo')->name('facturas.descargar_masivo');
+     // Nueva ruta para exportar ZIP
+    Route::post('facturas/exportar-masivo', 'FacturaController@exportarMasivo')->name('facturas.exportar-masivo');
 
-    // ── Facturación Especial (Altas, Bajas, Sin Lectura) ──────────
+   
+
+      // ── Facturación Especial (No Normales) ────────────────────────
     Route::get('facturas-especial', 'FacturacionEspecialController@index')->name('facturacion.especial.index');
+    Route::get('facturas-especial/resumen', 'FacturacionEspecialController@resumen')->name('facturacion.especial.resumen');
+    Route::get('facturas-especial/lecturas', 'FacturacionEspecialController@getLecturas')->name('facturacion.especial.lecturas');
+    
     Route::post('facturas-especial/facturar', 'FacturacionEspecialController@facturarSeleccionadas')->name('facturacion.especial.facturar-seleccionadas');
-    Route::get('facturas-especial/{id}/pdf', 'FacturacionEspecialController@descargarPdf')->name('facturacion.especial.pdf');
+
 
     // ── Pagos ─────────────────────────────────────────────────────
     Route::get('pagos', 'PagoController@index')

@@ -1,185 +1,376 @@
-@extends('layouts.app')
+@extends("theme.$theme.layout")
 
-@section('title', 'Facturación Especial Masiva')
+@section('titulo', 'Facturación Especial Masiva')
 
-@section('content')
+@section('styles')
+<style>
+/* Mismos estilos modernos que la vista de masiva normal */
+.modern-card { border-radius:20px; box-shadow:0 10px 40px rgba(0,0,0,.1); border:none; overflow:hidden; margin-bottom:20px; background:white; }
+.modern-card .card-header { background:linear-gradient(135deg,#2e50e4 0%,#2b0c49 100%); border:none; padding:22px 28px; display:flex; justify-content:space-between; align-items:center; }
+.modern-card .card-header h3 { color:white; font-weight:700; font-size:1.3rem; margin:0; }
+.form-box { background:white; border-radius:16px; padding:24px; box-shadow:0 4px 15px rgba(0,0,0,.06); margin-bottom:20px; }
+.form-box h5 { font-weight:700; color:#2d3748; font-size:.9rem; text-transform:uppercase; letter-spacing:.5px; margin-bottom:16px; border-bottom:2px solid #e2e8f0; padding-bottom:10px; }
+.form-control-gen { border-radius:10px; border:2px solid #e2e8f0; padding:10px 13px; transition:all .3s; font-size:.88rem; }
+.form-control-gen:focus { border-color:#667eea; box-shadow:0 0 0 3px rgba(102,126,234,.12); outline:none; }
+label.lbl { font-weight:600; color:#4a5568; font-size:.8rem; text-transform:uppercase; letter-spacing:.4px; }
+
+/* Panel de resultados */
+#panelResultados { display:none; }
+.resultado-card { background:white; border-radius:14px; padding:18px 20px; margin-bottom:16px; border-left:4px solid #667eea; box-shadow:0 2px 8px rgba(0,0,0,.05); }
+.resultado-card.rc-success { border-left-color:#48bb78; background:#f0fff4; }
+.resultado-card.rc-warning { border-left-color:#ed8936; background:#fffaf0; }
+.resultado-card.rc-danger { border-left-color:#f56565; background:#fff5f5; }
+
+.rc-title { font-weight:700; color:#2d3748; font-size:1rem; margin-bottom:8px; }
+.rc-val { font-size:1.8rem; font-weight:800; color:#2d3748; }
+.rc-subtitle { font-size:.75rem; color:#718096; text-transform:uppercase; letter-spacing:.4px; }
+
+/* Tabla de detalles y selección */
+.tabla-detalles { width:100%; border-collapse:collapse; font-size:.85rem; }
+.tabla-detalles th { background:#f7fafc; padding:10px 12px; text-align:left; font-weight:700; color:#4a5568; text-transform:uppercase; font-size:.7rem; letter-spacing:.5px; }
+.tabla-detalles td { padding:10px 12px; border-bottom:1px solid #e2e8f0; }
+.tabla-detalles tr:hover { background:#f7fafc; }
+.tabla-detalles input[type="checkbox"] { transform: scale(1.3); cursor: pointer; }
+
+.badge-estado { padding:4px 10px; border-radius:12px; font-size:.7rem; font-weight:700; text-transform:uppercase; }
+.badge-estado.FACTURADO_MANUAL { background:#c6f6d5; color:#22543d; }
+.badge-estado.ERROR { background:#fed7d7; color:#742a2a; }
+.badge-estado.SALTEADO { background:#e2e8f0; color:#4a5568; }
+
+.btn-grad { border-radius:12px; padding:11px 32px; font-weight:700; border:none; background:linear-gradient(135deg,#667eea,#764ba2); color:white; box-shadow:0 4px 15px rgba(102,126,234,.4); font-size:.92rem; }
+.btn-grad:disabled { opacity:.5; cursor:not-allowed; }
+.btn-preview { border-radius:12px; padding:10px 24px; font-weight:700; border:2px solid #667eea; color:#667eea; background:white; font-size:.88rem; transition:all .3s; }
+.btn-preview:hover { background:#667eea; color:white; }
+
+.spinner-proceso { display:none; text-align:center; padding:40px; }
+.spinner-proceso i { font-size:3rem; color:#667eea; }
+
+.resumen-box { background:linear-gradient(135deg,#667eea,#764ba2); border-radius:14px; padding:16px 20px; color:white; margin-bottom:16px; }
+.resumen-box .rb-row { display:flex; justify-content:space-between; margin-bottom:8px; font-size:.85rem; }
+.resumen-box .rb-row:last-child { margin-bottom:0; }
+.resumen-box .rb-lbl { opacity:.8; }
+.resumen-box .rb-val { font-weight:700; }
+
+/* Contenedor de tabla con scroll */
+.tabla-container { max-height: 500px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 10px; }
+</style>
+@endsection
+
+@section('contenido')
 <div class="container-fluid">
-    <div class="row justify-content-center">
-        <div class="col-md-12">
-            <div class="card shadow-sm">
-                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between bg-primary text-white">
-                    <h6 class="m-0 font-weight-bold"><i class="fas fa-bolt"></i> Facturación Especial (Altas, Bajas, Sin Lectura)</h6>
-                </div>
 
-                <div class="card-body">
-                    @if(session('success'))
-                        <div class="alert alert-success alert-dismissible fade show" role="alert">
-                            {{ session('success') }}
-                            <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
-                        </div>
-                    @endif
-
-                    @if(session('error'))
-                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                            {{ session('error') }}
-                            <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
-                        </div>
-                    @endif
-
-                    @if(session('errores') && count(session('errores')) > 0)
-                        <div class="alert alert-warning">
-                            <strong>Detalles de errores:</strong>
-                            <ul class="mb-0">
-                                @foreach(session('errores') as $error)
-                                    <li>{{ $error }}</li>
-                                @endforeach
-                            </ul>
-                        </div>
-                    @endif
-
-                    <!-- Formulario de selección de período -->
-                    <form method="GET" action="{{ route('facturacion.especial.index') }}" class="mb-4">
-                        <div class="form-row align-items-end">
-                            <div class="col-md-4">
-                                <label for="periodo_id"><strong>Seleccionar Período:</strong></label>
-                                <select name="periodo_id" id="periodo_id" class="form-control" required onchange="this.form.submit()">
-                                    <option value="">-- Seleccione un período --</option>
-                                    @foreach($periodos as $periodo)
-                                        <option value="{{ $periodo->id }}" {{ $periodoId == $periodo->id ? 'selected' : '' }}>
-                                            {{ $periodo->nombre }} ({{ $periodo->fecha_inicio }} al {{ $periodo->fecha_fin }})
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <div class="col-md-8">
-                                <small class="text-muted">Seleccione un período para cargar las lecturas especiales pendientes.</small>
-                            </div>
-                        </div>
-                    </form>
-
-                    @if($periodoId && $lecturas->count() > 0)
-                        <!-- Formulario de facturación -->
-                        <form method="POST" action="{{ route('facturacion.especial.facturar-seleccionadas') }}" id="formFacturacion">
-                            @csrf
-                            <input type="hidden" name="periodo_id" value="{{ $periodoId }}">
-                            
-                            <div class="d-flex justify-content-between align-items-center mb-3">
-                                <h5 class="text-secondary">Lecturas Especiales Disponibles ({{ $lecturas->count() }})</h5>
-                                <div>
-                                    <button type="button" class="btn btn-sm btn-info" onclick="seleccionarTodo(true)">
-                                        <i class="fas fa-check-square"></i> Seleccionar Todo
-                                    </button>
-                                    <button type="button" class="btn btn-sm btn-secondary" onclick="seleccionarTodo(false)">
-                                        <i class="fas fa-square"></i> Deseleccionar Todo
-                                    </button>
-                                    <button type="submit" class="btn btn-success" id="btnFacturar" disabled>
-                                        <i class="fas fa-file-invoice-dollar"></i> Facturar Seleccionadas
-                                    </button>
-                                </div>
-                            </div>
-
-                            <!-- Tabla con DataTable -->
-                            <div class="table-responsive">
-                                <table class="table table-bordered table-hover" id="tablaEspeciales">
-                                    <thead class="thead-light">
-                                        <tr>
-                                            <th width="5%">
-                                                <input type="checkbox" id="checkAll" onclick="seleccionarTodo(this.checked)">
-                                            </th>
-                                            <th>ID</th>
-                                            <th>Cliente</th>
-                                            <th>NIT/CC</th>
-                                            <th>Dirección</th>
-                                            <th>Lectura Anterior</th>
-                                            <th>Lectura Actual</th>
-                                            <th>Consumo</th>
-                                            <th>Estado</th>
-                                            <th>Observaciones</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach($lecturas as $lectura)
-                                            <tr>
-                                                <td>
-                                                    <input type="checkbox" name="lecturas_ids[]" value="{{ $lectura->id }}" class="check-item" onchange="verificarSeleccion()">
-                                                </td>
-                                                <td>{{ $lectura->id }}</td>
-                                                <td>{{ $lectura->cliente->nombre ?? 'N/A' }}</td>
-                                                <td>{{ $lectura->cliente->documento ?? 'N/A' }}</td>
-                                                <td>{{ $lectura->cliente->direccion ?? 'N/A' }}</td>
-                                                <td>{{ number_format($lectura->lectura_anterior, 2) }}</td>
-                                                <td>{{ number_format($lectura->lectura_actual, 2) }}</td>
-                                                <td><strong>{{ number_format($lectura->consumo, 2) }}</strong></td>
-                                                <td>
-                                                    <span class="badge badge-{{ $lectura->estado == 54 ? 'success' : 'warning' }}">
-                                                        {{ $lectura->estado }}
-                                                    </span>
-                                                </td>
-                                                <td>{{ $lectura->observaciones ?? '-' }}</td>
-                                            </tr>
-                                        @endforeach
-                                    </tbody>
-                                </table>
-                            </div>
-                        </form>
-                    @elseif($periodoId && $lecturas->count() == 0)
-                        <div class="alert alert-info text-center">
-                            <i class="fas fa-info-circle fa-3x mb-3"></i>
-                            <h5>No hay lecturas especiales pendientes en este período</h5>
-                            <p>Todas las lecturas son normales o ya han sido procesadas.</p>
-                        </div>
-                    @endif
-                </div>
+    <!-- Header -->
+    <div class="modern-card">
+        <div class="card-header">
+            <h3><i class="fa fa-bolt"></i> Facturación Especial (Altas, Bajas, Sin Lectura)</h3>
+            <div>
+                <a href="{{ route('facturas.index') }}" class="btn btn-light mr-2" style="border-radius:12px;font-weight:700;">
+                    <i class="fa fa-arrow-left"></i> Volver
+                </a>
+                <a href="{{ route('facturas.masiva') }}" class="btn btn-outline-light" style="border-radius:12px;font-weight:700;">
+                    <i class="fa fa-cogs"></i> Ir a Masiva Normal
+                </a>
             </div>
         </div>
     </div>
+
+    <div class="row">
+        <!-- Columna Izquierda: Configuración -->
+        <div class="col-md-4">
+            <div class="form-box">
+                <h5><i class="fa fa-cog"></i> Configuración</h5>
+                
+                <div class="form-group">
+                    <label class="lbl">Período de Lectura <span style="color:red">*</span></label>
+                    <select class="form-control form-control-gen" id="selPeriodo">
+                        <option value="">— Seleccione período —</option>
+                        @foreach($periodos as $p)
+                        <option value="{{ $p->id }}" data-nombre="{{ $p->nombre }}">
+                            {{ $p->nombre }} — {{ $p->estado }}
+                        </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div id="resumenPeriodo" style="display:none;">
+                    <div class="resumen-box">
+                        <div class="rb-row"><span class="rb-lbl">Especiales Total:</span><span class="rb-val" id="rTotal">—</span></div>
+                        <div class="rb-row"><span class="rb-lbl">Ya Facturadas:</span><span class="rb-val" id="rFacturadas">—</span></div>
+                        <div class="rb-row"><span class="rb-lbl">Pendientes:</span><span class="rb-val" id="rPendientes">—</span></div>
+                    </div>
+                </div>
+
+                <div style="background:#fffaf0;border-radius:10px;padding:14px;margin-bottom:16px;font-size:.82rem;color:#c05621;">
+                    <i class="fa fa-exclamation-triangle" style="color:#dd6b20;"></i>
+                    <strong>Atención:</strong>
+                    <ul style="margin:8px 0 0 20px;padding:0;">
+                        <li>Solo se muestran lecturas <strong>NO normales</strong> (Altas, Bajas, etc).</li>
+                        <li>Debe seleccionar manualmente cuáles facturar.</li>
+                        <li>Verifique lecturas anteriores y actuales antes de procesar.</li>
+                    </ul>
+                </div>
+
+                <button class="btn btn-grad w-100" id="btnCargarTabla" disabled>
+                    <i class="fa fa-table"></i> Cargar Lecturas
+                </button>
+                <button class="btn btn-grad w-100 mt-2" id="btnProcesar" disabled style="display:none;">
+                    <i class="fa fa-play"></i> Facturar Seleccionadas
+                </button>
+            </div>
+        </div>
+
+        <!-- Columna Derecha: Tabla y Resultados -->
+        <div class="col-md-8">
+            
+            {{-- Spinner --}}
+            <div class="spinner-proceso" id="spinnerProceso">
+                <i class="fa fa-spinner fa-spin"></i>
+                <h5 style="margin-top:20px;color:#4a5568;">Procesando facturas...</h5>
+            </div>
+
+            {{-- Mensaje Inicial --}}
+            <div id="mensajeInicial" style="background:#f7fafc;border-radius:14px;padding:40px;text-align:center;">
+                <i class="fa fa-file-invoice" style="font-size:3rem;color:#cbd5e0;margin-bottom:16px;"></i>
+                <h5 style="color:#4a5568;font-weight:700;">Seleccione un período para comenzar</h5>
+            </div>
+
+            {{-- Tabla de Selección --}}
+            <div id="panelTabla" style="display:none;">
+                <div class="form-box">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="mb-0"><i class="fa fa-list"></i> Lecturas Disponibles</h5>
+                        <div>
+                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="seleccionarTodo(true)">Marcar Todas</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="seleccionarTodo(false)">Desmarcar</button>
+                        </div>
+                    </div>
+
+                    <div class="tabla-container">
+                        <table class="tabla-detalles" id="tablaEspeciales">
+                            <thead>
+                                <tr>
+                                    <th width="5%"><input type="checkbox" id="checkAll" onclick="seleccionarTodo(this.checked)"></th>
+                                    <th>Suscriptor</th>
+                                    <th>Cliente</th>
+                                    <th>Anterior</th>
+                                    <th>Actual</th>
+                                    <th>Consumo</th>
+                                    <th>Crítica</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tablaBody">
+                                <!-- Se llena con JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="mt-2 text-muted small" id="contadorSeleccion">0 seleccionadas</div>
+                </div>
+            </div>
+
+            {{-- Resultados --}}
+            <div id="panelResultados">
+                <div class="form-box">
+                    <h5><i class="fa fa-check-circle"></i> Resultados</h5>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="resultado-card rc-success">
+                                <div class="rc-subtitle">Facturadas</div>
+                                <div class="rc-val" id="resFacturadas">0</div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="resultado-card rc-danger">
+                                <div class="rc-subtitle">Errores</div>
+                                <div class="rc-val" id="resErrores">0</div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="resultado-card" style="border-left-color:#cbd5e0; background:#f7fafc;">
+                                <div class="rc-subtitle">Procesadas</div>
+                                <div class="rc-val" id="resProcesadas">0</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="margin-top:20px; max-height:300px; overflow-y:auto; border:1px solid #e2e8f0; border-radius:10px;">
+                        <table class="tabla-detalles">
+                            <thead>
+                                <tr>
+                                    <th>Suscriptor</th>
+                                    <th>Estado</th>
+                                    <th>Mensaje</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tablaDetallesBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
 </div>
+@endsection
 
-<!-- Estilos y Scripts para DataTable -->
-<link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap4.min.css">
-<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.3.6/css/buttons.bootstrap4.min.css">
-
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap4.min.js"></script>
-<script src="https://cdn.datatables.net/buttons/2.3.6/js/dataTables.buttons.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
-<script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.html5.min.js"></script>
-<script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.print.min.js"></script>
-
+@section('scripts')
 <script>
 $(document).ready(function() {
-    // Inicializar DataTable
-    $('#tablaEspeciales').DataTable({
-        language: {
-            url: '//cdn.datatables.net/plug-ins/1.13.4/i18n/es-ES.json'
-        },
-        dom: 'Bfrtip',
-        buttons: [
-            { extend: 'excelHtml5', className: 'btn btn-success btn-sm', text: '<i class="fas fa-file-excel"></i> Excel' },
-            { extend: 'pdfHtml5', className: 'btn btn-danger btn-sm', text: '<i class="fas fa-file-pdf"></i> PDF' },
-            { extend: 'print', className: 'btn btn-info btn-sm', text: '<i class="fas fa-print"></i> Imprimir' }
-        ],
-        pageLength: 10,
-        order: [[1, 'asc']]
+    let periodoId = null;
+    let lecturasDisponibles = [];
+
+    $('#selPeriodo').on('change', function() {
+        periodoId = $(this).val();
+        if (periodoId) {
+            $('#btnCargarTabla').prop('disabled', false);
+            $('#resumenPeriodo').hide();
+            $('#panelTabla').hide();
+            $('#panelResultados').hide();
+            $('#mensajeInicial').show();
+            $('#btnProcesar').hide();
+        } else {
+            periodoId = null;
+            $('#btnCargarTabla').prop('disabled', true);
+        }
     });
-});
 
-function seleccionarTodo(seleccionar) {
-    $('.check-item').prop('checked', seleccionar);
-    $('#checkAll').prop('checked', seleccionar);
-    verificarSeleccion();
-}
+    // Cargar Resumen
+    $('#btnCargarTabla').on('click', function() {
+        if (!periodoId) return;
 
-function verificarSeleccion() {
-    const seleccionados = $('.check-item:checked').length;
-    $('#btnFacturar').prop('disabled', seleccionados === 0);
-    
-    if (seleccionados > 0) {
-        $('#btnFacturar').html(`<i class="fas fa-file-invoice-dollar"></i> Facturar (${seleccionados})`);
-    } else {
-        $('#btnFacturar').html('<i class="fas fa-file-invoice-dollar"></i> Facturar Seleccionadas');
+        // 1. Cargar resumen numérico
+        $.ajax({
+            url: '{{ route("facturacion.especial.resumen") }}', // Asegúrate de crear esta ruta
+            method: 'GET',
+            data: { periodo_lectura_id: periodoId },
+            success: function(res) {
+                if (res.ok) {
+                    const r = res.resumen;
+                    $('#rTotal').text(r.especiales_total);
+                    $('#rFacturadas').text(r.especiales_facturadas);
+                    $('#rPendientes').text(r.especiales_pendientes);
+                    $('#resumenPeriodo').slideDown();
+                    
+                    // 2. Cargar tabla de datos
+                    cargarTablaLecturas();
+                }
+            },
+            error: function() { alert('Error al cargar resumen'); }
+        });
+    });
+
+    function cargarTablaLecturas() {
+        $.ajax({
+            url: '{{ route("facturacion.especial.lecturas") }}', // Ruta nueva para obtener lista
+            method: 'GET',
+            data: { periodo_lectura_id: periodoId },
+            success: function(res) {
+                if (res.ok && res.lecturas.length > 0) {
+                    lecturasDisponibles = res.lecturas;
+                    renderizarTabla(res.lecturas);
+                    $('#panelTabla').slideDown();
+                    $('#mensajeInicial').hide();
+                    $('#btnProcesar').show();
+                } else {
+                    alert('No hay lecturas especiales pendientes en este período.');
+                    $('#btnCargarTabla').prop('disabled', true);
+                }
+            }
+        });
     }
-}
+
+    function renderizarTabla(datos) {
+        let html = '';
+        datos.forEach((l, index) => {
+            html += `<tr>
+                <td><input type="checkbox" class="check-item" value="${index}" onchange="verificarSeleccion()"></td>
+                <td><strong>${l.suscriptor}</strong></td>
+                <td>${l.nombre}</td>
+                <td>${l.la}</td>
+                <td>${l.lect_actual}</td>
+                <td><strong>${l.consumo}</strong></td>
+                <td><span class="badge badge-info">${l.critica}</span></td>
+            </tr>`;
+        });
+        $('#tablaBody').html(html);
+    }
+
+    // Selección
+    window.seleccionarTodo = function(marcar) {
+        $('.check-item').prop('checked', marcar);
+        $('#checkAll').prop('checked', marcar);
+        verificarSeleccion();
+    };
+
+    window.verificarSeleccion = function() {
+        const count = $('.check-item:checked').length;
+        $('#contadorSeleccion').text(`${count} seleccionadas`);
+        $('#btnProcesar').prop('disabled', count === 0);
+        if(count > 0) {
+            $('#btnProcesar').html(`<i class="fa fa-play"></i> Facturar (${count})`);
+        } else {
+            $('#btnProcesar').html('<i class="fa fa-play"></i> Facturar Seleccionadas');
+        }
+    };
+
+    // Procesar
+    $('#btnProcesar').on('click', function() {
+        if (!confirm('¿Confirmar facturación de las lecturas seleccionadas?')) return;
+
+        const seleccionados = [];
+        $('.check-item:checked').each(function() {
+            seleccionados.push(lecturasDisponibles[$(this).val()]);
+        });
+
+        if (seleccionados.length === 0) return;
+
+        $('#btnProcesar').prop('disabled', true);
+        $('#spinnerProceso').show();
+        $('#panelResultados').hide();
+
+        $.ajax({
+            url: '{{ route("facturacion.especial.facturar-seleccionadas") }}',
+            method: 'POST',
+            data: {
+                periodo_lectura_id: periodoId,
+                lecturas: seleccionados,
+                _token: '{{ csrf_token() }}'
+            },
+            success: function(res) {
+                $('#spinnerProceso').hide();
+                if (res.ok) {
+                    mostrarResultados(res.resultado);
+                    // Recargar tabla para quitar las facturadas
+                    setTimeout(cargarTablaLecturas, 2000); 
+                } else {
+                    alert('Error: ' + res.mensaje);
+                    $('#btnProcesar').prop('disabled', false);
+                }
+            },
+            error: function(xhr) {
+                $('#spinnerProceso').hide();
+                alert('Error en solicitud: ' + xhr.responseText);
+                $('#btnProcesar').prop('disabled', false);
+            }
+        });
+    });
+
+    function mostrarResultados(res) {
+        $('#resFacturadas').text(res.facturadas);
+        $('#resErrores').text(res.errores);
+        $('#resProcesadas').text(res.procesadas);
+
+        let html = '';
+        res.detalles.forEach(d => {
+            const cls = d.estado === 'ERROR' ? 'rc-danger' : (d.estado === 'SALTEADO' ? '' : 'rc-success');
+            html += `<tr>
+                <td>${d.suscriptor}</td>
+                <td><span class="badge-estado ${d.estado}">${d.estado}</span></td>
+                <td>${d.mensaje}</td>
+            </tr>`;
+        });
+        $('#tablaDetallesBody').html(html);
+        $('#panelResultados').slideDown();
+    }
+});
 </script>
 @endsection

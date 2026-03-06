@@ -10,6 +10,10 @@ use App\Models\ClienteHistoricoConsumo;
 use App\Models\ClienteOtrosCobro;
 use App\Services\FacturacionService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use ZipArchive;
+use Barryvdh\DomPDF\Facade\Pdf; // Ajusta según tu librería PDF
 
 class FacturaController extends Controller
 {
@@ -22,21 +26,138 @@ class FacturaController extends Controller
 
     // ── Listado ───────────────────────────────────────────────────────────────
 
+    // public function index(Request $request)
+    // {
+    //     $periodos = PeriodoLectura::orderBy('codigo', 'desc')->get(['id','codigo','nombre','estado']);
+
+    //     $query = Factura::with('cliente')
+    //         ->orderBy('periodo', 'desc')
+    //         ->orderBy('numero_factura', 'desc');
+
+    //     if ($p = $request->periodo) $query->where('periodo', $p);
+    //     if ($s = $request->suscriptor) $query->where('suscriptor', 'like', "%{$s}%");
+    //     if ($e = $request->estado) $query->where('estado', $e);
+
+    //     $facturas = $query->paginate(25)->appends(request()->query());
+
+    //     return view('facturacion.facturas.index', compact('facturas', 'periodos'));
+    // }
+
     public function index(Request $request)
     {
-        $periodos = PeriodoLectura::orderBy('codigo', 'desc')->get(['id','codigo','nombre','estado']);
+        $periodos = PeriodoLectura::orderBy('codigo', 'desc')->get(['id', 'codigo', 'nombre']);
 
-        $query = Factura::with('cliente')
-            ->orderBy('periodo', 'desc')
-            ->orderBy('numero_factura', 'desc');
+        // Construir consulta base
+        $query = Factura::with(['cliente', 'periodoLectura']);
 
-        if ($p = $request->periodo) $query->where('periodo', $p);
-        if ($s = $request->suscriptor) $query->where('suscriptor', 'like', "%{$s}%");
-        if ($e = $request->estado) $query->where('estado', $e);
+        // Filtros
+        if ($request->filled('periodo')) {
+            $query->where('periodo', $request->periodo);
+        }
 
-        $facturas = $query->paginate(25)->appends(request()->query());
+        if ($request->filled('suscriptor')) {
+            $query->where('suscriptor', 'LIKE', "%{$request->suscriptor}%");
+        }
 
-        return view('facturacion.facturas.index', compact('facturas', 'periodos'));
+        if ($request->filled('estado')) {
+            $query->where('estado', $request->estado);
+        }
+
+        // Filtro por ID Ruta (Viene de la tabla ordenescu relacionada al cliente o factura)
+        // Asumiendo que guardaste id_ruta en clientes o puedes cruzar con ordenes
+        if ($request->filled('id_ruta')) {
+            $query->whereHas('cliente', function($q) use ($request) {
+                $q->where('id_ruta', $request->id_ruta);
+            });
+        }
+
+        // Filtro por Crítica (Requiere unir con la lectura original del período)
+        // La crítica está en ordenescu, vinculamos vía suscriptor y período
+        if ($request->filled('critica')) {
+            $query->whereHas('cliente', function($q) use ($request) {
+                $q->whereHas('ordenes', function($sq) use ($request) {
+                    $sq->where('Critica', 'LIKE', "%{$request->critica}%")
+                       // Opcional: filtrar también por el período seleccionado para mayor precisión
+                       ->when($request->filled('periodo'), function($sub) use ($request) {
+                           return $sub->where('Periodo', $request->periodo);
+                       });
+                });
+            });
+        }
+
+        // Ordenamiento por defecto
+        $query->orderBy('created_at', 'desc');
+
+        $facturas = $query->paginate(50);
+
+        // Cálculo de KPIs basados en los filtros actuales
+        $kpiTotal = $facturas->total(); 
+        // Nota: Para KPIs exactos de toda la BD filtrada sin paginación, clonar query:
+        $baseQuery = clone $query;
+        $stats = [
+            'total' => $baseQuery->count(),
+            'pendiente' => (clone $baseQuery)->where('estado', 'PENDIENTE')->sum('total_a_pagar'),
+            'pagada' => (clone $baseQuery)->where('estado', 'PAGADA')->sum('total_a_pagar'),
+            'anulada' => (clone $baseQuery)->where('estado', 'ANULADA')->count(),
+        ];
+
+        // Obtener lista única de críticas para el select (opcional, mejora UX)
+        // Esto puede ser costoso, se deja comentado o se limita si hay muchos datos
+        // $criticas = ... 
+
+        return view('facturacion.facturas.index', compact('facturas', 'periodos', 'stats'));
+    }
+
+    /**
+     * Exportar masivamente las facturas del resultado actual en un ZIP
+     */
+    public function exportarMasivo(Request $request)
+    {
+        // Repetimos la lógica de filtrado para obtener los IDs exactos
+        $query = Factura::with(['cliente']);
+        
+        if ($request->filled('periodo')) $query->where('periodo', $request->periodo);
+        if ($request->filled('suscriptor')) $query->where('suscriptor', 'LIKE', "%{$request->suscriptor}%");
+        if ($request->filled('estado')) $query->where('estado', $request->estado);
+        if ($request->filled('id_ruta')) {
+            $query->whereHas('cliente', fn($q) => $q->where('id_ruta', $request->id_ruta));
+        }
+        if ($request->filled('critica')) {
+            $query->whereHas('cliente', fn($q) => $q->whereHas('ordenes', fn($sq) => $sq->where('Critica', 'LIKE', "%{$request->critica}%")));
+        }
+
+        $facturas = $query->get();
+
+        if ($facturas->isEmpty()) {
+            return redirect()->back()->with('error', 'No hay facturas para exportar con esos filtros.');
+        }
+
+        $zip = new ZipArchive;
+        $fileName = "facturas_masivas_" . date('YmdHis') . ".zip";
+        $tempPath = storage_path('app/public/' . $fileName);
+
+        if ($zip->open($tempPath, ZipArchive::CREATE) === TRUE) {
+            foreach ($facturas as $factura) {
+                try {
+                    // Generar PDF
+                    $pdf = Pdf::loadView('facturacion.facturas.pdf', compact('factura')); // Ajusta tu vista PDF
+                    
+                    // Nombre del archivo dentro del ZIP
+                    $nombreArchivo = "Factura_{$factura->numero_factura}_{$factura->suscriptor}.pdf";
+                    
+                    // Agregar al ZIP
+                    $zip->addFromString($nombreArchivo, $pdf->output());
+                } catch (\Exception $e) {
+                    Log::error("Error generando PDF para factura {$factura->id}: " . $e->getMessage());
+                }
+            }
+            $zip->close();
+
+            // Descargar y eliminar temporal
+            return response()->download($tempPath)->deleteFileAfterSend(true);
+        }
+
+        return redirect()->back()->with('error', 'Error creando el archivo ZIP.');
     }
 
     // ── Generar (formulario + preview Ajax) ──────────────────────────────────

@@ -260,6 +260,11 @@ Route::group(['middleware' => 'auth', 'prefix' => 'facturacion'], function () {
     Route::post('facturas/masiva/facturar-seleccionadas', 'FacturacionMasivaController@facturarSeleccionadas')->name('facturas.masiva.facturar-seleccionadas');
     Route::post('facturas/descargar-masivo', 'FacturacionMasivaController@descargarMasivo')->name('facturas.descargar_masivo');
 
+    // ── Facturación Especial (Altas, Bajas, Sin Lectura) ──────────
+    Route::get('facturas-especial', 'FacturacionEspecialController@index')->name('facturacion.especial.index');
+    Route::post('facturas-especial/facturar', 'FacturacionEspecialController@facturarSeleccionadas')->name('facturacion.especial.facturar-seleccionadas');
+    Route::get('facturas-especial/{id}/pdf', 'FacturacionEspecialController@descargarPdf')->name('facturacion.especial.pdf');
+
     // ── Pagos ─────────────────────────────────────────────────────
     Route::get('pagos', 'PagoController@index')
         ->name('pagos.index');

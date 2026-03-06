@@ -113,7 +113,7 @@ label.lbl { font-weight:600; color:#4a5568; font-size:.8rem; text-transform:uppe
                     <ul style="margin:8px 0 0 20px;padding:0;">
                         <li>Solo se facturan automáticamente las lecturas con crítica <strong>NORMAL-54</strong></li>
                         <li>Las demás críticas quedan pendientes para revisión manual</li>
-                        <li>Se crea una orden de revisión para cada lectura no normal</li>
+                        <li>Puedes seleccionar manualmente lecturas ALTOS/BAJOS para facturar</li>
                     </ul>
                 </div>
 
@@ -121,7 +121,10 @@ label.lbl { font-weight:600; color:#4a5568; font-size:.8rem; text-transform:uppe
                     <i class="fa fa-chart-bar"></i> Cargar Resumen
                 </button>
                 <button class="btn btn-grad w-100 mt-2" id="btnProcesar" disabled style="display:none;">
-                    <i class="fa fa-play"></i> Ejecutar Facturación Masiva
+                    <i class="fa fa-play"></i> Ejecutar Facturación Automática
+                </button>
+                <button class="btn btn-preview w-100 mt-2" id="btnCargarSeleccion" disabled style="display:none;">
+                    <i class="fa fa-list-check"></i> Seleccionar para Facturar
                 </button>
             </div>
         </div>
@@ -132,6 +135,42 @@ label.lbl { font-weight:600; color:#4a5568; font-size:.8rem; text-transform:uppe
                 <i class="fa fa-spinner fa-spin"></i>
                 <h5 style="margin-top:20px;color:#4a5568;">Procesando facturación...</h5>
                 <p style="color:#718096;font-size:.9rem;">Esto puede tomar varios minutos dependiendo de la cantidad de lecturas.</p>
+            </div>
+
+            {{-- Panel de selección manual --}}
+            <div id="panelSeleccion" style="display:none;">
+                <div class="form-box">
+                    <h5><i class="fa fa-hand-pointer"></i> Seleccionar Lecturas para Facturar</h5>
+                    <p style="color:#718096;font-size:.85rem;margin-bottom:16px;">
+                        Marque las lecturas con críticas ALTOS/BAJOS u otras que desee facturar manualmente.
+                    </p>
+                    
+                    <div style="max-height:500px;overflow-y:auto;border:1px solid #e2e8f0;border-radius:10px;">
+                        <table class="tabla-detalles">
+                            <thead>
+                                <tr>
+                                    <th style="width:40px;"><input type="checkbox" id="chkTodos"></th>
+                                    <th>Suscriptor</th>
+                                    <th>Consumo</th>
+                                    <th>Crítica</th>
+                                    <th>Lectura Ant.</th>
+                                    <th>Lectura Act.</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tablaSeleccionBody">
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div style="margin-top:16px;display:flex;gap:10px;">
+                        <button class="btn btn-grad" id="btnFacturarSeleccionados">
+                            <i class="fa fa-check"></i> Facturar Seleccionadas
+                        </button>
+                        <button class="btn btn-preview" id="btnCancelarSeleccion">
+                            <i class="fa fa-times"></i> Cancelar
+                        </button>
+                    </div>
+                </div>
             </div>
 
             {{-- Panel de resultados --}}
@@ -206,6 +245,7 @@ label.lbl { font-weight:600; color:#4a5568; font-size:.8rem; text-transform:uppe
 $(document).ready(function() {
 
     let periodoSeleccionado = null;
+    let lecturasNoNormales = [];
 
     // Habilitar botón cargar resumen cuando seleccione período
     $('#selPeriodo').on('change', function() {
@@ -215,7 +255,9 @@ $(document).ready(function() {
             $('#btnCargarResumen').prop('disabled', false);
             $('#resumenPeriodo').hide();
             $('#btnProcesar').hide();
+            $('#btnCargarSeleccion').hide();
             $('#panelResultados').hide();
+            $('#panelSeleccion').hide();
             $('#mensajeInicial').show();
         } else {
             periodoSeleccionado = null;
@@ -242,7 +284,9 @@ $(document).ready(function() {
                     
                     $('#resumenPeriodo').slideDown();
                     $('#btnProcesar').show();
+                    $('#btnCargarSeleccion').show();
                     $('#btnProcesar').prop('disabled', false);
+                    $('#btnCargarSeleccion').prop('disabled', false);
                 } else {
                     alert('Error al cargar resumen: ' + res.mensaje);
                 }
@@ -253,7 +297,127 @@ $(document).ready(function() {
         });
     });
 
-    // Ejecutar facturación masiva
+    // Cargar lecturas no normales para selección manual
+    $('#btnCargarSeleccion').on('click', function() {
+        if (!periodoSeleccionado) return;
+
+        $('#btnCargarSeleccion').prop('disabled', true);
+        $('#btnProcesar').prop('disabled', true);
+        
+        $.ajax({
+            url: '{{ route("facturas.masiva.lecturas-no-normales") }}',
+            method: 'GET',
+            data: { periodo_lectura_id: periodoSeleccionado },
+            success: function(res) {
+                $('#btnCargarSeleccion').prop('disabled', false);
+                $('#btnProcesar').prop('disabled', false);
+                
+                if (res.ok) {
+                    lecturasNoNormales = res.lecturas;
+                    mostrarPanelSeleccion(lecturasNoNormales);
+                } else {
+                    alert('Error al cargar lecturas: ' + res.mensaje);
+                }
+            },
+            error: function(xhr) {
+                $('#btnCargarSeleccion').prop('disabled', false);
+                $('#btnProcesar').prop('disabled', false);
+                alert('Error en la solicitud');
+            }
+        });
+    });
+
+    function mostrarPanelSeleccion(lecturas) {
+        let html = '';
+        lecturas.forEach(function(l) {
+            const consumo = (l.Lect_Actual || 0) - (l.LA || 0);
+            html += '<tr>';
+            html += '<td><input type="checkbox" class="chk-lectura" value="' + l.id + '" data-suscriptor="' + l.Suscriptor + '" data-consumo="' + consumo + '" data-critica="' + (l.Critica || '') + '" data-la="' + (l.LA || 0) + '" data-lect-actual="' + (l.Lect_Actual || 0) + '"></td>';
+            html += '<td><strong>' + l.Suscriptor + '</strong></td>';
+            html += '<td>' + consumo + ' m³</td>';
+            html += '<td>' + (l.Critica || '—') + '</td>';
+            html += '<td>' + (l.LA || 0) + '</td>';
+            html += '<td>' + (l.Lect_Actual || 0) + '</td>';
+            html += '</tr>';
+        });
+        
+        $('#tablaSeleccionBody').html(html);
+        $('#mensajeInicial').hide();
+        $('#panelResultados').hide();
+        $('#panelSeleccion').slideDown();
+    }
+
+    // Checkbox seleccionar todos
+    $(document).on('change', '#chkTodos', function() {
+        const checked = $(this).prop('checked');
+        $('.chk-lectura').prop('checked', checked);
+    });
+
+    // Cancelar selección
+    $('#btnCancelarSeleccion').on('click', function() {
+        $('#panelSeleccion').slideUp();
+        $('#mensajeInicial').show();
+        lecturasNoNormales = [];
+    });
+
+    // Facturar seleccionadas
+    $('#btnFacturarSeleccionados').on('click', function() {
+        const seleccionados = [];
+        $('.chk-lectura:checked').each(function() {
+            seleccionados.push({
+                lectura_id: $(this).val(),
+                suscriptor: $(this).data('suscriptor'),
+                consumo: $(this).data('consumo'),
+                critica: $(this).data('critica'),
+                la: $(this).data('la'),
+                lect_actual: $(this).data('lect-actual')
+            });
+        });
+
+        if (seleccionados.length === 0) {
+            alert('Debe seleccionar al menos una lectura');
+            return;
+        }
+
+        if (!confirm('¿Está seguro de facturar ' + seleccionados.length + ' lecturas seleccionadas?')) {
+            return;
+        }
+
+        $('#btnFacturarSeleccionados').prop('disabled', true);
+        $('#btnCancelarSeleccion').prop('disabled', true);
+        $('#spinnerProceso').show();
+        $('#panelSeleccion').hide();
+
+        $.ajax({
+            url: '{{ route("facturas.masiva.facturar-seleccionadas") }}',
+            method: 'POST',
+            data: { 
+                periodo_lectura_id: periodoSeleccionado,
+                lecturas: seleccionados,
+                _token: '{{ csrf_token() }}'
+            },
+            success: function(res) {
+                $('#spinnerProceso').hide();
+                $('#btnFacturarSeleccionados').prop('disabled', false);
+                $('#btnCancelarSeleccion').prop('disabled', false);
+                
+                if (res.ok) {
+                    mostrarResultados(res.resultado);
+                    lecturasNoNormales = [];
+                } else {
+                    alert('Error en el proceso: ' + res.mensaje);
+                }
+            },
+            error: function(xhr) {
+                $('#spinnerProceso').hide();
+                $('#btnFacturarSeleccionados').prop('disabled', false);
+                $('#btnCancelarSeleccion').prop('disabled', false);
+                alert('Error en la solicitud: ' + xhr.responseText);
+            }
+        });
+    });
+
+    // Ejecutar facturación masiva (solo normales)
     $('#btnProcesar').on('click', function() {
         if (!periodoSeleccionado) return;
 

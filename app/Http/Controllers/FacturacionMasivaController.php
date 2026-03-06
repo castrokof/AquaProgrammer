@@ -222,6 +222,166 @@ class FacturacionMasivaController extends Controller
     }
 
     /**
+     * Generar facturas masivamente para lecturas críticas confirmadas
+     * Esta función factura todas las lecturas que han sido revisadas y confirmadas
+     */
+    public function procesarCriticasConfirmadas(Request $request)
+    {
+        $request->validate([
+            'periodo_lectura_id' => 'required|exists:periodos_lectura,id',
+        ]);
+
+        $periodo = PeriodoLectura::findOrFail($request->periodo_lectura_id);
+        
+        // Verificar que el período esté en estado adecuado
+        if (!in_array($periodo->estado, ['LECTURA_CERRADA', 'FACTURADO'])) {
+            return response()->json([
+                'ok' => false,
+                'mensaje' => 'El período debe estar en estado LECTURA_CERRADA o FACTURADO para proceder con la facturación.'
+            ], 422);
+        }
+
+        $resultado = [
+            'procesadas' => 0,
+            'facturadas' => 0,
+            'errores' => 0,
+            'detalles' => [],
+        ];
+
+        DB::beginTransaction();
+        try {
+            // Obtener todas las órdenes de revisión EJECUTADAS del período que tengan nueva_lectura
+            $ordenesRevision = OrdenRevision::whereHas('lectura', function($q) use ($request) {
+                    $q->where('periodo_lectura_id', $request->periodo_lectura_id);
+                })
+                ->where('estado_orden', 'EJECUTADO')
+                ->whereNotNull('nueva_lectura')
+                ->get();
+
+            foreach ($ordenesRevision as $orden) {
+                $resultado['procesadas']++;
+
+                try {
+                    $lectura = $orden->lectura;
+                    
+                    // Verificar si ya existe factura para este cliente en este período
+                    $existeFactura = Factura::where('suscriptor', $lectura->Suscriptor)
+                        ->where('periodo_lectura_id', $request->periodo_lectura_id)
+                        ->exists();
+
+                    if ($existeFactura) {
+                        $resultado['detalles'][] = [
+                            'suscriptor' => $lectura->Suscriptor,
+                            'estado' => 'SALTEADO',
+                            'mensaje' => 'Ya tiene factura',
+                        ];
+                        continue;
+                    }
+
+                    // Buscar cliente
+                    $cliente = Cliente::where('suscriptor', $lectura->Suscriptor)->first();
+                    if (!$cliente) {
+                        $resultado['errores']++;
+                        $resultado['detalles'][] = [
+                            'suscriptor' => $lectura->Suscriptor,
+                            'estado' => 'ERROR',
+                            'mensaje' => 'Cliente no encontrado',
+                        ];
+                        continue;
+                    }
+
+                    // Usar la nueva lectura confirmada
+                    $lecturaAnterior = intval($lectura->LA ?? 0);
+                    $lecturaActual = intval($orden->nueva_lectura ?? 0);
+                    $consumo = $lecturaActual - $lecturaAnterior;
+
+                    // Si el consumo es negativo, saltar
+                    if ($consumo < 0) {
+                        $resultado['errores']++;
+                        $resultado['detalles'][] = [
+                            'suscriptor' => $lectura->Suscriptor,
+                            'estado' => 'ERROR',
+                            'mensaje' => 'Consumo negativo (' . $consumo . ')',
+                        ];
+                        continue;
+                    }
+
+                    // Facturar con la lectura confirmada
+                    $calculo = $this->svc->calcular(
+                        $cliente,
+                        $consumo,
+                        $periodo,
+                        $lecturaAnterior,
+                        $lecturaActual
+                    );
+
+                    $calculo['observaciones'] = 'Facturación por crítica confirmada - Revisión #' . $orden->id;
+                    $calculo['usuario_id'] = auth()->id();
+                    $calculo['es_automatica'] = false;
+                    $calculo['suscriptor'] = $lectura->Suscriptor;
+                    $calculo['periodo_lectura_id'] = $periodo->id;
+
+                    $factura = Factura::create($calculo);
+
+                    // Registrar en historial de consumos
+                    ClienteHistoricoConsumo::registrarYActualizarPromedio(
+                        $cliente->id,
+                        $cliente->suscriptor,
+                        $periodo->codigo,
+                        $calculo['consumo_m3'],
+                        $lecturaAnterior,
+                        $lecturaActual
+                    );
+
+                    // Descontar cuotas de otros cobros
+                    $otrosCobros = ClienteOtrosCobro::where('cliente_id', $cliente->id)->activo()->get();
+                    foreach ($otrosCobros as $cobro) {
+                        $cobro->pagarCuota();
+                    }
+
+                    $resultado['facturadas']++;
+                    $resultado['detalles'][] = [
+                        'suscriptor' => $lectura->Suscriptor,
+                        'estado' => 'FACTURADO',
+                        'mensaje' => 'Factura #' . $factura->numero_factura,
+                        'consumo' => $consumo,
+                        'revision_id' => $orden->id,
+                    ];
+
+                } catch (\Exception $e) {
+                    $resultado['errores']++;
+                    $resultado['detalles'][] = [
+                        'suscriptor' => $orden->codigo_predio ?? 'N/A',
+                        'estado' => 'ERROR',
+                        'mensaje' => $e->getMessage(),
+                    ];
+                    Log::error('Error en facturación de críticas confirmadas: ' . $e->getMessage(), [
+                        'orden_revision_id' => $orden->id,
+                    ]);
+                }
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'ok' => true,
+                'resultado' => $resultado,
+                'mensaje' => 'Proceso completado. ' . 
+                    $resultado['facturadas'] . ' facturas generadas desde críticas confirmadas.',
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error grave en facturación de críticas confirmadas: ' . $e->getMessage());
+            
+            return response()->json([
+                'ok' => false,
+                'mensaje' => 'Error durante el proceso: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
      * Obtener resumen de lecturas por período
      */
     public function resumen(Request $request)
@@ -242,6 +402,14 @@ class FacturacionMasivaController extends Controller
 
         $conFactura = Factura::where('periodo_lectura_id', $request->periodo_lectura_id)->count();
 
+        // Contar revisiones ejecutadas pendientes de facturar
+        $revisionesEjecutadas = OrdenRevision::whereHas('lectura', function($q) use ($request) {
+                $q->where('periodo_lectura_id', $request->periodo_lectura_id);
+            })
+            ->where('estado_orden', 'EJECUTADO')
+            ->whereNotNull('nueva_lectura')
+            ->count();
+
         return response()->json([
             'ok' => true,
             'resumen' => [
@@ -250,7 +418,66 @@ class FacturacionMasivaController extends Controller
                 'otras_criticas' => $total - $normales,
                 'ya_facturadas' => $conFactura,
                 'pendientes_facturar' => $total - $conFactura,
+                'revisiones_ejecutadas' => $revisionesEjecutadas,
             ],
         ]);
+    }
+
+    /**
+     * Descargar masivamente facturas en PDF (ZIP)
+     */
+    public function descargarMasivo(Request $request)
+    {
+        $request->validate([
+            'facturas_ids' => 'required|array',
+            'facturas_ids.*' => 'required|integer|exists:facturas,id',
+        ]);
+
+        try {
+            $zip = new \ZipArchive();
+            $zipFileName = 'facturas_' . date('Y-m-d_His') . '.zip';
+            $zipPath = storage_path('app/temp/' . $zipFileName);
+
+            // Crear directorio temporal si no existe
+            if (!file_exists(dirname($zipPath))) {
+                mkdir(dirname($zipPath), 0755, true);
+            }
+
+            if ($zip->open($zipPath, \ZipArchive::CREATE) !== true) {
+                return response()->json([
+                    'ok' => false,
+                    'mensaje' => 'Error al crear archivo ZIP'
+                ], 500);
+            }
+
+            $contador = 0;
+            foreach ($request->facturas_ids as $facturaId) {
+                $factura = Factura::with(['cliente.estrato', 'periodoLectura', 'tarifaPeriodo'])
+                    ->findOrFail($facturaId);
+
+                $pdf = \PDF::loadView('pdf.factura', compact('factura'));
+                
+                $pdfContent = $pdf->output();
+                $filename = sprintf('Factura_%s_%s.pdf', 
+                    $factura->numero_factura, 
+                    $factura->suscriptor
+                );
+
+                $zip->addFromString($filename, $pdfContent);
+                $contador++;
+            }
+
+            $zip->close();
+
+            return response()->download($zipPath)->deleteFileAfterSend(true);
+
+        } catch (\Exception $e) {
+            Log::error('Error en descarga masiva: ' . $e->getMessage());
+            
+            return response()->json([
+                'ok' => false,
+                'mensaje' => 'Error durante la generación del ZIP: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 }

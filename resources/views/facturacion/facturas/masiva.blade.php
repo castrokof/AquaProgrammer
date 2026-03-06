@@ -33,6 +33,7 @@ label.lbl { font-weight:600; color:#4a5568; font-size:.8rem; text-transform:uppe
 
 .badge-estado { padding:4px 10px; border-radius:12px; font-size:.7rem; font-weight:700; text-transform:uppercase; }
 .badge-estado.FACTURADO_AUTOMATICO { background:#c6f6d5; color:#22543d; }
+.badge-estado.FACTURADO { background:#c6f6d5; color:#22543d; }
 .badge-estado.PENDIENTE_REVISION { background:#fed7d7; color:#742a2a; }
 .badge-estado.ERROR { background:#fed7d7; color:#742a2a; }
 .badge-estado.SALTEADO { background:#e2e8f0; color:#4a5568; }
@@ -50,6 +51,11 @@ label.lbl { font-weight:600; color:#4a5568; font-size:.8rem; text-transform:uppe
 .resumen-box .rb-row:last-child { margin-bottom:0; }
 .resumen-box .rb-lbl { opacity:.8; }
 .resumen-box .rb-val { font-weight:700; }
+
+/* Botones de acción */
+.acciones-box { background:#f7fafc; border-radius:14px; padding:16px; margin-top:20px; }
+.acciones-box h6 { font-weight:700; color:#2d3748; margin-bottom:12px; }
+.btn-accion { border-radius:10px; padding:10px 20px; font-weight:600; font-size:.85rem; margin-right:8px; margin-bottom:8px; }
 </style>
 @endsection
 
@@ -104,24 +110,38 @@ label.lbl { font-weight:600; color:#4a5568; font-size:.8rem; text-transform:uppe
                             <span class="rb-lbl">Pendientes:</span>
                             <span class="rb-val" id="rPendientes">—</span>
                         </div>
+                        <div class="rb-row" style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,.3);">
+                            <span class="rb-lbl">Revisiones ejecutadas:</span>
+                            <span class="rb-val" id="rRevisiones">—</span>
+                        </div>
                     </div>
+                </div>
+
+                {{-- Acciones de facturación --}}
+                <div class="acciones-box" id="accionesBox" style="display:none;">
+                    <h6><i class="fa fa-cogs"></i> Acciones Disponibles</h6>
+                    
+                    <button class="btn btn-accion btn-success" id="btnProcesarNormales" style="background:#48bb78;border:none;">
+                        <i class="fa fa-bolt"></i> Facturar Normales (54)
+                    </button>
+                    
+                    <button class="btn btn-accion btn-warning" id="btnProcesarCriticas" style="background:#ed8936;border:none;color:white;">
+                        <i class="fa fa-check-double"></i> Facturar Críticas Confirmadas
+                    </button>
                 </div>
 
                 <div style="background:#ebf8ff;border-radius:10px;padding:14px;margin-bottom:16px;font-size:.82rem;color:#2c5282;">
                     <i class="fa fa-info-circle" style="color:#3182ce;"></i>
                     <strong>Información:</strong>
                     <ul style="margin:8px 0 0 20px;padding:0;">
-                        <li>Solo se facturan automáticamente las lecturas con crítica <strong>NORMAL-54</strong></li>
-                        <li>Las demás críticas quedan pendientes para revisión manual</li>
-                        <li>Se crea una orden de revisión para cada lectura no normal</li>
+                        <li><strong>Facturar Normales (54):</strong> Genera facturas automáticamente para lecturas con crítica NORMAL-54</li>
+                        <li><strong>Facturar Críticas Confirmadas:</strong> Genera facturas para lecturas que fueron revisadas y confirmadas con nueva lectura</li>
+                        <li>Las demás críticas no confirmadas quedan pendientes para revisión manual</li>
                     </ul>
                 </div>
 
                 <button class="btn btn-grad w-100" id="btnCargarResumen" disabled>
                     <i class="fa fa-chart-bar"></i> Cargar Resumen
-                </button>
-                <button class="btn btn-grad w-100 mt-2" id="btnProcesar" disabled style="display:none;">
-                    <i class="fa fa-play"></i> Ejecutar Facturación Masiva
                 </button>
             </div>
         </div>

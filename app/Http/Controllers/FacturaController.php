@@ -10,6 +10,7 @@ use App\Models\ClienteHistoricoConsumo;
 use App\Models\ClienteOtrosCobro;
 use App\Services\FacturacionService;
 use Illuminate\Http\Request;
+use Barryvdh\DomPDF\Facade as PDF;
 
 class FacturaController extends Controller
 {
@@ -210,5 +211,48 @@ class FacturaController extends Controller
         $factura->update(['estado' => 'ANULADA', 'observaciones' => ($factura->observaciones ?? '') . ' | ANULADA: ' . $request->motivo]);
 
         return response()->json(['ok' => true, 'mensaje' => 'Factura anulada.']);
+    }
+
+    // ── PDF individual ────────────────────────────────────────────────────────
+
+    public function pdf($id)
+    {
+        $factura = Factura::with(['cliente', 'pagos'])->findOrFail($id);
+        $facturas = collect([$factura]);
+
+        $pdf = PDF::loadView('facturacion.facturas.pdf', compact('facturas'))
+            ->setPaper('letter', 'portrait');
+
+        return $pdf->download('factura-' . $factura->numero_factura . '.pdf');
+    }
+
+    // ── PDF masivo (seleccionados) ─────────────────────────────────────────────
+
+    public function pdfMasivo(Request $request)
+    {
+        $request->validate([
+            'ids'   => 'required|array|min:1|max:100',
+            'ids.*' => 'integer|exists:facturas,id',
+        ]);
+
+        $facturas = Factura::with(['cliente', 'pagos'])
+            ->whereIn('id', $request->ids)
+            ->orderBy('periodo', 'desc')
+            ->orderBy('numero_factura')
+            ->get();
+
+        if ($facturas->isEmpty()) {
+            abort(404, 'No se encontraron facturas con los IDs indicados.');
+        }
+
+        $periodo = $facturas->first()->periodo;
+        $nombre  = count($request->ids) === 1
+            ? 'factura-' . $facturas->first()->numero_factura . '.pdf'
+            : 'facturas-' . $periodo . '-' . count($request->ids) . '.pdf';
+
+        $pdf = PDF::loadView('facturacion.facturas.pdf', compact('facturas'))
+            ->setPaper('letter', 'portrait');
+
+        return $pdf->download($nombre);
     }
 }

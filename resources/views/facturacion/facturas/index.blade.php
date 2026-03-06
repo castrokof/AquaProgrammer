@@ -13,6 +13,7 @@
 #tblFacturas thead th { background:linear-gradient(135deg,#3d57ce 0%,#776a84 100%); color:white; font-weight:600; font-size:.73rem; text-transform:uppercase; padding:12px 8px; border:none; white-space:nowrap; text-align:center; }
 #tblFacturas tbody td { padding:10px 8px; vertical-align:middle; border-bottom:1px solid #f0f0f0; text-align:center; font-size:.82rem; }
 #tblFacturas tbody tr:hover { background:#f8f9ff; }
+#tblFacturas tbody tr.fila-seleccionada { background:#eef2ff; }
 .badge-est { display:inline-block; padding:3px 10px; border-radius:20px; font-size:.7rem; font-weight:700; }
 .badge-PENDIENTE { background:#fef3c7; color:#92400e; }
 .badge-PAGADA    { background:#c6f6d5; color:#22543d; }
@@ -21,6 +22,35 @@
 .kpi-box { border-radius:16px; padding:18px 22px; color:white; margin-bottom:20px; }
 .kpi-box .kpi-val { font-size:1.6rem; font-weight:800; }
 .kpi-box .kpi-lbl { font-size:.78rem; opacity:.88; }
+
+/* Bulk bar */
+#bulkBar {
+    display:none;
+    background:linear-gradient(135deg,#2e50e4,#2b0c49);
+    border-radius:12px;
+    padding:12px 20px;
+    margin-bottom:14px;
+    align-items:center;
+    justify-content:space-between;
+    color:white;
+}
+#bulkBar.visible { display:flex; }
+#bulkBar .sel-count { font-size:.9rem; font-weight:700; }
+#bulkBar .btn-dl-pdf {
+    background:white; color:#2e50e4; border:none;
+    border-radius:10px; padding:8px 18px;
+    font-weight:700; font-size:.85rem; cursor:pointer;
+}
+#bulkBar .btn-dl-pdf:hover { background:#e8edff; }
+#bulkBar .btn-clear {
+    background:rgba(255,255,255,.15); color:white; border:none;
+    border-radius:10px; padding:8px 14px;
+    font-weight:600; font-size:.82rem; cursor:pointer; margin-left:8px;
+}
+
+/* Checkbox styling */
+.check-factura { width:16px; height:16px; cursor:pointer; accent-color:#2e50e4; }
+#checkAll { width:16px; height:16px; cursor:pointer; accent-color:#2e50e4; }
 </style>
 @endsection
 
@@ -77,11 +107,25 @@
         </form>
     </div>
 
+    {{-- BARRA DE ACCIONES MASIVAS --}}
+    <div id="bulkBar">
+        <span class="sel-count"><i class="fa fa-check-square"></i> <span id="cntSel">0</span> factura(s) seleccionada(s)</span>
+        <div>
+            <button class="btn-dl-pdf" id="btnDescargaPDF">
+                <i class="fa fa-file-pdf"></i> Descargar PDF
+            </button>
+            <button class="btn-clear" id="btnClearSel">
+                <i class="fa fa-times"></i> Limpiar selección
+            </button>
+        </div>
+    </div>
+
     {{-- TABLA --}}
     <div style="background:white;border-radius:16px;padding:20px;box-shadow:0 10px 40px rgba(0,0,0,.08);overflow-x:auto;">
         <table id="tblFacturas" class="table table-hover" style="width:100%;">
             <thead>
                 <tr>
+                    <th style="width:36px;"><input type="checkbox" id="checkAll" title="Seleccionar todos"></th>
                     <th>N° Factura</th>
                     <th>Suscriptor</th>
                     <th>Período</th>
@@ -100,6 +144,7 @@
             <tbody>
                 @forelse($facturas as $f)
                 <tr>
+                    <td><input type="checkbox" class="check-factura" value="{{ $f->id }}"></td>
                     <td><strong style="font-family:monospace;">{{ $f->numero_factura }}</strong></td>
                     <td>
                         <strong>{{ $f->suscriptor }}</strong>
@@ -133,6 +178,9 @@
                         <a href="{{ route('facturas.show', $f->id) }}" class="btn btn-info btn-sm" title="Ver detalle">
                             <i class="fa fa-eye"></i>
                         </a>
+                        <a href="{{ route('facturas.pdf', $f->id) }}" class="btn btn-secondary btn-sm" title="Descargar PDF" target="_blank">
+                            <i class="fa fa-file-pdf"></i>
+                        </a>
                         @if($f->estado !== 'ANULADA')
                         <button class="btn btn-danger btn-sm btn-anular"
                                 data-id="{{ $f->id }}" title="Anular factura">
@@ -143,7 +191,7 @@
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="13" style="text-align:center;padding:50px;color:#a0aec0;">
+                    <td colspan="14" style="text-align:center;padding:50px;color:#a0aec0;">
                         <i class="fa fa-file-invoice-dollar" style="font-size:2.5rem;display:block;margin-bottom:12px;"></i>
                         No se encontraron facturas.
                     </td>
@@ -181,12 +229,67 @@
         </div>
     </div>
 </div>
+
+{{-- Formulario oculto para descarga masiva de PDF --}}
+<form id="formPdfMasivo" action="{{ route('facturas.pdf-masivo') }}" method="POST" target="_blank" style="display:none;">
+    @csrf
+    <div id="idsContainer"></div>
+</form>
+
 @endsection
 
 @section('scripts')
 <script>
 var CSRF = $("meta[name='csrf-token']").attr("content");
 
+// ── Selección masiva ────────────────────────────────────────────────────────
+function actualizarBulkBar() {
+    var n = $('.check-factura:checked').length;
+    $('#cntSel').text(n);
+    if (n > 0) {
+        $('#bulkBar').addClass('visible');
+    } else {
+        $('#bulkBar').removeClass('visible');
+    }
+    // Resaltar filas
+    $('.check-factura').each(function () {
+        $(this).closest('tr').toggleClass('fila-seleccionada', $(this).is(':checked'));
+    });
+}
+
+$('#checkAll').on('change', function () {
+    $('.check-factura').prop('checked', this.checked);
+    actualizarBulkBar();
+});
+
+$(document).on('change', '.check-factura', function () {
+    var total   = $('.check-factura').length;
+    var checked = $('.check-factura:checked').length;
+    $('#checkAll').prop('indeterminate', checked > 0 && checked < total);
+    $('#checkAll').prop('checked', checked === total);
+    actualizarBulkBar();
+});
+
+$('#btnClearSel').on('click', function () {
+    $('.check-factura, #checkAll').prop('checked', false).prop('indeterminate', false);
+    actualizarBulkBar();
+});
+
+// ── Descarga masiva PDF ─────────────────────────────────────────────────────
+$('#btnDescargaPDF').on('click', function () {
+    var ids = $('.check-factura:checked').map(function () { return this.value; }).get();
+    if (ids.length === 0) { return; }
+
+    var $form = $('#formPdfMasivo');
+    var $cont = $('#idsContainer');
+    $cont.empty();
+    ids.forEach(function (id) {
+        $cont.append('<input type="hidden" name="ids[]" value="' + id + '">');
+    });
+    $form.submit();
+});
+
+// ── Anular ──────────────────────────────────────────────────────────────────
 $(document).on('click', '.btn-anular', function () {
     $('#anularId').val($(this).data('id'));
     $('#anularMotivo').val('');

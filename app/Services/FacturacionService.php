@@ -63,6 +63,18 @@ class FacturacionService
             'ALCANTARILLADO', $consumoM3, $estratoId, $tarifa, in_array($servicios, ['AL','AG-AL'])
         );
 
+        // ── Subsidio / Contribución por estrato ───────────────────────────────
+        // porcentaje_subsidio > 0  → estratos 1-3 reciben descuento (subsidio)
+        // porcentaje_subsidio < 0  → estratos 5-6/COM/IND pagan sobretasa (contribución)
+        // Se aplica sobre el consumo básico de acueducto únicamente.
+        $pctSubsidio = $cliente->estrato ? (float) $cliente->estrato->porcentaje_subsidio : 0.0;
+        $subsidioAcueducto = 0.0;
+        if ($pctSubsidio != 0 && $acueducto['basico_valor'] > 0) {
+            $subsidioAcueducto = round($acueducto['basico_valor'] * $pctSubsidio / 100, 2);
+            // Positivo = descuenta del total; negativo = aumenta el total.
+            $acueducto['total'] = round($acueducto['total'] - $subsidioAcueducto, 2);
+        }
+
         // ── Otros cobros activos ──────────────────────────────────────────────
         $otrosAcueducto      = ClienteOtrosCobro::where('cliente_id', $cliente->id)
             ->where('tipo_servicio', 'ACUEDUCTO')->activo()->sum('cuota_mensual');
@@ -127,7 +139,7 @@ class FacturacionService
             'consumo_suntuario_acueducto_m3'             => $acueducto['suntuario_m3'],
             'consumo_suntuario_acueducto_valor'          => $acueducto['suntuario_valor'],
             'subtotal_facturacion_acueducto'             => $acueducto['subtotal'],
-            'subsidio_emergencia'                        => 0,
+            'subsidio_emergencia'                        => $subsidioAcueducto,
             'total_facturacion_acueducto'                => $acueducto['total'],
             'otros_cobros_acueducto'                     => $otrosAcueducto,
             'cuota_otros_cobros_acueducto'               => $otrosAcueducto,

@@ -343,10 +343,13 @@
                 </tr>
                 @endif
                 @if($factura->subsidio_emergencia != 0)
+                @php $esSubsidio = $factura->subsidio_emergencia > 0; @endphp
                 <tr>
-                    <td>Subsidio de Emergencia</td>
+                    <td>{{ $esSubsidio ? 'Subsidio Estrato' : 'Contribución Estrato' }}</td>
                     <td class="right">—</td>
-                    <td class="right" style="color:#166534;">- $ {{ number_format($factura->subsidio_emergencia,0,',','.') }}</td>
+                    <td class="right" style="color:{{ $esSubsidio ? '#166534' : '#991b1b' }};">
+                        {{ $esSubsidio ? '- ' : '+ ' }}$ {{ number_format(abs($factura->subsidio_emergencia),0,',','.') }}
+                    </td>
                 </tr>
                 @endif
                 @if($factura->cuota_otros_cobros_acueducto > 0)

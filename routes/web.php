@@ -236,6 +236,12 @@ Route::group(['middleware' => 'auth', 'prefix' => 'facturacion'], function () {
         ->name('facturas.index');
     Route::get('facturas/generar', 'FacturaController@generar')
         ->name('facturas.generar');
+    Route::get('facturas/lote', 'FacturaController@lote')
+        ->name('facturas.lote');
+    Route::post('facturas/clientes-sin-factura', 'FacturaController@clientesSinFactura')
+        ->name('facturas.clientes-sin-factura');
+    Route::post('facturas/store-lote', 'FacturaController@storeLote')
+        ->name('facturas.store-lote');
     Route::post('facturas/preview', 'FacturaController@preview')
         ->name('facturas.preview');
     Route::post('facturas/buscar-cliente', 'FacturaController@buscarCliente')

@@ -117,7 +117,8 @@ class PeriodoLecturaController extends Controller
             ], 422);
         }
 
-        $clientes = Cliente::where('estado', 'ACTIVO')
+        $clientes = Cliente::with('estrato')
+            ->where('estado', 'ACTIVO')
             ->orderBy('sector')
             ->orderBy('suscriptor')
             ->get();

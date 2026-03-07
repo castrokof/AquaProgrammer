@@ -10,6 +10,7 @@ use App\Models\ClienteHistoricoConsumo;
 use App\Models\ClienteOtrosCobro;
 use App\Services\FacturacionService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade as PDF;
 
 class FacturaController extends Controller
@@ -211,6 +212,155 @@ class FacturaController extends Controller
         $factura->update(['estado' => 'ANULADA', 'observaciones' => ($factura->observaciones ?? '') . ' | ANULADA: ' . $request->motivo]);
 
         return response()->json(['ok' => true, 'mensaje' => 'Factura anulada.']);
+    }
+
+    // ── Facturación en lote ───────────────────────────────────────────────────
+
+    /** Vista de facturación masiva/manual por lote */
+    public function lote()
+    {
+        $periodos = PeriodoLectura::whereIn('estado', ['ACTIVO','LECTURA_CERRADA','FACTURADO'])
+            ->orderBy('codigo', 'desc')->get();
+
+        return view('facturacion.facturas.lote', compact('periodos'));
+    }
+
+    /**
+     * Ajax: devuelve clientes ACTIVOS sin factura en el período seleccionado.
+     * Clasifica: sin_medidor, altos, bajos, causados, normales.
+     * "Altos/bajos/causados" vienen del campo Critica de ordenescu para ese período.
+     */
+    public function clientesSinFactura(Request $request)
+    {
+        $request->validate(['periodo_lectura_id' => 'required|exists:periodos_lectura,id']);
+
+        $periodo = PeriodoLectura::findOrFail($request->periodo_lectura_id);
+
+        // IDs de clientes que ya tienen factura en este período
+        $yaFacturados = Factura::where('periodo_lectura_id', $periodo->id)
+            ->pluck('cliente_id')->toArray();
+
+        // Clientes activos sin factura aún
+        $clientes = Cliente::with('estrato')
+            ->where('estado', 'ACTIVO')
+            ->whereNotIn('id', $yaFacturados)
+            ->orderBy('sector')
+            ->orderBy('suscriptor')
+            ->get();
+
+        // Órdenes de lectura para este período (si existen)
+        $ordenes = \App\Models\Admin\Ordenesmtl::where('periodo_lectura_id', $periodo->id)
+            ->get(['Suscriptor', 'Critica', 'Lect_Actual', 'LA', 'Cons_Act', 'Estado'])
+            ->keyBy('Suscriptor');
+
+        $resultado = $clientes->map(function ($c) use ($ordenes) {
+            $orden  = $ordenes->get($c->suscriptor);
+            $critica = $orden ? ($orden->Critica ?? '') : '';
+            $criticaUpper = strtoupper($critica);
+
+            // Clasificación
+            if (!$c->tiene_medidor) {
+                $tipo = 'sin_medidor';
+            } elseif (str_contains($criticaUpper, 'ALTO') || str_contains($criticaUpper, 'ELEVADO')) {
+                $tipo = 'alto';
+            } elseif (str_contains($criticaUpper, 'BAJO') || str_contains($criticaUpper, 'CERO')) {
+                $tipo = 'bajo';
+            } elseif ($critica !== '' && !str_contains($criticaUpper, 'NORMAL')) {
+                $tipo = 'causado';
+            } else {
+                $tipo = 'normal';
+            }
+
+            return [
+                'id'               => $c->id,
+                'suscriptor'       => $c->suscriptor,
+                'nombre'           => trim($c->nombre . ' ' . $c->apellido),
+                'direccion'        => $c->direccion,
+                'sector'           => $c->sector,
+                'estrato'          => optional($c->estrato)->nombre ?? '—',
+                'servicios'        => $c->servicios,
+                'tiene_medidor'    => $c->tiene_medidor,
+                'serie_medidor'    => $c->serie_medidor,
+                'promedio_consumo' => (float) $c->promedio_consumo,
+                'tipo'             => $tipo,
+                'critica'          => $critica,
+                // Pre-llenar con lectura de la orden si existe
+                'lect_anterior'    => $orden ? $orden->LA        : null,
+                'lect_actual'      => $orden ? $orden->Lect_Actual : null,
+                'consumo_sugerido' => $orden ? $orden->Cons_Act  : (int) round($c->promedio_consumo ?: 1),
+            ];
+        });
+
+        return response()->json([
+            'ok'       => true,
+            'periodo'  => $periodo->nombre,
+            'clientes' => $resultado->values(),
+            'total'    => $resultado->count(),
+        ]);
+    }
+
+    /**
+     * Genera facturas en lote para los clientes enviados.
+     * Recibe array rows: [{cliente_id, consumo_m3, lectura_anterior, lectura_actual}]
+     */
+    public function storeLote(Request $request)
+    {
+        $request->validate([
+            'periodo_lectura_id'    => 'required|exists:periodos_lectura,id',
+            'rows'                  => 'required|array|min:1|max:500',
+            'rows.*.cliente_id'     => 'required|exists:clientes,id',
+            'rows.*.consumo_m3'     => 'required|integer|min:0',
+            'rows.*.lectura_anterior' => 'nullable|integer|min:0',
+            'rows.*.lectura_actual'   => 'nullable|integer|min:0',
+        ]);
+
+        $periodo  = PeriodoLectura::with('tarifa')->findOrFail($request->periodo_lectura_id);
+        $generadas = 0;
+        $errores   = [];
+
+        \DB::beginTransaction();
+        try {
+            foreach ($request->rows as $row) {
+                // Saltar si ya existe factura
+                $existe = Factura::where('cliente_id', $row['cliente_id'])
+                    ->where('periodo_lectura_id', $periodo->id)
+                    ->exists();
+                if ($existe) { continue; }
+
+                $cliente = Cliente::with('estrato')->findOrFail($row['cliente_id']);
+                $calculo = $this->svc->calcular(
+                    $cliente,
+                    (int) $row['consumo_m3'],
+                    $periodo,
+                    isset($row['lectura_anterior']) ? (int) $row['lectura_anterior'] : null,
+                    isset($row['lectura_actual'])   ? (int) $row['lectura_actual']   : null
+                );
+                $calculo['usuario_id']    = auth()->id();
+                $calculo['es_automatica'] = false;
+
+                $factura = Factura::create($calculo);
+
+                ClienteHistoricoConsumo::registrarYActualizarPromedio(
+                    $cliente->id, $cliente->suscriptor, $periodo->codigo,
+                    $calculo['consumo_m3'], $calculo['lectura_anterior'], $calculo['lectura_actual']
+                );
+
+                ClienteOtrosCobro::where('cliente_id', $cliente->id)->activo()->each->pagarCuota();
+
+                $generadas++;
+            }
+
+            \DB::commit();
+        } catch (\Throwable $e) {
+            \DB::rollBack();
+            return response()->json(['ok' => false, 'mensaje' => 'Error al generar facturas: ' . $e->getMessage()], 500);
+        }
+
+        return response()->json([
+            'ok'       => true,
+            'generadas' => $generadas,
+            'mensaje'  => "{$generadas} factura(s) generada(s) correctamente.",
+        ]);
     }
 
     // ── PDF individual ────────────────────────────────────────────────────────

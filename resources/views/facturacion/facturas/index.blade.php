@@ -4,12 +4,15 @@
 
 @section('styles')
 <style>
+/* Estilos Modernos (Mantenemos los tuyos y agregamos algunos) */
 .modern-card { border-radius:20px; box-shadow:0 10px 40px rgba(0,0,0,.1); border:none; overflow:hidden; margin-bottom:20px; background:white; }
 .modern-card .card-header { background:linear-gradient(135deg,#2e50e4 0%,#2b0c49 100%); border:none; padding:22px 28px; display:flex; justify-content:space-between; align-items:center; }
 .modern-card .card-header h3 { color:white; font-weight:700; font-size:1.3rem; margin:0; }
 .filtros-box { background:white; border-radius:16px; padding:20px; box-shadow:0 4px 15px rgba(0,0,0,.05); margin-bottom:20px; }
-.filtros-box .form-control, .filtros-box .form-control-sm { border-radius:10px; border:2px solid #e2e8f0; }
+.filtros-box .form-control { border-radius:10px; border:2px solid #e2e8f0; }
 .filtros-box .form-control:focus { border-color:#667eea; box-shadow:0 0 0 3px rgba(102,126,234,.12); outline:none; }
+
+/* Tabla */
 #tblFacturas thead th { background:linear-gradient(135deg,#3d57ce 0%,#776a84 100%); color:white; font-weight:600; font-size:.73rem; text-transform:uppercase; padding:12px 8px; border:none; white-space:nowrap; text-align:center; }
 #tblFacturas tbody td { padding:10px 8px; vertical-align:middle; border-bottom:1px solid #f0f0f0; text-align:center; font-size:.82rem; }
 #tblFacturas tbody tr:hover { background:#f8f9ff; }
@@ -57,6 +60,7 @@
 @section('contenido')
 <div class="container-fluid">
 
+    <!-- Header -->
     <div class="modern-card">
         <div class="card-header">
             <h3><i class="fa fa-file-invoice-dollar"></i> Facturas</h3>
@@ -71,25 +75,42 @@
         </div>
     </div>
 
-    {{-- FILTROS --}}
+    <!-- Tarjetas por Crítica -->
+    <h6 class="text-uppercase text-muted font-weight-bold mb-2" style="font-size:0.8rem;">Resumen por Crítica</h6>
+    <div class="critica-grid">
+        @foreach($agrupadoPorCritica as $critica => $datos)
+        <div class="critica-card">
+            <div class="critica-nombre">{{ $critica }}</div>
+            <div class="critica-cantidad">{{ $datos['cantidad'] }}</div>
+            <small class="text-muted">${{ number_format($datos['total_valor'], 0, ',', '.') }}</small>
+        </div>
+        @endforeach
+    </div>
+
+    <!-- Filtros -->
     <div class="filtros-box">
         <form method="GET" action="{{ route('facturas.index') }}">
             <div class="row align-items-end">
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <label style="font-weight:600;font-size:.8rem;color:#4a5568;text-transform:uppercase;">Período</label>
                     <select name="periodo" class="form-control">
                         <option value="">— Todos —</option>
                         @foreach($periodos as $p)
-                        <option value="{{ $p->codigo }}" {{ request('periodo')==$p->codigo?'selected':'' }}>
-                            {{ $p->nombre }} ({{ $p->codigo }})
-                        </option>
+                        <option value="{{ $p->codigo }}" {{ request('periodo')==$p->codigo?'selected':'' }}>{{ $p->nombre }}</option>
                         @endforeach
                     </select>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-2">
+                    <label style="font-weight:600;font-size:.8rem;color:#4a5568;text-transform:uppercase;">ID Ruta</label>
+                    <input type="number" name="id_ruta" class="form-control" value="{{ request('id_ruta') }}" placeholder="Ej: 101">
+                </div>
+                <div class="col-md-2">
+                    <label style="font-weight:600;font-size:.8rem;color:#4a5568;text-transform:uppercase;">Crítica</label>
+                    <input type="text" name="critica" class="form-control" value="{{ request('critica') }}" placeholder="Ej: ALTA">
+                </div>
+                <div class="col-md-2">
                     <label style="font-weight:600;font-size:.8rem;color:#4a5568;text-transform:uppercase;">Suscriptor</label>
-                    <input type="text" name="suscriptor" class="form-control"
-                           value="{{ request('suscriptor') }}" placeholder="Código suscriptor">
+                    <input type="text" name="suscriptor" class="form-control" value="{{ request('suscriptor') }}" placeholder="Código">
                 </div>
                 <div class="col-md-2">
                     <label style="font-weight:600;font-size:.8rem;color:#4a5568;text-transform:uppercase;">Estado</label>
@@ -100,13 +121,10 @@
                         @endforeach
                     </select>
                 </div>
-                <div class="col-md-4" style="margin-top:8px;">
-                    <button type="submit" class="btn btn-primary" style="border-radius:12px;font-weight:700;margin-right:6px;">
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100" style="border-radius:12px;font-weight:700;">
                         <i class="fa fa-search"></i> Filtrar
                     </button>
-                    <a href="{{ route('facturas.index') }}" class="btn btn-secondary" style="border-radius:12px;">
-                        <i class="fa fa-times"></i> Limpiar
-                    </a>
                 </div>
             </div>
         </form>
@@ -133,15 +151,11 @@
                     <th style="width:36px;"><input type="checkbox" id="checkAll" title="Seleccionar todos"></th>
                     <th>N° Factura</th>
                     <th>Suscriptor</th>
+                    <th>Ruta</th>
+                    <th>Crítica</th>
                     <th>Período</th>
-                    <th>Expide</th>
                     <th>Vence</th>
-                    <th>Acueducto</th>
-                    <th>Alcantar.</th>
-                    <th>Otros Cobros</th>
-                    <th>Saldo Ant.</th>
                     <th>Total</th>
-                    <th>Tipo</th>
                     <th>Estado</th>
                     <th>Acciones</th>
                 </tr>
@@ -204,9 +218,7 @@
                 @endforelse
             </tbody>
         </table>
-        <div style="margin-top:16px;">{{ $facturas->links() }}</div>
     </div>
-
 </div>
 
 {{-- Modal anular --}}
@@ -245,7 +257,23 @@
 
 @section('scripts')
 <script>
-var CSRF = $("meta[name='csrf-token']").attr("content");
+var idioma_espanol = { /* Tu objeto de idioma */ };
+
+$(function () {
+    $('#tblFacturas').DataTable({
+        dom: 'Bfrtip',
+        buttons: [
+            { extend: 'excelHtml5', text: '<i class="fa fa-file-excel"></i> Excel', className: 'btn btn-success btn-sm' },
+            { extend: 'print', text: '<i class="fa fa-print"></i> Imprimir', className: 'btn btn-info btn-sm' }
+        ],
+        pageLength: 100, // Mostramos más por página
+        language: idioma_espanol,
+        order: [[1, 'desc']],
+        columnDefs: [
+            { orderable: false, targets: [0, 9] } // No ordenar por checkbox ni acciones
+        ]
+    });
+});
 
 // ── Selección masiva ────────────────────────────────────────────────────────
 function actualizarBulkBar() {
@@ -302,25 +330,19 @@ $(document).on('click', '.btn-anular', function () {
 });
 
 $('#btnConfirmarAnular').on('click', function () {
-    var id     = $('#anularId').val();
+    var id = $('#anularId').val();
     var motivo = $('#anularMotivo').val().trim();
-    if (!motivo) {
-        Swal.fire('Campo requerido', 'Debe indicar el motivo de anulación.', 'warning');
-        return;
-    }
+    if (!motivo) { alert('Digite el motivo'); return; }
+    
     $.ajax({
-        url: '/facturacion/facturas/' + id + '/anular', method: 'POST',
+        url: '/facturacion/facturas/' + id + '/anular',
+        method: 'POST',
         data: { motivo: motivo, _token: CSRF },
         success: function (r) {
-            if (r.ok) {
-                $('#modalAnular').modal('hide');
-                Manteliviano.notificaciones(r.mensaje, 'Facturas', 'success');
-                setTimeout(() => location.reload(), 1200);
-            }
+            if (r.ok) { location.reload(); }
+            else { alert(r.mensaje); }
         },
-        error: function (xhr) {
-            Swal.fire('No se puede anular', xhr.responseJSON?.mensaje || 'Error.', 'error');
-        }
+        error: function (xhr) { alert('Error al anular'); }
     });
 });
 </script>

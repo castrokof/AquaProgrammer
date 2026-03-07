@@ -59,16 +59,8 @@ class MacromedidorApiController extends Controller
      */
     public function enviarMacro(Request $request)
     {
-        // 1. Validar token
-        $apiToken = $request->input('api_token');
-        if (!$apiToken) {
-            return response()->json(['success' => false, 'message' => 'api_token requerido'], 401);
-        }
-
-        $user = Usuario::where('api_token', $apiToken)->first();
-        if (!$user) {
-            return response()->json(['success' => false, 'message' => 'Token invalido'], 401);
-        }
+        
+        $user = $request->user();
 
         // 2. Buscar el macromedidor
         $idOrden = $request->input('id_orden');

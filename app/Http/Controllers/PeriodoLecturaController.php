@@ -99,23 +99,24 @@ class PeriodoLecturaController extends Controller
      * El período debe estar en PLANIFICADO o ACTIVO y sin órdenes previas.
      */
     public function generarOrdenes($id)
-    {
-        $periodo = PeriodoLectura::with('tarifa')->findOrFail($id);
+{
+    $periodo = PeriodoLectura::with('tarifa')->findOrFail($id);
 
-        if (!in_array($periodo->estado, ['PLANIFICADO', 'ACTIVO'])) {
-            return response()->json([
-                'ok'      => false,
-                'mensaje' => 'El período debe estar en estado PLANIFICADO o ACTIVO para generar órdenes.',
-            ], 422);
-        }
+    // Validaciones iniciales...
+    if (!in_array($periodo->estado, ['PLANIFICADO', 'ACTIVO'])) {
+        return response()->json([
+            'ok' => false,
+            'mensaje' => 'El período debe estar en estado PLANIFICADO o ACTIVO.',
+        ], 422);
+    }
 
-        $yaExisten = Ordenesmtl::where('periodo_lectura_id', $periodo->id)->count();
-        if ($yaExisten > 0) {
-            return response()->json([
-                'ok'      => false,
-                'mensaje' => "Este período ya tiene {$yaExisten} órdenes generadas. No se puede repetir.",
-            ], 422);
-        }
+    $yaExisten = Ordenesmtl::where('periodo_lectura_id', $periodo->id)->count();
+    if ($yaExisten > 0) {
+        return response()->json([
+            'ok' => false,
+            'mensaje' => "Este período ya tiene {$yaExisten} órdenes generadas.",
+        ], 422);
+    }
 
         $clientes = Cliente::with('estrato')
             ->where('estado', 'ACTIVO')
@@ -123,64 +124,142 @@ class PeriodoLecturaController extends Controller
             ->orderBy('suscriptor')
             ->get();
 
-        if ($clientes->isEmpty()) {
-            return response()->json(['ok' => false, 'mensaje' => 'No hay clientes activos para generar órdenes.'], 422);
-        }
-
-        $conMedidor  = 0;
-        $sinMedidor  = 0;
-        $consecutivo = 1;
-        $facturacion = new FacturacionService();
-
-        DB::beginTransaction();
-        try {
-            foreach ($clientes as $cliente) {
-                if ($cliente->tiene_medidor) {
-                    Ordenesmtl::create([
-                        'Suscriptor'         => $cliente->suscriptor,
-                        'Periodo'            => $periodo->codigo,
-                        'Año'                => substr($periodo->codigo, 0, 4),
-                        'Mes'                => substr($periodo->codigo, 4, 2),
-                        'Ciclo'              => $periodo->ciclo,
-                        'Nombre'             => $cliente->nombre,
-                        'Apell'              => $cliente->apellido,
-                        'Direccion'          => $cliente->direccion,
-                        'Telefono'           => $cliente->telefono,
-                        'Ref_Medidor'        => $cliente->serie_medidor,
-                        'Ruta'               => $cliente->sector,
-                        'Consecutivo'        => $consecutivo++,
-                        'Promedio'           => (int) round($cliente->promedio_consumo),
-                        'Estado'             => 1, // PENDIENTE
-                        'periodo_lectura_id' => $periodo->id,
-                        'uso'                => $cliente->tipo_uso,
-                        'servicio'           => $cliente->servicios,
-                    ]);
-                    $conMedidor++;
-                } else {
-                    // Sin medidor: facturar automáticamente con promedio
-                    $consumo = max(1, (int) round($cliente->promedio_consumo));
-                    $datos   = $facturacion->calcular($cliente, $consumo, $periodo);
-                    Factura::create($datos);
-                    $sinMedidor++;
-                }
-            }
-
-            // Si el período estaba en PLANIFICADO, avanzar a ACTIVO
-            if ($periodo->estado === 'PLANIFICADO') {
-                $periodo->update(['estado' => 'ACTIVO']);
-            }
-
-            DB::commit();
-
-            return response()->json([
-                'ok'          => true,
-                'con_medidor' => $conMedidor,
-                'sin_medidor' => $sinMedidor,
-                'mensaje'     => "{$conMedidor} órdenes de lectura generadas · {$sinMedidor} clientes sin medidor facturados automáticamente.",
-            ]);
-        } catch (\Throwable $e) {
-            DB::rollBack();
-            return response()->json(['ok' => false, 'mensaje' => 'Error al generar órdenes: ' . $e->getMessage()], 500);
-        }
+    if ($clientes->isEmpty()) {
+        return response()->json(['ok' => false, 'mensaje' => 'No hay clientes activos.'], 422);
     }
+
+    // 👇 Obtener el siguiente ordenescu_id si NO es auto_increment
+     $lastId = DB::table('ordenescu')->max('ordenescu_id') ?? 0;
+     $nextOrdenescuId = $lastId + 1;
+
+    $conMedidor = 0;
+    $sinMedidor = 0;
+    $facturacion = new FacturacionService();
+
+    DB::beginTransaction();
+    try {
+        foreach ($clientes as $cliente) {
+            if ($cliente->tiene_medidor) {
+                
+                // 👇 1. Obtener LA y Promedio del histórico
+                $lecturaPrev = $this->obtenerLecturaAnterior($cliente->suscriptor, $periodo->codigo);
+
+                // 👇 2. CREAR PRIMERO EN ENTRADA (para obtener el ID válido)
+                $entrada = \App\Models\Admin\Entrada::create([
+                    // Campos obligatorios de tu tabla 'entrada' (ajusta según DESCRIBE entrada)
+                    'Ciclo'           => $periodo->ciclo,
+                    'Suscriptor'      => $cliente->suscriptor,
+                    'Periodo'         => $periodo->codigo,
+                    'Año'             => substr($periodo->codigo, 0, 4),
+                    'Mes'             => substr($periodo->codigo, 4, 2),
+                    'Nombre'          => $cliente->nombre,
+                    'Apell'           => $cliente->apellido ?? 'APELLIDO',
+                    'Ref_Medidor'     => $cliente->serie_medidor,
+                    'Direccion'       => $cliente->direccion,
+                    'Telefono'        => $cliente->telefono ?? '',
+                    'Ruta'            => $cliente->ruta,
+                    'id_Ruta'         => $cliente->id_ruta,
+                    'idDivision'      => $cliente->id_ruta,
+                    'uso'             => $cliente->tipo_uso,
+                    'servicio'        => $cliente->servicios,
+                    'consecutivoRuta' => $cliente->consecutivo,
+                    'consecutivo_int' => $cliente->consecutivo,
+                    'LA'              => $lecturaPrev['Lect_Actual'],
+                    'Promedio'        => $lecturaPrev['Promedio'],
+                    'Tope'            => 6, // valor por defecto
+                    'estrato'         => $cliente->estrato ?? null,
+                    'id_lectura'      => $nextOrdenescuId++, // se puede actualizar después
+                    // 👇 Agrega aquí cualquier otro campo NOT NULL de tu tabla entrada
+                ]);
+
+                // 👇 3. AHORA SÍ: insertar en ordenescu usando el ID generado en entrada
+                Ordenesmtl::create([
+                    'ordenescu_id'       => $entrada->id,  // ✅ FK válida desde entrada
+                    'Suscriptor'         => $cliente->suscriptor,
+                    'Periodo'            => $periodo->codigo,
+                    'Año'                => substr($periodo->codigo, 0, 4),
+                    'Mes'                => substr($periodo->codigo, 4, 2),
+                    'Ciclo'              => $periodo->ciclo,
+                    'Nombre'             => $cliente->nombre,
+                    'Apell'              => $cliente->apellido ?? 'APELLIDO',
+                    'Direccion'          => $cliente->direccion,
+                    'Telefono'           => $cliente->telefono ?? '',
+                    'Ref_Medidor'        => $cliente->serie_medidor,
+                    'Ruta'               => $cliente->ruta,
+                    'LA'                 => $lecturaPrev['Lect_Actual'],
+                    'Promedio'           => $lecturaPrev['Promedio'],
+                    'Estado'             => 1, // CARGADO
+                    'Estado_des'         => 'CARGADO',
+                    'periodo_lectura_id' => $periodo->id,
+                    'uso'                => $cliente->tipo_uso,
+                    'servicio'           => $cliente->servicios,
+                    'idDivision'         => $cliente->id_ruta,
+                    'id_Ruta'            => $cliente->id_ruta,
+                    'Consecutivo'        => $cliente->consecutivo,
+                    'recorrido'        => $cliente->consecutivo,
+                    'consecutivoRuta'    => $cliente->consecutivo, // 👈 Incrementa solo aquí
+                    'fecha_de_ejecucion' => null, // 👈 Incrementa solo aquí
+                    'Tope'            => 6,
+                    'id_lectura'         => $entrada->id, // 👈 Mismo ID si es tu lógica
+                    // 👇 Agrega aquí cualquier otro campo NOT NULL de ordenescu
+                ]);
+
+                $conMedidor++;
+            } else {
+                // Clientes sin medidor: facturación automática
+                $consumo = max(1, (int) round($cliente->promedio_consumo));
+                $datos = $facturacion->calcular($cliente, $consumo, $periodo);
+                Factura::create($datos);
+                $sinMedidor++;
+            }
+        }
+
+        if ($periodo->estado === 'PLANIFICADO') {
+            $periodo->update(['estado' => 'ACTIVO']);
+        }
+
+        DB::commit();
+
+        return response()->json([
+            'ok' => true,
+            'con_medidor' => $conMedidor,
+            'sin_medidor' => $sinMedidor,
+            'mensaje' => "{$conMedidor} órdenes generadas · {$sinMedidor} facturados automáticamente.",
+        ]);
+
+    } catch (\Throwable $e) {
+        DB::rollBack();
+        \Log::error('Error en generarOrdenes: ' . $e->getMessage(), [
+            'trace' => $e->getTraceAsString(),
+            'suscriptor' => $cliente->suscriptor ?? null
+        ]);
+        return response()->json([
+            'ok' => false,
+            'mensaje' => 'Error al generar órdenes: ' . $e->getMessage()
+        ], 500);
+    }
+}
+
+/**
+ * Helper: Obtiene la lectura anterior y promedio de un cliente
+ */
+        private function obtenerLecturaAnterior($suscriptor, $periodoActual)
+        {
+            $ultima = Ordenesmtl::where('Suscriptor', $suscriptor)
+                ->where('Estado', 4) // Ajusta: 2 = FINALIZADA
+                ->where('Periodo', '<', $periodoActual)
+                ->orderByDesc('Periodo')
+                ->orderByDesc('Consecutivo')
+                ->first();
+
+            return $ultima 
+                ? [
+                    'Lect_Actual' => $ultima->Lect_Actual ?? $ultima->Promedio ?? 0,
+                    'Promedio' => $ultima->Promedio ?? 0
+                ]
+                : [
+                    'Lect_Actual' => 0,
+                    'Promedio' => 0
+                ];
+        }
 }

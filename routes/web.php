@@ -250,6 +250,8 @@ Route::group(['middleware' => 'auth', 'prefix' => 'facturacion'], function () {
         ->name('facturas.store');
     Route::get('facturas/{id}', 'FacturaController@show')
         ->name('facturas.show');
+    Route::get('facturas/{id}/pdf', 'FacturaController@descargarPdf')
+        ->name('facturas.pdf');
     Route::post('facturas/{id}/pago', 'FacturaController@registrarPago')
         ->name('facturas.pago');
     Route::post('facturas/{id}/anular', 'FacturaController@anular')
@@ -258,6 +260,29 @@ Route::group(['middleware' => 'auth', 'prefix' => 'facturacion'], function () {
         ->name('facturas.pdf');
     Route::post('facturas/pdf-masivo', 'FacturaController@pdfMasivo')
         ->name('facturas.pdf-masivo');
+
+    // ── Facturación Masiva ────────────────────────────────────────
+    Route::get('facturasMasiva', 'FacturacionMasivaController@index')->name('facturas.masiva');
+    Route::post('facturas/masiva/procesar', 'FacturacionMasivaController@procesar')->name('facturas.masiva.procesar');
+    Route::post('facturas/masiva/criticas-confirmadas', 'FacturacionMasivaController@procesarCriticasConfirmadas')->name('facturas.masiva.criticas_confirmadas');
+    Route::get('facturas/masiva/resumen', 'FacturacionMasivaController@resumen')->name('facturas.masiva.resumen');
+    Route::get('facturas/masiva/lecturas-no-normales', 'FacturacionMasivaController@lecturasNoNormales')->name('facturas.masiva.lecturas-no-normales');
+    Route::post('facturas/masiva/facturar-seleccionadas', 'FacturacionMasivaController@facturarSeleccionadas')->name('facturas.masiva.facturar-seleccionadas');
+    Route::post('facturas/descargar-masivo', 'FacturacionMasivaController@descargarMasivo')->name('facturas.descargar_masivo');
+     // Nueva ruta para exportar ZIP
+    Route::post('facturas/exportar-masivo', 'FacturaController@exportarMasivo')->name('facturas.exportar-masivo');
+    Route::post('facturas/exportar-seleccionadas', 'FacturaController@exportarSeleccionadas')
+    ->name('facturas.exportar_seleccionadas');
+
+   
+
+      // ── Facturación Especial (No Normales) ────────────────────────
+    Route::get('facturas-especial', 'FacturacionEspecialController@index')->name('facturacion.especial.index');
+    Route::get('facturas-especial/resumen', 'FacturacionEspecialController@resumen')->name('facturacion.especial.resumen');
+    Route::get('facturas-especial/lecturas', 'FacturacionEspecialController@getLecturas')->name('facturacion.especial.lecturas');
+    
+    Route::post('facturas-especial/facturar', 'FacturacionEspecialController@facturarSeleccionadas')->name('facturacion.especial.facturar-seleccionadas');
+
 
     // ── Pagos ─────────────────────────────────────────────────────
     Route::get('pagos', 'PagoController@index')

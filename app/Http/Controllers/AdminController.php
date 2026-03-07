@@ -49,7 +49,7 @@ class AdminController extends Controller
                     ['Estado_des', '!=', 'CARGADO'],
                     //['fecha_de_ejecucion', '!=', '0000-00-00 00:00:00'],
                     ])
-                ->whereNotNull('fecha_de_ejecucion')
+               // ->whereNotNull('fecha_de_ejecucion')
                 ->groupBy('Ciclo', 'Periodo', 'Usuario','nombreu','idDivision')
                 ->get();
                 

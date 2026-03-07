@@ -174,7 +174,7 @@ label.requerido::after { content: " *"; color: #f5576c; font-weight: 700; }
         </table>
 
         <div style="margin-top:20px;">
-            {{ $clientes->appends(request()->query())->links() }}
+          
         </div>
     </div>
 </div>
@@ -372,13 +372,14 @@ label.requerido::after { content: " *"; color: #f5576c; font-weight: 700; }
                             </div>
                         </div>
                     </div>
-
-                </div>
-                <div class="modal-footer">
                     <button type="button" class="btn btn-modal-cancel" data-dismiss="modal">Cancelar</button>
                     <button type="submit" class="btn btn-modal-save">
                         <i class="fa fa-save"></i> Guardar Cliente
                     </button>
+
+                </div>
+                <div class="modal-footer">
+                    
                 </div>
             </form>
         </div>
@@ -388,28 +389,58 @@ label.requerido::after { content: " *"; color: #f5576c; font-weight: 700; }
 @endsection
 
 @section('scriptsPlugins')
-<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap4.min.css">
+<link href="{{asset("assets/$theme/plugins/datatables-bs4/css/dataTables.bootstrap4.css")}}" rel="stylesheet" type="text/css"/>   
+<script src="{{asset("assets/$theme/plugins/datatables/jquery.dataTables.js")}}" type="text/javascript"></script>
+<script src="{{asset("assets/$theme/plugins/datatables-bs4/js/dataTables.bootstrap4.js")}}" type="text/javascript"></script>
+<script src="{{asset("assets/$theme/plugins/select2/js/select2.full.min.js")}}" type="text/javascript"></script>
+<!-- <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap4.min.css">
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap4.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap4.min.js"></script> -->
 @endsection
 
 @section('scripts')
 <script>
 $(function () {
     $('#tblClientes').DataTable({
-        paging:   false,
+       
+        
+        lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "Mostrar Todo"]],
         order:    [[10, 'desc']],
-        language: {
-            search:      'Filtrar en página:',
-            zeroRecords: 'No se encontraron resultados',
-            info:        'Mostrando _START_ a _END_ de _TOTAL_ clientes',
-            infoEmpty:   'Sin registros',
-            infoFiltered:'(filtrados de _MAX_ en total)'
-        },
+        language: idioma_espanol,
         columnDefs: [
             { orderable: false, targets: [11] }
-        ]
+        ],
+         dom: '<"row"<"col-md-9 form-inline"l><"col-xs-3 form-inline"B>>rt<"row"<"col-md-8 form-inline"i><"col-md-4 form-inline"p>>',
     });
 });
+
+var idioma_espanol = {
+    "sProcessing": "Procesando...",
+    "sLengthMenu": "Mostrar _MENU_ registros",
+    "sZeroRecords": "No se encontraron resultados",
+    "sEmptyTable": "Ningún dato disponible en esta tabla =(",
+    "sInfo": "Mostrando registros del _START_ al _END_ de un total de _TOTAL_ registros",
+    "sInfoEmpty": "Mostrando registros del 0 al 0 de un total de 0 registros",
+    "sInfoFiltered": "(filtrado de un total de _MAX_ registros)",
+    "sInfoPostFix": "",
+    "sSearch": "Buscar:",
+    "sUrl": "",
+    "sInfoThousands": ",",
+    "sLoadingRecords": "Cargando...",
+    "oPaginate": {
+        "sFirst": "Primero",
+        "sLast": "Último",
+        "sNext": "Siguiente",
+        "sPrevious": "Anterior"
+    },
+    "oAria": {
+        "sSortAscending": ": Activar para ordenar la columna de manera ascendente",
+        "sSortDescending": ": Activar para ordenar la columna de manera descendente"
+    },
+    "buttons": {
+        "copy": "Copiar",
+        "colvis": "Visibilidad"
+    }
+};
 </script>
 @endsection

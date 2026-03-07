@@ -226,6 +226,7 @@ label.lbl { font-weight:600; color:#4a5568; font-size:.8rem; text-transform:uppe
                         <div class="pv-row"><span class="pv-lbl" id="pvBasicoAcLbl">Básico (0 m³)</span><span class="pv-val" id="pvBasicoAcVal">$ 0</span></div>
                         <div class="pv-row"><span class="pv-lbl" id="pvCompleAcLbl">Complementario (0 m³)</span><span class="pv-val" id="pvCompleAcVal">$ 0</span></div>
                         <div class="pv-row"><span class="pv-lbl" id="pvSuntAcLbl">Suntuario (0 m³)</span><span class="pv-val" id="pvSuntAcVal">$ 0</span></div>
+                        <div class="pv-row" id="rowSubsidio" style="display:none;"><span class="pv-lbl" id="lblSubsidio">Subsidio Estrato</span><span class="pv-val" id="pvSubsidio" style="color:#166534;font-weight:700;">$ 0</span></div>
                         <div class="pv-row pv-total"><span class="pv-lbl">Subtotal Acueducto</span><span class="pv-val" id="pvSubtotalAc">$ 0</span></div>
                     </div>
                 </div>
@@ -394,6 +395,17 @@ $('#btnPreview').on('click', function () {
             $('#pvCompleAcVal').text(fmt(c.consumo_complementario_acueducto_valor));
             $('#pvSuntAcLbl').text('Suntuario (' + (c.consumo_suntuario_acueducto_m3||0) + ' m³)');
             $('#pvSuntAcVal').text(fmt(c.consumo_suntuario_acueducto_valor));
+            // Subsidio / Contribución
+            var subsidio = parseFloat(c.subsidio_emergencia) || 0;
+            if (subsidio !== 0) {
+                var esSubsidio = subsidio > 0;
+                $('#lblSubsidio').text(esSubsidio ? 'Subsidio Estrato' : 'Contribución Estrato');
+                $('#pvSubsidio').css('color', esSubsidio ? '#166534' : '#991b1b')
+                    .text((esSubsidio ? '- ' : '+ ') + fmt(Math.abs(subsidio)));
+                $('#rowSubsidio').show();
+            } else {
+                $('#rowSubsidio').hide();
+            }
             $('#pvSubtotalAc').text(fmt(c.total_facturacion_acueducto));
             $('#pvTotalAcueducto').text(fmt(c.subtotal_conexion_otros_acueducto));
             // Alcantarillado

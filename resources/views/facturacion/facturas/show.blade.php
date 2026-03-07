@@ -85,8 +85,8 @@ body { background:#f0f4f8; }
                 <i class="fa fa-dollar-sign"></i> Registrar Pago
             </button>
             @endif
-            <a href="{{ route('facturas.pdf', $factura->id) }}" class="btn btn-primary"
-               style="border-radius:12px;font-weight:700;" target="_blank">
+            <a href="{{ route('facturas.pdf', $factura->id) }}"
+               class="btn btn-outline-danger" style="border-radius:12px;font-weight:700;" target="_blank">
                 <i class="fa fa-file-pdf"></i> Descargar PDF
             </a>
             <button onclick="window.print()" class="btn btn-outline-secondary"
@@ -219,7 +219,16 @@ body { background:#f0f4f8; }
                     <tr><td>Consumo Suntuario</td><td>{{ $factura->consumo_suntuario_acueducto_m3 }}</td><td>$ {{ number_format($factura->consumo_suntuario_acueducto_valor,0,',','.') }}</td></tr>
                     @endif
                     @if($factura->subsidio_emergencia != 0)
-                    <tr><td>Subsidio de Emergencia</td><td>—</td><td>- $ {{ number_format($factura->subsidio_emergencia,0,',','.') }}</td></tr>
+                    @php $esSubsidio = $factura->subsidio_emergencia > 0; @endphp
+                    <tr>
+                        <td style="color:{{ $esSubsidio ? '#166534' : '#991b1b' }};">
+                            {{ $esSubsidio ? 'Subsidio Estrato' : 'Contribución Estrato' }}
+                        </td>
+                        <td>—</td>
+                        <td style="color:{{ $esSubsidio ? '#166534' : '#991b1b' }};">
+                            {{ $esSubsidio ? '- ' : '+ ' }}$ {{ number_format(abs($factura->subsidio_emergencia),0,',','.') }}
+                        </td>
+                    </tr>
                     @endif
                     @if($factura->otros_cobros_acueducto > 0)
                     <tr><td>Otros Cobros — Cuota {{ $factura->otros_cobros_acueducto>0?'':'0' }}</td><td>—</td><td>$ {{ number_format($factura->cuota_otros_cobros_acueducto,0,',','.') }}</td></tr>

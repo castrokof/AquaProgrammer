@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\PeriodoLectura;
 use App\Models\TarifaPeriodo;
 use App\Models\Cliente;
+use App\Models\ClienteHistoricoConsumo;
 use App\Models\Factura;
 use App\Models\Admin\Ordenesmtl;
 use App\Services\FacturacionService;
@@ -117,10 +118,11 @@ class PeriodoLecturaController extends Controller
         ], 422);
     }
 
-    $clientes = Cliente::where('estado', 'ACTIVO')
-        ->orderBy('sector')
-        ->orderBy('suscriptor')
-        ->get();
+        $clientes = Cliente::with('estrato')
+            ->where('estado', 'ACTIVO')
+            ->orderBy('sector')
+            ->orderBy('suscriptor')
+            ->get();
 
     if ($clientes->isEmpty()) {
         return response()->json(['ok' => false, 'mensaje' => 'No hay clientes activos.'], 422);

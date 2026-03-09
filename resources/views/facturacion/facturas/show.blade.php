@@ -97,23 +97,24 @@ body { background:#f0f4f8; }
     </div>
 
     {{-- FACTURA --}}
+    @php $nf = fn($v) => number_format((float)($v ?? 0), 0, ',', '.'); @endphp
     <div class="fact-header">
         <div>
             <div class="empresa">ACUEDUCTO ALTO LOS MANGOS</div>
             <div class="subempresa">Servicio Público Domiciliario</div>
             <div style="margin-top:12px;font-size:.78rem;opacity:.8;">
                 {{ $factura->mes_cuenta }}<br>
-                Del {{ \Carbon\Carbon::parse($factura->fecha_del)->format('d/m/Y') }}
-                al {{ \Carbon\Carbon::parse($factura->fecha_hasta)->format('d/m/Y') }}
+                Del {{ $factura->fecha_del?->format('d/m/Y') ?? '—' }}
+                al {{ $factura->fecha_hasta?->format('d/m/Y') ?? '—' }}
             </div>
         </div>
         <div class="num-factura">
             <div class="lbl">Factura N°</div>
             <div class="num">{{ $factura->numero_factura }}</div>
             <div style="font-size:.78rem;opacity:.8;margin-top:8px;">
-                Expide: {{ \Carbon\Carbon::parse($factura->fecha_expedicion)->format('d/m/Y') }}<br>
-                Vence: {{ \Carbon\Carbon::parse($factura->fecha_vencimiento)->format('d/m/Y') }}<br>
-                Corte: {{ \Carbon\Carbon::parse($factura->fecha_corte)->format('d/m/Y') }}
+                Expide: {{ $factura->fecha_expedicion?->format('d/m/Y') ?? '—' }}<br>
+                Vence: {{ $factura->fecha_vencimiento?->format('d/m/Y') ?? '—' }}<br>
+                Corte: {{ $factura->fecha_corte?->format('d/m/Y') ?? '—' }}
             </div>
             @if($factura->es_automatica)
                 <span style="background:rgba(255,255,255,.25);border-radius:8px;padding:3px 10px;font-size:.68rem;font-weight:700;margin-top:6px;display:inline-block;">AUTO</span>
@@ -210,13 +211,13 @@ body { background:#f0f4f8; }
             <table class="tabla-fact">
                 <thead><tr><th>Concepto</th><th>m³</th><th>Valor</th></tr></thead>
                 <tbody>
-                    <tr><td>Cargo Fijo</td><td>—</td><td>$ {{ number_format($factura->cargo_fijo_acueducto,0,',','.') }}</td></tr>
-                    <tr><td>Consumo Básico</td><td>{{ $factura->consumo_basico_acueducto_m3 }}</td><td>$ {{ number_format($factura->consumo_basico_acueducto_valor,0,',','.') }}</td></tr>
+                    <tr><td>Cargo Fijo</td><td>—</td><td>$ {{ $nf($factura->cargo_fijo_acueducto) }}</td></tr>
+                    <tr><td>Consumo Básico</td><td>{{ $factura->consumo_basico_acueducto_m3 }}</td><td>$ {{ $nf($factura->consumo_basico_acueducto_valor) }}</td></tr>
                     @if($factura->consumo_complementario_acueducto_m3 > 0)
-                    <tr><td>Consumo Complementario</td><td>{{ $factura->consumo_complementario_acueducto_m3 }}</td><td>$ {{ number_format($factura->consumo_complementario_acueducto_valor,0,',','.') }}</td></tr>
+                    <tr><td>Consumo Complementario</td><td>{{ $factura->consumo_complementario_acueducto_m3 }}</td><td>$ {{ $nf($factura->consumo_complementario_acueducto_valor) }}</td></tr>
                     @endif
                     @if($factura->consumo_suntuario_acueducto_m3 > 0)
-                    <tr><td>Consumo Suntuario</td><td>{{ $factura->consumo_suntuario_acueducto_m3 }}</td><td>$ {{ number_format($factura->consumo_suntuario_acueducto_valor,0,',','.') }}</td></tr>
+                    <tr><td>Consumo Suntuario</td><td>{{ $factura->consumo_suntuario_acueducto_m3 }}</td><td>$ {{ $nf($factura->consumo_suntuario_acueducto_valor) }}</td></tr>
                     @endif
                     @if($factura->subsidio_emergencia != 0)
                     @php $esSubsidio = $factura->subsidio_emergencia > 0; @endphp
@@ -226,16 +227,16 @@ body { background:#f0f4f8; }
                         </td>
                         <td>—</td>
                         <td style="color:{{ $esSubsidio ? '#166534' : '#991b1b' }};">
-                            {{ $esSubsidio ? '- ' : '+ ' }}$ {{ number_format(abs($factura->subsidio_emergencia),0,',','.') }}
+                            {{ $esSubsidio ? '- ' : '+ ' }}$ {{ $nf(abs($factura->subsidio_emergencia)) }}
                         </td>
                     </tr>
                     @endif
                     @if($factura->otros_cobros_acueducto > 0)
-                    <tr><td>Otros Cobros — Cuota {{ $factura->otros_cobros_acueducto>0?'':'0' }}</td><td>—</td><td>$ {{ number_format($factura->cuota_otros_cobros_acueducto,0,',','.') }}</td></tr>
+                    <tr><td>Otros Cobros — Cuota {{ $factura->otros_cobros_acueducto>0?'':'0' }}</td><td>—</td><td>$ {{ $nf($factura->cuota_otros_cobros_acueducto) }}</td></tr>
                     @endif
                 </tbody>
                 <tfoot>
-                    <tr><td colspan="2"><strong>Total Acueducto</strong></td><td><strong>$ {{ number_format($factura->subtotal_conexion_otros_acueducto,0,',','.') }}</strong></td></tr>
+                    <tr><td colspan="2"><strong>Total Acueducto</strong></td><td><strong>$ {{ $nf($factura->subtotal_conexion_otros_acueducto) }}</strong></td></tr>
                 </tfoot>
             </table>
         </div>
@@ -248,20 +249,20 @@ body { background:#f0f4f8; }
             <table class="tabla-fact">
                 <thead><tr><th>Concepto</th><th>m³</th><th>Valor</th></tr></thead>
                 <tbody>
-                    <tr><td>Cargo Fijo</td><td>—</td><td>$ {{ number_format($factura->cargo_fijo_alcantarillado,0,',','.') }}</td></tr>
-                    <tr><td>Consumo Básico</td><td>{{ $factura->consumo_basico_alcantarillado_m3 }}</td><td>$ {{ number_format($factura->consumo_basico_alcantarillado_valor,0,',','.') }}</td></tr>
+                    <tr><td>Cargo Fijo</td><td>—</td><td>$ {{ $nf($factura->cargo_fijo_alcantarillado) }}</td></tr>
+                    <tr><td>Consumo Básico</td><td>{{ $factura->consumo_basico_alcantarillado_m3 }}</td><td>$ {{ $nf($factura->consumo_basico_alcantarillado_valor) }}</td></tr>
                     @if($factura->consumo_complementario_alcantarillado_m3 > 0)
-                    <tr><td>Consumo Complementario</td><td>{{ $factura->consumo_complementario_alcantarillado_m3 }}</td><td>$ {{ number_format($factura->consumo_complementario_alcantarillado_valor,0,',','.') }}</td></tr>
+                    <tr><td>Consumo Complementario</td><td>{{ $factura->consumo_complementario_alcantarillado_m3 }}</td><td>$ {{ $nf($factura->consumo_complementario_alcantarillado_valor) }}</td></tr>
                     @endif
                     @if($factura->consumo_suntuario_alcantarillado_m3 > 0)
-                    <tr><td>Consumo Suntuario</td><td>{{ $factura->consumo_suntuario_alcantarillado_m3 }}</td><td>$ {{ number_format($factura->consumo_suntuario_alcantarillado_valor,0,',','.') }}</td></tr>
+                    <tr><td>Consumo Suntuario</td><td>{{ $factura->consumo_suntuario_alcantarillado_m3 }}</td><td>$ {{ $nf($factura->consumo_suntuario_alcantarillado_valor) }}</td></tr>
                     @endif
                     @if($factura->otros_cobros_alcantarillado > 0)
-                    <tr><td>Otros Cobros — Cuota</td><td>—</td><td>$ {{ number_format($factura->cuota_otros_cobros_alcantarillado,0,',','.') }}</td></tr>
+                    <tr><td>Otros Cobros — Cuota</td><td>—</td><td>$ {{ $nf($factura->cuota_otros_cobros_alcantarillado) }}</td></tr>
                     @endif
                 </tbody>
                 <tfoot>
-                    <tr><td colspan="2"><strong>Total Alcantarillado</strong></td><td><strong>$ {{ number_format($factura->subtotal_conexion_otros_alcantarillado,0,',','.') }}</strong></td></tr>
+                    <tr><td colspan="2"><strong>Total Alcantarillado</strong></td><td><strong>$ {{ $nf($factura->subtotal_conexion_otros_alcantarillado) }}</strong></td></tr>
                 </tfoot>
             </table>
         </div>
@@ -275,7 +276,7 @@ body { background:#f0f4f8; }
                     <span style="font-weight:700;color:#e53e3e;font-size:.88rem;"><i class="fa fa-exclamation-triangle"></i> Saldo Anterior en Mora</span>
                     <div style="font-size:.78rem;color:#718096;margin-top:4px;">{{ $factura->facturas_en_mora }} factura(s) pendientes de períodos anteriores.</div>
                 </div>
-                <span style="font-size:1.2rem;font-weight:800;color:#e53e3e;">$ {{ number_format($factura->saldo_anterior,0,',','.') }}</span>
+                <span style="font-size:1.2rem;font-weight:800;color:#e53e3e;">$ {{ $nf($factura->saldo_anterior) }}</span>
             </div>
         </div>
         @endif
@@ -287,7 +288,7 @@ body { background:#f0f4f8; }
                     <div class="lbl">TOTAL A PAGAR</div>
                     <div style="font-size:.72rem;opacity:.7;">Incluye todos los conceptos del período</div>
                 </div>
-                <div class="val">$ {{ number_format($factura->total_a_pagar,0,',','.') }}</div>
+                <div class="val">$ {{ $nf($factura->total_a_pagar) }}</div>
             </div>
         </div>
 
@@ -306,9 +307,9 @@ body { background:#f0f4f8; }
                         {{ $p->numero_recibo ? 'Recibo: ' . $p->numero_recibo : 'Sin número' }}
                         — {{ $p->medio_pago }}
                     </div>
-                    <div class="fechas">{{ \Carbon\Carbon::parse($p->fecha_pago)->format('d/m/Y') }}</div>
+                    <div class="fechas">{{ $p->fecha_pago?->format('d/m/Y') ?? '—' }}</div>
                 </div>
-                <div class="monto">+ $ {{ number_format($p->total_pago_realizado,0,',','.') }}</div>
+                <div class="monto">+ $ {{ $nf($p->total_pago_realizado) }}</div>
             </div>
             @empty
             <div style="text-align:center;padding:20px;color:#a0aec0;font-size:.85rem;">
@@ -321,12 +322,12 @@ body { background:#f0f4f8; }
             <div style="display:flex;justify-content:space-between;align-items:center;background:#f0f4ff;border-radius:12px;padding:14px 18px;margin-top:12px;">
                 <div>
                     <div style="font-size:.75rem;color:#4a5568;font-weight:700;text-transform:uppercase;">Total Pagado</div>
-                    <div style="font-size:1.1rem;font-weight:800;color:#22543d;">$ {{ number_format($totalPagado,0,',','.') }}</div>
+                    <div style="font-size:1.1rem;font-weight:800;color:#22543d;">$ {{ $nf($totalPagado) }}</div>
                 </div>
                 <div style="text-align:right;">
                     <div style="font-size:.75rem;color:#4a5568;font-weight:700;text-transform:uppercase;">Saldo Pendiente</div>
                     <div style="font-size:1.1rem;font-weight:800;color:{{ $saldoPendiente > 0 ? '#e53e3e' : '#22543d' }};">
-                        $ {{ number_format($saldoPendiente,0,',','.') }}
+                        $ {{ $nf($saldoPendiente) }}
                         @if($saldoPendiente <= 0) <i class="fa fa-check-circle"></i> @endif
                     </div>
                 </div>
@@ -407,7 +408,7 @@ body { background:#f0f4f8; }
                         <div style="text-align:right;">
                             <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;color:#718096;">Saldo pendiente</div>
                             <div style="font-size:1rem;font-weight:800;color:#e53e3e;" id="saldoQuedaraCalc">
-                                $ {{ number_format($saldoPendiente ?? $factura->total_a_pagar,0,',','.') }}
+                                $ {{ $nf($saldoPendiente ?? $factura->total_a_pagar) }}
                             </div>
                         </div>
                     </div>

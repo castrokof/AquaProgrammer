@@ -156,9 +156,11 @@ class FacturaController extends Controller
         if ($zip->open($tempPath, ZipArchive::CREATE) === TRUE) {
             foreach ($facturas as $factura) {
                 try {
-                    // Generar PDF
-                    $pdf = Pdf::loadView('facturacion.facturas.pdf', compact('factura')); // Ajusta tu vista PDF
-                    
+                    // Generar PDF (la vista espera $facturas como colección)
+                    $facturaCol = collect([$factura]);
+                    $pdf = PDF::loadView('facturacion.facturas.pdf', ['facturas' => $facturaCol])
+                        ->setPaper('letter', 'portrait');
+
                     // Nombre del archivo dentro del ZIP
                     $nombreArchivo = "Factura_{$factura->numero_factura}_{$factura->suscriptor}.pdf";
                     
@@ -201,10 +203,10 @@ public function exportarSeleccionadas(Request $request)
     }
 
     foreach ($facturas as $f) {
-        // Generar PDF individual (usando tu servicio existente)
-        $pdf = \PDF::loadView('facturacion.facturas.pdf', compact('f')); // Ajusta la vista según tu proyecto
+        $facturaCol = collect([$f]);
+        $pdf = PDF::loadView('facturacion.facturas.pdf', ['facturas' => $facturaCol])
+            ->setPaper('letter', 'portrait');
         $nombrePdf = "Factura_{$f->numero_factura}_{$f->suscriptor}.pdf";
-        
         $zip->addFromString($nombrePdf, $pdf->output());
     }
 
@@ -340,16 +342,13 @@ public function exportarSeleccionadas(Request $request)
 
     public function descargarPdf($id)
     {
-        $factura = Factura::with(['cliente.estrato', 'periodoLectura', 'tarifaPeriodo', 'pagos'])->findOrFail($id);
-        
-        $pdf = \PDF::loadView('pdf.factura', compact('factura'));
-        
-        $filename = sprintf('Factura_%s_%s.pdf', 
-            $factura->numero_factura, 
-            $factura->suscriptor
-        );
-        
-        return $pdf->download($filename);
+        $factura  = Factura::with(['cliente', 'pagos'])->findOrFail($id);
+        $facturas = collect([$factura]);
+
+        $pdf = PDF::loadView('facturacion.facturas.pdf', compact('facturas'))
+            ->setPaper('letter', 'portrait');
+
+        return $pdf->download('Factura_' . $factura->numero_factura . '_' . $factura->suscriptor . '.pdf');
     }
 
     // ── Pago ──────────────────────────────────────────────────────────────────

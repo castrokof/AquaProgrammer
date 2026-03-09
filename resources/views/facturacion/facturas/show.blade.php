@@ -104,17 +104,17 @@ body { background:#f0f4f8; }
             <div class="subempresa">Servicio Público Domiciliario</div>
             <div style="margin-top:12px;font-size:.78rem;opacity:.8;">
                 {{ $factura->mes_cuenta }}<br>
-                Del {{ $factura->fecha_del?->format('d/m/Y') ?? '—' }}
-                al {{ $factura->fecha_hasta?->format('d/m/Y') ?? '—' }}
+                Del {{ $factura->fecha_del ? $factura->fecha_del->format('d/m/Y') : '—' }}
+                al {{ $factura->fecha_hasta ? $factura->fecha_hasta->format('d/m/Y') : '—' }}
             </div>
         </div>
         <div class="num-factura">
             <div class="lbl">Factura N°</div>
             <div class="num">{{ $factura->numero_factura }}</div>
             <div style="font-size:.78rem;opacity:.8;margin-top:8px;">
-                Expide: {{ $factura->fecha_expedicion?->format('d/m/Y') ?? '—' }}<br>
-                Vence: {{ $factura->fecha_vencimiento?->format('d/m/Y') ?? '—' }}<br>
-                Corte: {{ $factura->fecha_corte?->format('d/m/Y') ?? '—' }}
+                Expide: {{ $factura->fecha_expedicion ? $factura->fecha_expedicion->format('d/m/Y') : '—' }}<br>
+                Vence: {{ $factura->fecha_vencimiento ? $factura->fecha_vencimiento->format('d/m/Y') : '—' }}<br>
+                Corte: {{ $factura->fecha_corte ? $factura->fecha_corte->format('d/m/Y') : '—' }}
             </div>
             @if($factura->es_automatica)
                 <span style="background:rgba(255,255,255,.25);border-radius:8px;padding:3px 10px;font-size:.68rem;font-weight:700;margin-top:6px;display:inline-block;">AUTO</span>
@@ -307,7 +307,7 @@ body { background:#f0f4f8; }
                         {{ $p->numero_recibo ? 'Recibo: ' . $p->numero_recibo : 'Sin número' }}
                         — {{ $p->medio_pago }}
                     </div>
-                    <div class="fechas">{{ $p->fecha_pago?->format('d/m/Y') ?? '—' }}</div>
+                    <div class="fechas">{{ $p->fecha_pago ? $p->fecha_pago->format('d/m/Y') : '—' }}</div>
                 </div>
                 <div class="monto">+ $ {{ $nf($p->total_pago_realizado) }}</div>
             </div>

@@ -236,6 +236,8 @@ Route::group(['middleware' => 'auth', 'prefix' => 'facturacion'], function () {
         ->name('facturas.index');
     Route::get('facturas/data', 'FacturaController@data')
         ->name('facturas.data');
+    Route::get('facturas/kpis', 'FacturaController@kpis')
+        ->name('facturas.kpis');
     Route::get('facturas/generar', 'FacturaController@generar')
         ->name('facturas.generar');
     Route::get('facturas/lote', 'FacturaController@lote')

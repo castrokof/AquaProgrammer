@@ -26,104 +26,76 @@ class FacturaController extends Controller
 
     // ── Listado ───────────────────────────────────────────────────────────────
 
-    // public function index(Request $request)
-    // {
-    //     $periodos = PeriodoLectura::orderBy('codigo', 'desc')->get(['id','codigo','nombre','estado']);
-
-    //     $query = Factura::with('cliente')
-    //         ->orderBy('periodo', 'desc')
-    //         ->orderBy('numero_factura', 'desc');
-
-    //     if ($p = $request->periodo) $query->where('periodo', $p);
-    //     if ($s = $request->suscriptor) $query->where('suscriptor', 'like', "%{$s}%");
-    //     if ($e = $request->estado) $query->where('estado', $e);
-
-    //     $facturas = $query->paginate(25)->appends(request()->query());
-
-    //     return view('facturacion.facturas.index', compact('facturas', 'periodos'));
-    // }
-
-    public function index(Request $request)
-{
-    $periodos = PeriodoLectura::orderBy('codigo', 'desc')->get(['codigo', 'nombre']);
-    
-    // Iniciamos la consulta
-    $query = Factura::with(['cliente', 'periodoLectura'])
-        ->select('facturas.*'); // Seleccionar explícitamente columnas de facturas
-
-    // Aplicar Filtros
-    if ($request->filled('periodo')) {
-        $query->where('periodo', $request->periodo);
+    public function index()
+    {
+        $periodos = PeriodoLectura::orderBy('codigo', 'desc')->get(['codigo', 'nombre']);
+        return view('facturacion.facturas.index', compact('periodos'));
     }
-    if ($request->filled('suscriptor')) {
-        $query->where('suscriptor', 'like', '%' . $request->suscriptor . '%');
-    }
-    if ($request->filled('estado')) {
-        $query->where('estado', $request->estado);
-    }
-    // NUEVOS FILTROS
-    if ($request->filled('id_ruta')) {
-        // Unimos con la tabla ordenescu para filtrar por ruta histórica o usamos el snapshot si lo guardaste
-        // Opción A: Si guardaste id_ruta en facturas (recomendado verificar si existe en tu BD)
-        if (\Schema::hasColumn('facturas', 'id_ruta')) {
-            $query->where('id_ruta', $request->id_ruta);
-        } else {
-            // Opción B: Filtrar por suscriptores que pertenezcan a esa ruta en la última lectura
-            $suscriptoresRuta = \App\Models\Admin\Ordenesmtl::where('id_Ruta', $request->id_ruta)
-                ->pluck('Suscriptor');
-            $query->whereIn('suscriptor', $suscriptoresRuta);
+
+    /** AJAX: DataTables server-side para el listado de facturas */
+    public function data(Request $request)
+    {
+        $query = Factura::with('cliente')->select('facturas.*');
+
+        if ($request->filled('periodo'))    $query->where('periodo', $request->periodo);
+        if ($request->filled('suscriptor')) $query->where('suscriptor', 'like', '%'.$request->suscriptor.'%');
+        if ($request->filled('estado'))     $query->where('estado', $request->estado);
+
+        if ($request->filled('id_ruta')) {
+            if (\Schema::hasColumn('facturas', 'id_ruta')) {
+                $query->where('id_ruta', $request->id_ruta);
+            } else {
+                $subs = \App\Models\Admin\Ordenesmtl::where('id_Ruta', $request->id_ruta)->pluck('Suscriptor');
+                $query->whereIn('suscriptor', $subs);
+            }
         }
+
+        if ($request->filled('critica')) {
+            $subs = \App\Models\Admin\Ordenesmtl::where('Critica', 'like', '%'.$request->critica.'%')->pluck('Suscriptor');
+            $query->whereIn('suscriptor', $subs);
+        }
+
+        $total    = Factura::count();
+        $filtered = $query->count();
+
+        $facturas = $query->orderBy('fecha_expedicion', 'desc')
+            ->skip((int) $request->input('start', 0))
+            ->take((int) $request->input('length', 25))
+            ->get();
+
+        $data = $facturas->map(function ($f) {
+            $nombre = '';
+            if ($f->cliente) {
+                $nombre = trim($f->cliente->nombre . ' ' . $f->cliente->apellido);
+                if (mb_strlen($nombre) > 22) {
+                    $nombre = mb_substr($nombre, 0, 22) . '…';
+                }
+            }
+
+            return [
+                'id'          => $f->id,
+                'numero'      => $f->numero_factura,
+                'suscriptor'  => $f->suscriptor,
+                'nombre'      => $nombre,
+                'periodo'     => $f->periodo,
+                'expedicion'  => $f->fecha_expedicion  ? \Carbon\Carbon::parse($f->fecha_expedicion)->format('d/m/Y')  : '—',
+                'vencimiento' => $f->fecha_vencimiento ? \Carbon\Carbon::parse($f->fecha_vencimiento)->format('d/m/Y') : '—',
+                'total'       => number_format($f->total_a_pagar, 0, ',', '.'),
+                'estado'      => $f->estado,
+                'tipo'        => $f->es_automatica ? 'AUTO' : 'MANUAL',
+                'url_ver'     => route('facturas.show', $f->id),
+                'url_pdf'     => route('facturas.pdf', $f->id),
+                'anulada'     => $f->estado === 'ANULADA',
+            ];
+        });
+
+        return response()->json([
+            'draw'            => (int) $request->input('draw', 1),
+            'recordsTotal'    => $total,
+            'recordsFiltered' => $filtered,
+            'data'            => $data,
+        ]);
     }
-    
-    if ($request->filled('critica')) {
-        // Similar a ruta, la crítica viene de la orden de lectura
-        $suscriptoresCritica = \App\Models\Admin\Ordenesmtl::where('Critica', $request->critica)
-            ->pluck('Suscriptor');
-        $query->whereIn('suscriptor', $suscriptoresCritica);
-    }
-
-    // Ordenamiento por defecto
-    $query->orderBy('fecha_expedicion', 'desc');
-
-    // Obtenemos TODOS los resultados para que DataTables funcione bien con filtros y exportación
-    // Si son demasiados miles, considera implementar Server-side processing, pero para < 5000 esto es ideal.
-    $facturas = $query->get();
-
-    // KPIs Dinámicos basados en los filtros aplicados
-    $kpiTotal = $facturas->count();
-    $kpiPendiente = $facturas->where('estado', 'PENDIENTE')->sum('total_a_pagar');
-    $kpiPagada = $facturas->where('estado', 'PAGADA')->sum('total_a_pagar');
-    
-    // Agrupación por Crítica (para las tarjetas extra)
-    // Nota: Esto requiere unir con ordenes nuevamente para obtener la crítica actual de cada factura
-    $facturasConCritica = $facturas->map(function($f) {
-        $orden = \App\Models\Admin\Ordenesmtl::where('Suscriptor', $f->suscriptor)
-            ->where('periodo_lectura_id', $f->periodo_lectura_id)
-            ->first();
-        return [
-            'factura' => $f,
-            'critica' => $orden ? $orden->Critica : 'N/A',
-            'id_ruta' => $orden ? $orden->id_Ruta : 'N/A'
-        ];
-    });
-
-    $agrupadoPorCritica = collect($facturasConCritica)->groupBy('critica')->map(function($items, $key) {
-        return [
-            'cantidad' => $items->count(),
-            'total_valor' => $items->sum(fn($i) => $i['factura']->total_a_pagar)
-        ];
-    });
-
-    return view('facturacion.facturas.index', compact(
-        'facturas', 
-        'facturasConCritica', // Pasamos la colección enriquecida para la vista
-        'periodos', 
-        'kpiTotal', 
-        'kpiPendiente', 
-        'kpiPagada',
-        'agrupadoPorCritica'
-    ));
-}
 
     /**
      * Exportar masivamente las facturas del resultado actual en un ZIP

@@ -125,7 +125,7 @@ class TarifaPeriodo extends Model
             $inicioInterseccion = max($consumoYaAsignado, $desde);
             $finInterseccion = min($consumoYaAsignado + $consumoPorAsignar, $hasta);
             
-            $m3EnEsteRango = max(0, $finInterseccion - $inicioInterseccion + 1);
+            $m3EnEsteRango = max(0, $finInterseccion - $inicioInterseccion);
 
             \Illuminate\Support\Facades\Log::info('Calculos del rango', [
                 'desde' => $desde,

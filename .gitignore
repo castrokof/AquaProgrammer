@@ -70,3 +70,10 @@ htmlcov/
 *.tar.xz
 *.tar.zst
 ```
+# Laravel
+vendor/
+storage/framework/cache/
+storage/framework/sessions/
+storage/framework/views/
+storage/logs/
+.env

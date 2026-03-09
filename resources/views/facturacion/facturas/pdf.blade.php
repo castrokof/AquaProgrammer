@@ -1,389 +1,309 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <title>Factura {{ $factura->numero_factura }}</title>
-    <style>
-        @page {
-            size: letter;
-            margin: 15mm;
-        }
-        body {
-            font-family: 'Helvetica', 'Arial', sans-serif;
-            font-size: 10pt;
-            color: #333;
-            line-height: 1.4;
-        }
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 2px solid #2e50e4;
-            padding-bottom: 15px;
-            margin-bottom: 20px;
-        }
-        .logo-area {
-            width: 40%;
-        }
-        .logo-area img {
-            max-width: 150px;
-            height: auto;
-        }
-        .factura-info {
-            width: 60%;
-            text-align: right;
-        }
-        .factura-info h2 {
-            margin: 0;
-            color: #2e50e4;
-            font-size: 18pt;
-            text-transform: uppercase;
-        }
-        .info-row {
-            margin-top: 5px;
-            font-size: 9pt;
-        }
-        .info-label {
-            font-weight: bold;
-            color: #555;
-        }
-        
-        .section-box {
-            background: #f8f9fa;
-            border: 1px solid #e9ecef;
-            border-radius: 6px;
-            padding: 12px;
-            margin-bottom: 15px;
-        }
-        .section-title {
-            font-weight: bold;
-            color: #2e50e4;
-            text-transform: uppercase;
-            font-size: 9pt;
-            margin-bottom: 8px;
-            border-bottom: 1px solid #dee2e6;
-            padding-bottom: 4px;
-        }
-        
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 15px;
-            font-size: 9pt;
-        }
-        th, td {
-            padding: 8px;
-            text-align: left;
-            border-bottom: 1px solid #dee2e6;
-        }
-        th {
-            background-color: #f1f3f5;
-            color: #495057;
-            font-weight: bold;
-            text-transform: uppercase;
-            font-size: 8pt;
-        }
-        td.number {
-            text-align: right;
-            font-family: 'Courier New', monospace;
-        }
-        
-        .totals-area {
-            display: flex;
-            justify-content: flex-end;
-            margin-top: 20px;
-        }
-        .totals-table {
-            width: 40%;
-        }
-        .totals-table td {
-            padding: 6px 8px;
-        }
-        .totals-table .total-final {
-            font-size: 12pt;
-            font-weight: bold;
-            color: #d63384;
-            border-top: 2px solid #333;
-            background-color: #fff3cd;
-        }
-        
-        .footer {
-            margin-top: 30px;
-            text-align: center;
-            font-size: 8pt;
-            color: #6c757d;
-            border-top: 1px solid #dee2e6;
-            padding-top: 10px;
-        }
-        .barcode {
-            text-align: center;
-            margin-top: 15px;
-            font-family: 'Courier New', monospace;
-            font-size: 10pt;
-            letter-spacing: 2px;
-        }
-    </style>
+<meta charset="UTF-8">
+<title>Facturas</title>
+<style>
+@page { size: letter; margin: 12mm 15mm; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'DejaVu Sans', 'Arial', sans-serif; font-size: 9pt; color: #222; line-height: 1.4; }
+
+/* Separador entre facturas */
+.page-break { page-break-after: always; }
+
+/* ── Header ── */
+.fact-header { border-bottom: 2.5px solid #2e50e4; margin-bottom: 12px; padding-bottom: 10px; }
+.fact-header table { width: 100%; }
+.empresa { font-size: 13pt; font-weight: bold; color: #2e50e4; letter-spacing: .4px; }
+.sub-empresa { font-size: 8pt; color: #555; margin-top: 2px; }
+.periodo-txt { font-size: 8pt; color: #666; margin-top: 6px; }
+.num-fact-lbl { font-size: 7pt; color: #888; text-transform: uppercase; text-align: right; }
+.num-fact-val { font-size: 20pt; font-weight: bold; color: #2e50e4; text-align: right; letter-spacing: 1px; }
+.fechas-fact { font-size: 7.5pt; color: #555; text-align: right; margin-top: 4px; }
+
+/* ── Secciones ── */
+.section { margin-bottom: 10px; }
+.section-title { font-size: 7.5pt; font-weight: bold; color: #2e50e4; text-transform: uppercase;
+    letter-spacing: .5px; border-bottom: 1px solid #c7d2fe; padding-bottom: 3px; margin-bottom: 7px; }
+.info-grid { width: 100%; }
+.info-grid td { padding: 2px 5px; font-size: 8.5pt; vertical-align: top; }
+.info-lbl { font-weight: bold; color: #555; width: 110px; }
+
+/* ── Tabla de conceptos ── */
+.tabla-conceptos { width: 100%; border-collapse: collapse; font-size: 8.5pt; }
+.tabla-conceptos th { background: #eef2ff; color: #3730a3; font-size: 7.5pt; font-weight: bold;
+    text-transform: uppercase; padding: 5px 8px; text-align: right; border-bottom: 1.5px solid #c7d2fe; }
+.tabla-conceptos th:first-child { text-align: left; }
+.tabla-conceptos td { padding: 4px 8px; border-bottom: 1px solid #f3f4f6; text-align: right; }
+.tabla-conceptos td:first-child { text-align: left; }
+.tabla-conceptos tfoot td { font-weight: bold; border-top: 1.5px solid #c7d2fe; padding: 5px 8px;
+    background: #f5f7ff; text-align: right; }
+.tabla-conceptos tfoot td:first-child { text-align: left; }
+.subsidio-pos { color: #166534; }
+.subsidio-neg { color: #991b1b; }
+
+/* ── Mora ── */
+.mora-box { background: #fff5f5; border: 1px solid #fca5a5; border-radius: 5px;
+    padding: 7px 12px; display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 10px; }
+.mora-lbl { font-size: 8pt; font-weight: bold; color: #b91c1c; }
+.mora-sub { font-size: 7.5pt; color: #dc2626; }
+.mora-val { font-size: 12pt; font-weight: bold; color: #b91c1c; }
+
+/* ── Total final ── */
+.total-box { background: linear-gradient(135deg, #2e50e4, #2b0c49); color: white;
+    border-radius: 8px; padding: 12px 18px; display: flex; justify-content: space-between;
+    align-items: center; margin-bottom: 10px; }
+.total-box .lbl { font-size: 9pt; font-weight: bold; opacity: .9; }
+.total-box .sub { font-size: 7.5pt; opacity: .7; }
+.total-box .val { font-size: 18pt; font-weight: bold; }
+
+/* ── Tipo badge ── */
+.tipo-auto   { background: #e0f2fe; color: #0369a1; border-radius: 4px; padding: 1px 7px; font-size: 7pt; font-weight: bold; }
+.tipo-manual { background: #fef3c7; color: #b45309; border-radius: 4px; padding: 1px 7px; font-size: 7pt; font-weight: bold; }
+
+/* ── Pagos ── */
+.pago-row { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px dashed #e5e7eb; font-size: 8.5pt; }
+.pago-monto { font-weight: bold; color: #166534; }
+
+/* ── Código de barras / pie ── */
+.barcode { font-family: 'Courier New', monospace; font-size: 9pt; letter-spacing: 3px;
+    text-align: center; margin: 10px 0 6px; }
+.footer-txt { text-align: center; font-size: 7.5pt; color: #888; border-top: 1px solid #e5e7eb; padding-top: 6px; }
+</style>
 </head>
 <body>
 
 @foreach($facturas as $factura)
 @php
-    // Helper para formatear valores monetarios que pueden ser null (datos importados)
-    $nf = fn($v) => number_format((float)($v ?? 0), 0, ',', '.');
+    $nf = function($v) { return number_format((float)($v ?? 0), 0, ',', '.'); };
+
+    $fmtFecha = function($f) {
+        if (!$f) return '—';
+        if ($f instanceof \Carbon\Carbon) return $f->format('d/m/Y');
+        return \Carbon\Carbon::parse($f)->format('d/m/Y');
+    };
 @endphp
 
 @if(!$loop->first)
-<div class="fact-separator"></div>
+<div class="page-break"></div>
 @endif
 
 {{-- ── HEADER ── --}}
-<div class="header">
-    <div class="header-left">
-        <div class="empresa">EMPRESA DE AGUA Y ALCANTARILLADO</div>
-        <div class="sub-empresa">Servicio Público Domiciliario</div>
-        <div class="periodo-info">
-            {{ $factura->mes_cuenta }}&nbsp;&mdash;&nbsp;
-            Del {{ $factura->fecha_del?->format('d/m/Y') ?? '—' }}
-            al {{ $factura->fecha_hasta?->format('d/m/Y') ?? '—' }}
-        </div>
-    </div>
-    <div class="header-right">
-        <div class="num-factura-lbl">Factura N°</div>
-        <div class="num-factura-val">{{ $factura->numero_factura }}</div>
-        <div class="fecha-info">
-            Expide: {{ $factura->fecha_expedicion?->format('d/m/Y') ?? '—' }}<br>
-            Vence:&nbsp;&nbsp;{{ $factura->fecha_vencimiento?->format('d/m/Y') ?? '—' }}<br>
-            Corte:&nbsp;&nbsp;{{ $factura->fecha_corte?->format('d/m/Y') ?? '—' }}
-        </div>
-        <div class="factura-info">
-            <h2>FACTURA DE SERVICIO</h2>
-            <div class="info-row">
-                <span class="info-label">No. Factura:</span> {{ $factura->numero_factura }}
+<div class="fact-header">
+<table>
+    <tr>
+        <td style="width:55%;vertical-align:top;">
+            <div class="empresa">ACUEDUCTO ALTO LOS MANGOS</div>
+            <div class="sub-empresa">Servicio Público Domiciliario</div>
+            <div class="periodo-txt">
+                {{ $factura->mes_cuenta }}<br>
+                Del {{ $fmtFecha($factura->fecha_del) }} al {{ $fmtFecha($factura->fecha_hasta) }}
             </div>
-            <div class="info-row">
-                <span class="info-label">Fecha Expedición:</span> {{ $factura->fecha_expedicion->format('d/m/Y') }}
+        </td>
+        <td style="vertical-align:top;">
+            <div class="num-fact-lbl">Factura N°</div>
+            <div class="num-fact-val">{{ $factura->numero_factura }}</div>
+            <div class="fechas-fact">
+                Expide: {{ $fmtFecha($factura->fecha_expedicion) }}<br>
+                Vence:&nbsp; {{ $fmtFecha($factura->fecha_vencimiento) }}<br>
+                Corte:&nbsp; {{ $fmtFecha($factura->fecha_corte) }}
             </div>
-            <div class="info-row">
-                <span class="info-label">Fecha Vencimiento:</span> {{ $factura->fecha_vencimiento->format('d/m/Y') }}
+            <div style="text-align:right;margin-top:4px;">
+                @if($factura->es_automatica)
+                    <span class="tipo-auto">AUTO</span>
+                @else
+                    <span class="tipo-manual">MANUAL</span>
+                @endif
+                &nbsp;<span style="font-size:7.5pt;color:#555;">{{ $factura->periodo }}</span>
             </div>
-            <div class="info-row">
-                <span class="info-label">Período:</span> {{ $factura->periodo }}
-            </div>
-        </div>
-    </div>
+        </td>
+    </tr>
+</table>
+</div>
 
-    <!-- Información del Cliente -->
-    <div class="section-box">
-        <div class="section-title">Información del Suscriptor</div>
-        <table style="margin-bottom:0;">
+{{-- ── DATOS SUSCRIPTOR ── --}}
+<div class="section">
+    <div class="section-title">&#128100; Datos del Suscriptor</div>
+    <table class="info-grid">
+        <tr>
+            <td class="info-lbl">Suscriptor:</td>
+            <td>{{ $factura->suscriptor }}</td>
+            <td class="info-lbl">Estrato:</td>
+            <td>E{{ $factura->estrato_snapshot ?? '—' }}</td>
+            <td class="info-lbl">Tipo Uso:</td>
+            <td>{{ $factura->clase_uso ?? '—' }}</td>
+        </tr>
+        <tr>
+            <td class="info-lbl">Nombre:</td>
+            <td colspan="5">
+                @if($factura->cliente)
+                    {{ trim($factura->cliente->nombre . ' ' . $factura->cliente->apellido) }}
+                @else
+                    —
+                @endif
+            </td>
+        </tr>
+        <tr>
+            <td class="info-lbl">Dirección:</td>
+            <td>{{ $factura->cliente ? ($factura->cliente->direccion ?? '—') : '—' }}</td>
+            <td class="info-lbl">Sector:</td>
+            <td>{{ $factura->sector ?? '—' }}</td>
+            <td class="info-lbl">Servicios:</td>
+            <td>{{ $factura->servicios_snapshot ?? '—' }}</td>
+        </tr>
+    </table>
+</div>
+
+{{-- ── LECTURA ── --}}
+<div class="section">
+    <div class="section-title">&#128207; Lectura y Consumo</div>
+    <table class="tabla-conceptos">
+        <thead>
             <tr>
-                <td style="width: 20%;"><strong>Suscriptor:</strong></td>
-                <td>{{ $factura->suscriptor }}</td>
-                <td style="width: 20%;"><strong>Sector:</strong></td>
-                <td>{{ $factura->sector ?? 'N/A' }}</td>
+                <th style="text-align:left;">Lect. Anterior</th>
+                <th>Lect. Actual</th>
+                <th>Consumo m³</th>
+                <th>Promedio 6m</th>
+                <th>Serie Medidor</th>
             </tr>
+        </thead>
+        <tbody>
             <tr>
-                <td><strong>Nombre:</strong></td>
-                <td colspan="3">{{ $factura->cliente->nombre ?? '' }} {{ $factura->cliente->apellido ?? '' }}</td>
+                <td style="text-align:left;">{{ $factura->lectura_anterior ?? '—' }}</td>
+                <td>{{ $factura->lectura_actual ?? '—' }}</td>
+                <td><strong>{{ $factura->consumo_m3 }}</strong></td>
+                <td>{{ $factura->promedio_consumo_snapshot ?? '—' }}</td>
+                <td>{{ $factura->serie_medidor ?? '—' }}</td>
             </tr>
+        </tbody>
+    </table>
+</div>
+
+{{-- ── ACUEDUCTO ── --}}
+@if(in_array($factura->servicios_snapshot, ['AG','AG-AL']))
+<div class="section">
+    <div class="section-title">&#128166; Acueducto</div>
+    <table class="tabla-conceptos">
+        <thead>
+            <tr><th style="text-align:left;">Concepto</th><th>m³</th><th>Valor</th></tr>
+        </thead>
+        <tbody>
+            <tr><td>Cargo Fijo</td><td>—</td><td>$ {{ $nf($factura->cargo_fijo_acueducto) }}</td></tr>
+            <tr><td>Consumo Básico</td><td>{{ $factura->consumo_basico_acueducto_m3 }}</td><td>$ {{ $nf($factura->consumo_basico_acueducto_valor) }}</td></tr>
+            @if($factura->consumo_complementario_acueducto_m3 > 0)
+            <tr><td>Consumo Complementario</td><td>{{ $factura->consumo_complementario_acueducto_m3 }}</td><td>$ {{ $nf($factura->consumo_complementario_acueducto_valor) }}</td></tr>
+            @endif
+            @if($factura->consumo_suntuario_acueducto_m3 > 0)
+            <tr><td>Consumo Suntuario</td><td>{{ $factura->consumo_suntuario_acueducto_m3 }}</td><td>$ {{ $nf($factura->consumo_suntuario_acueducto_valor) }}</td></tr>
+            @endif
+            @if($factura->subsidio_emergencia != 0)
+            @php $esSubsidio = $factura->subsidio_emergencia > 0; @endphp
             <tr>
-                <td><strong>Dirección:</strong></td>
-                <td colspan="3">{{ $factura->cliente->direccion ?? 'N/A' }}</td>
+                <td class="{{ $esSubsidio ? 'subsidio-pos' : 'subsidio-neg' }}">
+                    {{ $esSubsidio ? 'Subsidio Estrato' : 'Contribución Estrato' }}
+                </td>
+                <td>—</td>
+                <td class="{{ $esSubsidio ? 'subsidio-pos' : 'subsidio-neg' }}">
+                    {{ $esSubsidio ? '- ' : '+ ' }}$ {{ $nf(abs($factura->subsidio_emergencia)) }}
+                </td>
             </tr>
-            <tr>
-                <td><strong>Estrato:</strong></td>
-                <td>{{ $factura->estrato_snapshot ?? 'N/A' }}</td>
-                <td><strong>Tipo Uso:</strong></td>
-                <td>{{ $factura->clase_uso ?? 'N/A' }}</td>
-            </tr>
-        </table>
+            @endif
+            @if($factura->cuota_otros_cobros_acueducto > 0)
+            <tr><td>Otros Cobros</td><td>—</td><td>$ {{ $nf($factura->cuota_otros_cobros_acueducto) }}</td></tr>
+            @endif
+        </tbody>
+        <tfoot>
+            <tr><td colspan="2">Total Acueducto</td><td>$ {{ $nf($factura->subtotal_conexion_otros_acueducto) }}</td></tr>
+        </tfoot>
+    </table>
+</div>
+@endif
+
+{{-- ── ALCANTARILLADO ── --}}
+@if(in_array($factura->servicios_snapshot, ['AL','AG-AL']))
+<div class="section">
+    <div class="section-title">&#128028; Alcantarillado</div>
+    <table class="tabla-conceptos">
+        <thead>
+            <tr><th style="text-align:left;">Concepto</th><th>m³</th><th>Valor</th></tr>
+        </thead>
+        <tbody>
+            <tr><td>Cargo Fijo</td><td>—</td><td>$ {{ $nf($factura->cargo_fijo_alcantarillado) }}</td></tr>
+            <tr><td>Consumo Básico</td><td>{{ $factura->consumo_basico_alcantarillado_m3 }}</td><td>$ {{ $nf($factura->consumo_basico_alcantarillado_valor) }}</td></tr>
+            @if($factura->consumo_complementario_alcantarillado_m3 > 0)
+            <tr><td>Consumo Complementario</td><td>{{ $factura->consumo_complementario_alcantarillado_m3 }}</td><td>$ {{ $nf($factura->consumo_complementario_alcantarillado_valor) }}</td></tr>
+            @endif
+            @if($factura->consumo_suntuario_alcantarillado_m3 > 0)
+            <tr><td>Consumo Suntuario</td><td>{{ $factura->consumo_suntuario_alcantarillado_m3 }}</td><td>$ {{ $nf($factura->consumo_suntuario_alcantarillado_valor) }}</td></tr>
+            @endif
+            @if($factura->cuota_otros_cobros_alcantarillado > 0)
+            <tr><td>Otros Cobros</td><td>—</td><td>$ {{ $nf($factura->cuota_otros_cobros_alcantarillado) }}</td></tr>
+            @endif
+        </tbody>
+        <tfoot>
+            <tr><td colspan="2">Total Alcantarillado</td><td>$ {{ $nf($factura->subtotal_conexion_otros_alcantarillado) }}</td></tr>
+        </tfoot>
+    </table>
+</div>
+@endif
+
+{{-- ── MORA ── --}}
+@if($factura->saldo_anterior > 0)
+<div class="mora-box">
+    <div>
+        <div class="mora-lbl">&#9888; Saldo Anterior en Mora</div>
+        <div class="mora-sub">{{ $factura->facturas_en_mora ?? 0 }} factura(s) pendiente(s) de períodos anteriores</div>
     </div>
+    <div class="mora-val">$ {{ $nf($factura->saldo_anterior) }}</div>
+</div>
+@endif
 
-    <!-- Detalles de Lectura -->
-    <div class="section-box">
-        <div class="section-title">Detalles de Lectura y Consumo</div>
-        <table style="margin-bottom:0;">
-            <thead>
-                <tr>
-                    <th>Anterior</th>
-                    <th>Actual</th>
-                    <th>Consumo (m³)</th>
-                    <th>Días</th>
-                    <th>Promedio 6 meses</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>Cargo Fijo</td>
-                    <td class="right">—</td>
-                    <td class="right">$ {{ $nf($factura->cargo_fijo_acueducto) }}</td>
-                </tr>
-                <tr>
-                    <td>Consumo Básico</td>
-                    <td class="right">{{ $factura->consumo_basico_acueducto_m3 }}</td>
-                    <td class="right">$ {{ $nf($factura->consumo_basico_acueducto_valor) }}</td>
-                </tr>
-                @if($factura->consumo_complementario_acueducto_m3 > 0)
-                <tr>
-                    <td>Consumo Complementario</td>
-                    <td class="right">{{ $factura->consumo_complementario_acueducto_m3 }}</td>
-                    <td class="right">$ {{ $nf($factura->consumo_complementario_acueducto_valor) }}</td>
-                </tr>
-                @endif
-                @if($factura->consumo_suntuario_acueducto_m3 > 0)
-                <tr>
-                    <td>Consumo Suntuario</td>
-                    <td class="right">{{ $factura->consumo_suntuario_acueducto_m3 }}</td>
-                    <td class="right">$ {{ $nf($factura->consumo_suntuario_acueducto_valor) }}</td>
-                </tr>
-                @endif
-                @if($factura->subsidio_emergencia != 0)
-                @php $esSubsidio = $factura->subsidio_emergencia > 0; @endphp
-                <tr>
-                    <td>{{ $esSubsidio ? 'Subsidio Estrato' : 'Contribución Estrato' }}</td>
-                    <td class="right">—</td>
-                    <td class="right" style="color:{{ $esSubsidio ? '#166534' : '#991b1b' }};">
-                        {{ $esSubsidio ? '- ' : '+ ' }}$ {{ $nf(abs($factura->subsidio_emergencia)) }}
-                    </td>
-                </tr>
-                @endif
-                @if($factura->cuota_otros_cobros_acueducto > 0)
-                <tr>
-                    <td>Otros Cobros Acueducto</td>
-                    <td class="right">—</td>
-                    <td class="right">$ {{ $nf($factura->cuota_otros_cobros_acueducto) }}</td>
-                </tr>
-                @endif
-            </tbody>
-            <tfoot>
-                <tr>
-                    <td colspan="2"><strong>Total Acueducto</strong></td>
-                    <td class="right"><strong>$ {{ $nf($factura->subtotal_conexion_otros_acueducto) }}</strong></td>
-                </tr>
-            </tfoot>
-        </table>
+{{-- ── TOTAL ── --}}
+<div class="total-box">
+    <div>
+        <div class="lbl">TOTAL A PAGAR</div>
+        <div class="sub">Incluye todos los conceptos del período</div>
     </div>
+    <div class="val">$ {{ $nf($factura->total_a_pagar) }}</div>
+</div>
 
-    <!-- Desglose de Valores -->
-    <div class="section-box">
-        <div class="section-title">Desglose de Valores</div>
-        <table>
-            <thead>
-                <tr>
-                    <th>Concepto</th>
-                    <th>Consumo (m³)</th>
-                    <th>Valor Unitario</th>
-                    <th>Total</th>
-                </tr>
-            </thead>
-            <tbody>
-                <!-- Acueducto Básico -->
-                @if($factura->consumo_basico_acueducto_m3 > 0)
-                <tr>
-                    <td>Cargo Fijo</td>
-                    <td class="right">—</td>
-                    <td class="right">$ {{ $nf($factura->cargo_fijo_alcantarillado) }}</td>
-                </tr>
-                @endif
-                
-                <!-- Acueducto Complementario -->
-                @if($factura->consumo_complementario_acueducto_m3 > 0)
-                <tr>
-                    <td>Consumo Básico</td>
-                    <td class="right">{{ $factura->consumo_basico_alcantarillado_m3 }}</td>
-                    <td class="right">$ {{ $nf($factura->consumo_basico_alcantarillado_valor) }}</td>
-                </tr>
-                @endif
-
-                <!-- Acueducto Suntuario -->
-                @if($factura->consumo_suntuario_acueducto_m3 > 0)
-                <tr>
-                    <td>Consumo Complementario</td>
-                    <td class="right">{{ $factura->consumo_complementario_alcantarillado_m3 }}</td>
-                    <td class="right">$ {{ $nf($factura->consumo_complementario_alcantarillado_valor) }}</td>
-                </tr>
-                @endif
-
-                <!-- Cargo Fijo Acueducto -->
-                @if($factura->cargo_fijo_acueducto > 0)
-                <tr>
-                    <td>Consumo Suntuario</td>
-                    <td class="right">{{ $factura->consumo_suntuario_alcantarillado_m3 }}</td>
-                    <td class="right">$ {{ $nf($factura->consumo_suntuario_alcantarillado_valor) }}</td>
-                </tr>
-                @endif
-
-                <!-- Alcantarillado (Resumido o desglosado similar si se requiere) -->
-                <tr>
-                    <td>Otros Cobros Alcantarillado</td>
-                    <td class="right">—</td>
-                    <td class="right">$ {{ $nf($factura->cuota_otros_cobros_alcantarillado) }}</td>
-                </tr>
-
-                <!-- Otros Cobros -->
-                @php
-                    $otrosTotal = ($factura->otros_cobros_acueducto + $factura->otros_cobros_alcantarillado + 
-                                  $factura->cuota_otros_cobros_acueducto + $factura->cuota_otros_cobros_alcantarillado);
-                @endphp
-                @if($otrosTotal > 0)
-                <tr>
-                    <td colspan="2"><strong>Total Alcantarillado</strong></td>
-                    <td class="right"><strong>$ {{ $nf($factura->subtotal_conexion_otros_alcantarillado) }}</strong></td>
-                </tr>
-                @endif
-
-    {{-- SALDO ANTERIOR --}}
-    @if($factura->saldo_anterior > 0)
-    <div class="section mora-box">
-        <div class="mora-title">&#9888; Saldo Anterior en Mora &mdash; {{ $factura->facturas_en_mora }} factura(s) pendiente(s)</div>
-        <div class="mora-monto">$ {{ $nf($factura->saldo_anterior) }}</div>
-    </div>
-
-    {{-- TOTAL FINAL --}}
-    <div class="section" style="background:#f9fafb;">
-        <div class="total-final">
-            <div class="total-final-left">
-                <div class="total-lbl">TOTAL A PAGAR</div>
-                <div class="total-sub">Incluye todos los conceptos del período</div>
-            </div>
-            <div class="total-final-right">
-                <div class="total-val">$ {{ $nf($factura->total_a_pagar) }}</div>
-            </div>
+{{-- ── PAGOS ── --}}
+@php
+    $totalPagado    = $factura->pagos->sum('total_pago_realizado');
+    $saldoPendiente = max(0, $factura->total_a_pagar - $totalPagado);
+@endphp
+@if($factura->pagos->count() > 0)
+<div class="section">
+    <div class="section-title">&#10003; Pagos Registrados</div>
+    @foreach($factura->pagos as $p)
+    <div class="pago-row">
+        <div>
+            <strong>{{ $p->numero_recibo ? 'Recibo: '.$p->numero_recibo : 'Sin número' }}</strong>
+            — {{ $p->medio_pago }}
+            <span style="color:#888;font-size:8pt;">
+                {{ $p->fecha_pago ? \Carbon\Carbon::parse($p->fecha_pago)->format('d/m/Y') : '—' }}
+            </span>
         </div>
+        <div class="pago-monto">+ $ {{ $nf($p->total_pago_realizado) }}</div>
     </div>
+    @endforeach
+    <table style="width:100%;margin-top:6px;font-size:8.5pt;">
+        <tr>
+            <td style="color:#555;">Total pagado: <strong style="color:#166534;">$ {{ $nf($totalPagado) }}</strong></td>
+            <td style="text-align:right;">Saldo pendiente: <strong style="color:{{ $saldoPendiente > 0 ? '#dc2626' : '#166534' }};">$ {{ $nf($saldoPendiente) }}</strong></td>
+        </tr>
+    </table>
+</div>
+@endif
 
-    {{-- PAGOS --}}
-    @php
-        $totalPagado    = $factura->pagos->sum('total_pago_realizado');
-        $saldoPendiente = max(0, $factura->total_a_pagar - $totalPagado);
-    @endphp
-    @if($factura->pagos->count() > 0)
-    <div class="section">
-        <div class="section-title">&#10003; Pagos Registrados</div>
-        @foreach($factura->pagos as $p)
-        <div class="pago-row">
-            <div class="pago-left">
-                <div class="pago-recibo">{{ $p->numero_recibo ? 'Recibo: '.$p->numero_recibo : 'Sin número' }} — {{ $p->medio_pago }}</div>
-                <div class="pago-fecha">{{ $p->fecha_pago?->format('d/m/Y') ?? '—' }}</div>
-            </div>
-            <div class="pago-right">
-                <div class="pago-monto">+ $ {{ $nf($p->total_pago_realizado) }}</div>
-            </div>
-        </div>
-        @endforeach
-        <div class="resumen-saldo">
-            <div class="resumen-item">
-                <div class="resumen-lbl">Total Pagado</div>
-                <div class="resumen-val" style="color:#166534;">$ {{ $nf($totalPagado) }}</div>
-            </div>
-            <div class="resumen-item">
-                <div class="resumen-lbl">Saldo Pendiente</div>
-                <div class="resumen-val" style="color:{{ $saldoPendiente > 0 ? '#dc2626' : '#166534' }};">
-                    $ {{ $nf($saldoPendiente) }}
-                </div>
-            </div>
-        </div>
-    </div>
+{{-- ── PIE ── --}}
+<div class="barcode">{{ str_pad($factura->numero_factura, 20, '0', STR_PAD_LEFT) }}</div>
+<div class="footer-txt">
+    Generado el {{ \Carbon\Carbon::now()->format('d/m/Y H:i') }} &mdash; ACUEDUCTO ALTO LOS MANGOS &mdash; Servicio Público Domiciliario
+</div>
+
+@endforeach
 
 </body>
 </html>

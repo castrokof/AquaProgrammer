@@ -33,6 +33,19 @@
 
 .check-factura { width:16px; height:16px; cursor:pointer; accent-color:#2e50e4; }
 #checkAll { width:16px; height:16px; cursor:pointer; accent-color:#2e50e4; }
+
+/* KPI cards */
+.kpi-row { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:20px; }
+.kpi-card { border-radius:16px; padding:18px 22px; color:white; position:relative; overflow:hidden; }
+.kpi-card .kpi-lbl { font-size:.72rem; font-weight:700; text-transform:uppercase; opacity:.85; letter-spacing:.5px; }
+.kpi-card .kpi-cnt { font-size:1.8rem; font-weight:900; line-height:1.1; margin:4px 0 2px; }
+.kpi-card .kpi-val { font-size:.82rem; font-weight:600; opacity:.85; }
+.kpi-card .kpi-icon { position:absolute; right:18px; top:50%; transform:translateY(-50%); font-size:2.5rem; opacity:.18; }
+.kpi-pendiente { background:linear-gradient(135deg,#f6ad55,#ed8936); }
+.kpi-pagada    { background:linear-gradient(135deg,#48bb78,#38a169); }
+.kpi-vencida   { background:linear-gradient(135deg,#fc8181,#e53e3e); }
+.kpi-anulada   { background:linear-gradient(135deg,#a0aec0,#718096); }
+@media(max-width:768px){ .kpi-row { grid-template-columns:repeat(2,1fr); } }
 </style>
 @endsection
 
@@ -44,6 +57,9 @@
         <div class="card-header">
             <h3><i class="fa fa-file-invoice-dollar"></i> Facturas</h3>
             <div style="display:flex;gap:10px;">
+                <a href="{{ route('facturas.masiva') }}" class="btn btn-light" style="border-radius:12px;font-weight:700;">
+                    <i class="fa fa-bolt"></i> Facturación Masiva
+                </a>
                 <a href="{{ route('facturas.lote') }}" class="btn btn-light" style="border-radius:12px;font-weight:700;">
                     <i class="fa fa-layer-group"></i> Facturar por Lote
                 </a>
@@ -51,6 +67,34 @@
                     <i class="fa fa-plus"></i> Generar Manual
                 </a>
             </div>
+        </div>
+    </div>
+
+    {{-- KPI Cards --}}
+    <div class="kpi-row" id="kpiRow">
+        <div class="kpi-card kpi-pendiente">
+            <div class="kpi-lbl">Pendiente</div>
+            <div class="kpi-cnt" id="kpiPendienteCnt">—</div>
+            <div class="kpi-val" id="kpiPendienteVal">—</div>
+            <i class="fa fa-clock kpi-icon"></i>
+        </div>
+        <div class="kpi-card kpi-pagada">
+            <div class="kpi-lbl">Pagada</div>
+            <div class="kpi-cnt" id="kpiPagadaCnt">—</div>
+            <div class="kpi-val" id="kpiPagadaVal">—</div>
+            <i class="fa fa-check-circle kpi-icon"></i>
+        </div>
+        <div class="kpi-card kpi-vencida">
+            <div class="kpi-lbl">Vencida</div>
+            <div class="kpi-cnt" id="kpiVencidaCnt">—</div>
+            <div class="kpi-val" id="kpiVencidaVal">—</div>
+            <i class="fa fa-exclamation-circle kpi-icon"></i>
+        </div>
+        <div class="kpi-card kpi-anulada">
+            <div class="kpi-lbl">Anulada</div>
+            <div class="kpi-cnt" id="kpiAnuladaCnt">—</div>
+            <div class="kpi-val" id="kpiAnuladaVal">—</div>
+            <i class="fa fa-ban kpi-icon"></i>
         </div>
     </div>
 
@@ -175,8 +219,33 @@
 
 @section('scripts')
 <script>
-var CSRF = '{{ csrf_token() }}';
+var CSRF     = '{{ csrf_token() }}';
 var DATA_URL = '{{ route("facturas.data") }}';
+var KPIS_URL = '{{ route("facturas.kpis") }}';
+
+function fmtCOP(n) {
+    return '$ ' + parseFloat(n || 0).toLocaleString('es-CO', {minimumFractionDigits:0, maximumFractionDigits:0});
+}
+
+function cargarKpis() {
+    var params = {
+        periodo:    $('#fPeriodo').val(),
+        id_ruta:    $('#fRuta').val(),
+        critica:    $('#fCritica').val(),
+        suscriptor: $('#fSuscriptor').val(),
+        estado:     $('#fEstado').val()
+    };
+    $.get(KPIS_URL, params, function (r) {
+        $('#kpiPendienteCnt').text(r.pendiente.cantidad);
+        $('#kpiPendienteVal').text(fmtCOP(r.pendiente.total));
+        $('#kpiPagadaCnt').text(r.pagada.cantidad);
+        $('#kpiPagadaVal').text(fmtCOP(r.pagada.total));
+        $('#kpiVencidaCnt').text(r.vencida.cantidad);
+        $('#kpiVencidaVal').text(fmtCOP(r.vencida.total));
+        $('#kpiAnuladaCnt').text(r.anulada.cantidad);
+        $('#kpiAnuladaVal').text(fmtCOP(r.anulada.total));
+    });
+}
 
 $(function () {
 
@@ -264,14 +333,18 @@ $(function () {
         }
     });
 
+    // Cargar KPIs al iniciar
+    cargarKpis();
+
     // ── Filtrar ────────────────────────────────────────────────────────────────
     $('#btnFiltrar').on('click', function () {
         tabla.ajax.reload();
+        cargarKpis();
     });
 
     // Filtrar también al presionar Enter en los inputs
     $('#fRuta, #fCritica, #fSuscriptor').on('keypress', function (e) {
-        if (e.which === 13) tabla.ajax.reload();
+        if (e.which === 13) { tabla.ajax.reload(); cargarKpis(); }
     });
 
     // ── Selección masiva ───────────────────────────────────────────────────────

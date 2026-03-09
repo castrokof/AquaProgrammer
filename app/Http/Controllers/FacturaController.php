@@ -508,6 +508,7 @@ public function exportarSeleccionadas(Request $request)
     {
         $request->validate([
             'periodo_lectura_id'    => 'required|exists:periodos_lectura,id',
+            'observaciones'         => 'nullable|string|max:500',
             'rows'                  => 'required|array|min:1|max:500',
             'rows.*.cliente_id'     => 'required|exists:clientes,id',
             'rows.*.consumo_m3'     => 'required|integer|min:0',
@@ -538,6 +539,9 @@ public function exportarSeleccionadas(Request $request)
                 );
                 $calculo['usuario_id']    = auth()->id();
                 $calculo['es_automatica'] = false;
+                if ($request->observaciones) {
+                    $calculo['observaciones'] = $request->observaciones;
+                }
 
                 $factura = Factura::create($calculo);
 

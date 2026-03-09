@@ -161,10 +161,17 @@ label.lbl { font-weight:600; color:#4a5568; font-size:.8rem; text-transform:uppe
 
     {{-- ── Barra de acciones flotante ──────────────────────────────────────── --}}
     <div id="barraAcciones">
-        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
-            <div>
-                <span id="textoSeleccionados" style="font-weight:700;color:#2d3748;font-size:.95rem;"></span>
-                <span style="color:#718096;font-size:.82rem;margin-left:8px;">suscriptores seleccionados</span>
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;flex:1;">
+                <div>
+                    <span id="textoSeleccionados" style="font-weight:700;color:#2d3748;font-size:.95rem;"></span>
+                    <span style="color:#718096;font-size:.82rem;margin-left:6px;">suscriptores seleccionados</span>
+                </div>
+                <div style="flex:1;min-width:240px;max-width:480px;">
+                    <input type="text" id="obsLote" class="form-control form-control-gen"
+                           placeholder="Observación / Motivo del ajuste (opcional)"
+                           style="font-size:.83rem;border-radius:10px;">
+                </div>
             </div>
             <div style="display:flex;gap:10px;align-items:center;">
                 <span id="spinnerGen" style="display:none;"><i class="fa fa-spinner fa-spin" style="color:#667eea;font-size:1.2rem;"></i></span>
@@ -398,6 +405,7 @@ $('#btnGenerarLote').on('click', function () {
             data: JSON.stringify({
                 _token: CSRF,
                 periodo_lectura_id: $('#selPeriodo').val(),
+                observaciones: $('#obsLote').val().trim() || null,
                 rows: seleccionados
             }),
             success: function(r){

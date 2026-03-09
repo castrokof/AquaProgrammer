@@ -4,54 +4,33 @@
 
 @section('styles')
 <style>
-/* Estilos Modernos (Mantenemos los tuyos y agregamos algunos) */
 .modern-card { border-radius:20px; box-shadow:0 10px 40px rgba(0,0,0,.1); border:none; overflow:hidden; margin-bottom:20px; background:white; }
 .modern-card .card-header { background:linear-gradient(135deg,#2e50e4 0%,#2b0c49 100%); border:none; padding:22px 28px; display:flex; justify-content:space-between; align-items:center; }
 .modern-card .card-header h3 { color:white; font-weight:700; font-size:1.3rem; margin:0; }
+
 .filtros-box { background:white; border-radius:16px; padding:20px; box-shadow:0 4px 15px rgba(0,0,0,.05); margin-bottom:20px; }
 .filtros-box .form-control { border-radius:10px; border:2px solid #e2e8f0; }
 .filtros-box .form-control:focus { border-color:#667eea; box-shadow:0 0 0 3px rgba(102,126,234,.12); outline:none; }
 
-/* Tabla */
 #tblFacturas thead th { background:linear-gradient(135deg,#3d57ce 0%,#776a84 100%); color:white; font-weight:600; font-size:.73rem; text-transform:uppercase; padding:12px 8px; border:none; white-space:nowrap; text-align:center; }
 #tblFacturas tbody td { padding:10px 8px; vertical-align:middle; border-bottom:1px solid #f0f0f0; text-align:center; font-size:.82rem; }
 #tblFacturas tbody tr:hover { background:#f8f9ff; }
 #tblFacturas tbody tr.fila-seleccionada { background:#eef2ff; }
+
 .badge-est { display:inline-block; padding:3px 10px; border-radius:20px; font-size:.7rem; font-weight:700; }
 .badge-PENDIENTE { background:#fef3c7; color:#92400e; }
 .badge-PAGADA    { background:#c6f6d5; color:#22543d; }
 .badge-VENCIDA   { background:#fed7d7; color:#742a2a; }
 .badge-ANULADA   { background:#e2e8f0; color:#718096; }
-.kpi-box { border-radius:16px; padding:18px 22px; color:white; margin-bottom:20px; }
-.kpi-box .kpi-val { font-size:1.6rem; font-weight:800; }
-.kpi-box .kpi-lbl { font-size:.78rem; opacity:.88; }
 
 /* Bulk bar */
-#bulkBar {
-    display:none;
-    background:linear-gradient(135deg,#2e50e4,#2b0c49);
-    border-radius:12px;
-    padding:12px 20px;
-    margin-bottom:14px;
-    align-items:center;
-    justify-content:space-between;
-    color:white;
-}
+#bulkBar { display:none; background:linear-gradient(135deg,#2e50e4,#2b0c49); border-radius:12px; padding:12px 20px; margin-bottom:14px; align-items:center; justify-content:space-between; color:white; }
 #bulkBar.visible { display:flex; }
 #bulkBar .sel-count { font-size:.9rem; font-weight:700; }
-#bulkBar .btn-dl-pdf {
-    background:white; color:#2e50e4; border:none;
-    border-radius:10px; padding:8px 18px;
-    font-weight:700; font-size:.85rem; cursor:pointer;
-}
+#bulkBar .btn-dl-pdf { background:white; color:#2e50e4; border:none; border-radius:10px; padding:8px 18px; font-weight:700; font-size:.85rem; cursor:pointer; }
 #bulkBar .btn-dl-pdf:hover { background:#e8edff; }
-#bulkBar .btn-clear {
-    background:rgba(255,255,255,.15); color:white; border:none;
-    border-radius:10px; padding:8px 14px;
-    font-weight:600; font-size:.82rem; cursor:pointer; margin-left:8px;
-}
+#bulkBar .btn-clear { background:rgba(255,255,255,.15); color:white; border:none; border-radius:10px; padding:8px 14px; font-weight:600; font-size:.82rem; cursor:pointer; margin-left:8px; }
 
-/* Checkbox styling */
 .check-factura { width:16px; height:16px; cursor:pointer; accent-color:#2e50e4; }
 #checkAll { width:16px; height:16px; cursor:pointer; accent-color:#2e50e4; }
 </style>
@@ -60,7 +39,7 @@
 @section('contenido')
 <div class="container-fluid">
 
-    <!-- Header -->
+    {{-- Header --}}
     <div class="modern-card">
         <div class="card-header">
             <h3><i class="fa fa-file-invoice-dollar"></i> Facturas</h3>
@@ -75,62 +54,48 @@
         </div>
     </div>
 
-    <!-- Tarjetas por Crítica -->
-    <h6 class="text-uppercase text-muted font-weight-bold mb-2" style="font-size:0.8rem;">Resumen por Crítica</h6>
-    <div class="critica-grid">
-        @foreach($agrupadoPorCritica as $critica => $datos)
-        <div class="critica-card">
-            <div class="critica-nombre">{{ $critica }}</div>
-            <div class="critica-cantidad">{{ $datos['cantidad'] }}</div>
-            <small class="text-muted">${{ number_format($datos['total_valor'], 0, ',', '.') }}</small>
-        </div>
-        @endforeach
-    </div>
-
-    <!-- Filtros -->
+    {{-- Filtros --}}
     <div class="filtros-box">
-        <form method="GET" action="{{ route('facturas.index') }}">
-            <div class="row align-items-end">
-                <div class="col-md-2">
-                    <label style="font-weight:600;font-size:.8rem;color:#4a5568;text-transform:uppercase;">Período</label>
-                    <select name="periodo" class="form-control">
-                        <option value="">— Todos —</option>
-                        @foreach($periodos as $p)
-                        <option value="{{ $p->codigo }}" {{ request('periodo')==$p->codigo?'selected':'' }}>{{ $p->nombre }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <label style="font-weight:600;font-size:.8rem;color:#4a5568;text-transform:uppercase;">ID Ruta</label>
-                    <input type="number" name="id_ruta" class="form-control" value="{{ request('id_ruta') }}" placeholder="Ej: 101">
-                </div>
-                <div class="col-md-2">
-                    <label style="font-weight:600;font-size:.8rem;color:#4a5568;text-transform:uppercase;">Crítica</label>
-                    <input type="text" name="critica" class="form-control" value="{{ request('critica') }}" placeholder="Ej: ALTA">
-                </div>
-                <div class="col-md-2">
-                    <label style="font-weight:600;font-size:.8rem;color:#4a5568;text-transform:uppercase;">Suscriptor</label>
-                    <input type="text" name="suscriptor" class="form-control" value="{{ request('suscriptor') }}" placeholder="Código">
-                </div>
-                <div class="col-md-2">
-                    <label style="font-weight:600;font-size:.8rem;color:#4a5568;text-transform:uppercase;">Estado</label>
-                    <select name="estado" class="form-control">
-                        <option value="">— Todos —</option>
-                        @foreach(['PENDIENTE','PAGADA','VENCIDA','ANULADA'] as $e)
-                        <option value="{{ $e }}" {{ request('estado')==$e?'selected':'' }}>{{ $e }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <button type="submit" class="btn btn-primary w-100" style="border-radius:12px;font-weight:700;">
-                        <i class="fa fa-search"></i> Filtrar
-                    </button>
-                </div>
+        <div class="row align-items-end">
+            <div class="col-md-2">
+                <label style="font-weight:600;font-size:.8rem;color:#4a5568;text-transform:uppercase;">Período</label>
+                <select id="fPeriodo" class="form-control">
+                    <option value="">— Todos —</option>
+                    @foreach($periodos as $p)
+                    <option value="{{ $p->codigo }}">{{ $p->nombre }}</option>
+                    @endforeach
+                </select>
             </div>
-        </form>
+            <div class="col-md-2">
+                <label style="font-weight:600;font-size:.8rem;color:#4a5568;text-transform:uppercase;">ID Ruta</label>
+                <input type="number" id="fRuta" class="form-control" placeholder="Ej: 101">
+            </div>
+            <div class="col-md-2">
+                <label style="font-weight:600;font-size:.8rem;color:#4a5568;text-transform:uppercase;">Crítica</label>
+                <input type="text" id="fCritica" class="form-control" placeholder="Ej: ALTA">
+            </div>
+            <div class="col-md-2">
+                <label style="font-weight:600;font-size:.8rem;color:#4a5568;text-transform:uppercase;">Suscriptor</label>
+                <input type="text" id="fSuscriptor" class="form-control" placeholder="Código">
+            </div>
+            <div class="col-md-2">
+                <label style="font-weight:600;font-size:.8rem;color:#4a5568;text-transform:uppercase;">Estado</label>
+                <select id="fEstado" class="form-control">
+                    <option value="">— Todos —</option>
+                    @foreach(['PENDIENTE','PAGADA','VENCIDA','ANULADA'] as $e)
+                    <option value="{{ $e }}">{{ $e }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button id="btnFiltrar" class="btn btn-primary w-100" style="border-radius:12px;font-weight:700;">
+                    <i class="fa fa-search"></i> Filtrar
+                </button>
+            </div>
+        </div>
     </div>
 
-    {{-- BARRA DE ACCIONES MASIVAS --}}
+    {{-- Barra acciones masivas --}}
     <div id="bulkBar">
         <span class="sel-count"><i class="fa fa-check-square"></i> <span id="cntSel">0</span> factura(s) seleccionada(s)</span>
         <div>
@@ -143,7 +108,7 @@
         </div>
     </div>
 
-    {{-- TABLA --}}
+    {{-- Tabla --}}
     <div style="background:white;border-radius:16px;padding:20px;box-shadow:0 10px 40px rgba(0,0,0,.08);overflow-x:auto;">
         <table id="tblFacturas" class="table table-hover" style="width:100%;">
             <thead>
@@ -151,72 +116,16 @@
                     <th style="width:36px;"><input type="checkbox" id="checkAll" title="Seleccionar todos"></th>
                     <th>N° Factura</th>
                     <th>Suscriptor</th>
-                    <th>Ruta</th>
-                    <th>Crítica</th>
                     <th>Período</th>
-                    <th>Vence</th>
+                    <th>Expedición</th>
+                    <th>Vencimiento</th>
                     <th>Total</th>
+                    <th>Tipo</th>
                     <th>Estado</th>
                     <th>Acciones</th>
                 </tr>
             </thead>
-            <tbody>
-                @forelse($facturas as $f)
-                <tr>
-                    <td><input type="checkbox" class="check-factura" value="{{ $f->id }}"></td>
-                    <td><strong style="font-family:monospace;">{{ $f->numero_factura }}</strong></td>
-                    <td>
-                        <strong>{{ $f->suscriptor }}</strong>
-                        @if($f->cliente)
-                        <br><span style="font-size:.75rem;color:#718096;">{{ Str::limit(trim($f->cliente->nombre . ' ' . $f->cliente->apellido), 20) }}</span>
-                        @endif
-                    </td>
-                    <td>{{ $f->periodo }}</td>
-                    <td>{{ \Carbon\Carbon::parse($f->fecha_expedicion)->format('d/m/Y') }}</td>
-                    <td>{{ \Carbon\Carbon::parse($f->fecha_vencimiento)->format('d/m/Y') }}</td>
-                    <td>$ {{ number_format($f->total_facturacion_acueducto, 0, ',', '.') }}</td>
-                    <td>$ {{ number_format($f->subtotal_alcantarillado, 0, ',', '.') }}</td>
-                    <td>$ {{ number_format($f->otros_cobros_acueducto + $f->otros_cobros_alcantarillado, 0, ',', '.') }}</td>
-                    <td>
-                        @if($f->saldo_anterior > 0)
-                        <span style="color:#e53e3e;font-weight:700;">$ {{ number_format($f->saldo_anterior, 0, ',', '.') }}</span>
-                        @else
-                        <span style="color:#a0aec0;">—</span>
-                        @endif
-                    </td>
-                    <td><strong style="color:#2d3748;">$ {{ number_format($f->total_a_pagar, 0, ',', '.') }}</strong></td>
-                    <td>
-                        @if($f->es_automatica)
-                            <span style="font-size:.68rem;background:#e0f2fe;color:#0369a1;border-radius:8px;padding:2px 8px;font-weight:700;">AUTO</span>
-                        @else
-                            <span style="font-size:.68rem;background:#fef3c7;color:#b45309;border-radius:8px;padding:2px 8px;font-weight:700;">MANUAL</span>
-                        @endif
-                    </td>
-                    <td><span class="badge-est badge-{{ $f->estado }}">{{ $f->estado }}</span></td>
-                    <td style="white-space:nowrap;">
-                        <a href="{{ route('facturas.show', $f->id) }}" class="btn btn-info btn-sm" title="Ver detalle">
-                            <i class="fa fa-eye"></i>
-                        </a>
-                        <a href="{{ route('facturas.pdf', $f->id) }}" class="btn btn-secondary btn-sm" title="Descargar PDF" target="_blank">
-                            <i class="fa fa-file-pdf"></i>
-                        </a>
-                        @if($f->estado !== 'ANULADA')
-                        <button class="btn btn-danger btn-sm btn-anular"
-                                data-id="{{ $f->id }}" title="Anular factura">
-                            <i class="fa fa-ban"></i>
-                        </button>
-                        @endif
-                    </td>
-                </tr>
-                @empty
-                <tr>
-                    <td colspan="14" style="text-align:center;padding:50px;color:#a0aec0;">
-                        <i class="fa fa-file-invoice-dollar" style="font-size:2.5rem;display:block;margin-bottom:12px;"></i>
-                        No se encontraron facturas.
-                    </td>
-                </tr>
-                @endforelse
-            </tbody>
+            <tbody></tbody>
         </table>
     </div>
 </div>
@@ -257,93 +166,172 @@
 
 @section('scripts')
 <script>
-var idioma_espanol = { /* Tu objeto de idioma */ };
+var CSRF = '{{ csrf_token() }}';
+var DATA_URL = '{{ route("facturas.data") }}';
 
 $(function () {
-    $('#tblFacturas').DataTable({
+
+    // ── DataTable ──────────────────────────────────────────────────────────────
+    var tabla = $('#tblFacturas').DataTable({
+        processing: true,
+        serverSide: true,
+        ajax: {
+            url: DATA_URL,
+            data: function (d) {
+                d.periodo    = $('#fPeriodo').val();
+                d.id_ruta    = $('#fRuta').val();
+                d.critica    = $('#fCritica').val();
+                d.suscriptor = $('#fSuscriptor').val();
+                d.estado     = $('#fEstado').val();
+            }
+        },
+        columns: [
+            {
+                data: 'id', orderable: false,
+                render: function (id) {
+                    return '<input type="checkbox" class="check-factura" value="' + id + '">';
+                }
+            },
+            {
+                data: 'numero',
+                render: function (v) { return '<strong style="font-family:monospace;">' + v + '</strong>'; }
+            },
+            {
+                data: 'suscriptor',
+                render: function (v, t, row) {
+                    var html = '<strong>' + v + '</strong>';
+                    if (row.nombre) html += '<br><span style="font-size:.75rem;color:#718096;">' + row.nombre + '</span>';
+                    return html;
+                }
+            },
+            { data: 'periodo' },
+            { data: 'expedicion' },
+            { data: 'vencimiento' },
+            {
+                data: 'total',
+                render: function (v) { return '$ ' + v; }
+            },
+            {
+                data: 'tipo',
+                render: function (v) {
+                    var style = v === 'AUTO'
+                        ? 'background:#e0f2fe;color:#0369a1;'
+                        : 'background:#fef3c7;color:#b45309;';
+                    return '<span style="font-size:.68rem;' + style + 'border-radius:8px;padding:2px 8px;font-weight:700;">' + v + '</span>';
+                }
+            },
+            {
+                data: 'estado',
+                render: function (v) {
+                    return '<span class="badge-est badge-' + v + '">' + v + '</span>';
+                }
+            },
+            {
+                data: null, orderable: false,
+                render: function (d, t, row) {
+                    var html = '<a href="' + row.url_ver + '" class="btn btn-info btn-sm" title="Ver detalle"><i class="fa fa-eye"></i></a> ';
+                    html    += '<a href="' + row.url_pdf + '" class="btn btn-secondary btn-sm" title="PDF" target="_blank"><i class="fa fa-file-pdf"></i></a>';
+                    if (!row.anulada) {
+                        html += ' <button class="btn btn-danger btn-sm btn-anular" data-id="' + row.id + '" title="Anular"><i class="fa fa-ban"></i></button>';
+                    }
+                    return html;
+                }
+            }
+        ],
+        pageLength: 25,
+        order: [[4, 'desc']],
+        language: {
+            url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json'
+        },
         dom: 'Bfrtip',
         buttons: [
             { extend: 'excelHtml5', text: '<i class="fa fa-file-excel"></i> Excel', className: 'btn btn-success btn-sm' },
-            { extend: 'print', text: '<i class="fa fa-print"></i> Imprimir', className: 'btn btn-info btn-sm' }
+            { extend: 'print',      text: '<i class="fa fa-print"></i> Imprimir',   className: 'btn btn-info btn-sm' }
         ],
-        pageLength: 100, // Mostramos más por página
-        language: idioma_espanol,
-        order: [[1, 'desc']],
-        columnDefs: [
-            { orderable: false, targets: [0, 9] } // No ordenar por checkbox ni acciones
-        ]
+        drawCallback: function () {
+            // Restablecer checkAll al cambiar página
+            $('#checkAll').prop('checked', false).prop('indeterminate', false);
+            actualizarBulkBar();
+        }
     });
-});
 
-// ── Selección masiva ────────────────────────────────────────────────────────
-function actualizarBulkBar() {
-    var n = $('.check-factura:checked').length;
-    $('#cntSel').text(n);
-    if (n > 0) {
-        $('#bulkBar').addClass('visible');
-    } else {
-        $('#bulkBar').removeClass('visible');
+    // ── Filtrar ────────────────────────────────────────────────────────────────
+    $('#btnFiltrar').on('click', function () {
+        tabla.ajax.reload();
+    });
+
+    // Filtrar también al presionar Enter en los inputs
+    $('#fRuta, #fCritica, #fSuscriptor').on('keypress', function (e) {
+        if (e.which === 13) tabla.ajax.reload();
+    });
+
+    // ── Selección masiva ───────────────────────────────────────────────────────
+    function actualizarBulkBar() {
+        var n = $('.check-factura:checked').length;
+        $('#cntSel').text(n);
+        n > 0 ? $('#bulkBar').addClass('visible') : $('#bulkBar').removeClass('visible');
+        $('.check-factura').each(function () {
+            $(this).closest('tr').toggleClass('fila-seleccionada', $(this).is(':checked'));
+        });
     }
-    // Resaltar filas
-    $('.check-factura').each(function () {
-        $(this).closest('tr').toggleClass('fila-seleccionada', $(this).is(':checked'));
+
+    $('#checkAll').on('change', function () {
+        $('.check-factura').prop('checked', this.checked);
+        actualizarBulkBar();
     });
-}
 
-$('#checkAll').on('change', function () {
-    $('.check-factura').prop('checked', this.checked);
-    actualizarBulkBar();
-});
-
-$(document).on('change', '.check-factura', function () {
-    var total   = $('.check-factura').length;
-    var checked = $('.check-factura:checked').length;
-    $('#checkAll').prop('indeterminate', checked > 0 && checked < total);
-    $('#checkAll').prop('checked', checked === total);
-    actualizarBulkBar();
-});
-
-$('#btnClearSel').on('click', function () {
-    $('.check-factura, #checkAll').prop('checked', false).prop('indeterminate', false);
-    actualizarBulkBar();
-});
-
-// ── Descarga masiva PDF ─────────────────────────────────────────────────────
-$('#btnDescargaPDF').on('click', function () {
-    var ids = $('.check-factura:checked').map(function () { return this.value; }).get();
-    if (ids.length === 0) { return; }
-
-    var $form = $('#formPdfMasivo');
-    var $cont = $('#idsContainer');
-    $cont.empty();
-    ids.forEach(function (id) {
-        $cont.append('<input type="hidden" name="ids[]" value="' + id + '">');
+    $(document).on('change', '.check-factura', function () {
+        var total   = $('.check-factura').length;
+        var checked = $('.check-factura:checked').length;
+        $('#checkAll').prop('indeterminate', checked > 0 && checked < total);
+        $('#checkAll').prop('checked', checked === total);
+        actualizarBulkBar();
     });
-    $form.submit();
-});
 
-// ── Anular ──────────────────────────────────────────────────────────────────
-$(document).on('click', '.btn-anular', function () {
-    $('#anularId').val($(this).data('id'));
-    $('#anularMotivo').val('');
-    $('#modalAnular').modal('show');
-});
-
-$('#btnConfirmarAnular').on('click', function () {
-    var id = $('#anularId').val();
-    var motivo = $('#anularMotivo').val().trim();
-    if (!motivo) { alert('Digite el motivo'); return; }
-    
-    $.ajax({
-        url: '/facturacion/facturas/' + id + '/anular',
-        method: 'POST',
-        data: { motivo: motivo, _token: CSRF },
-        success: function (r) {
-            if (r.ok) { location.reload(); }
-            else { alert(r.mensaje); }
-        },
-        error: function (xhr) { alert('Error al anular'); }
+    $('#btnClearSel').on('click', function () {
+        $('.check-factura, #checkAll').prop('checked', false).prop('indeterminate', false);
+        actualizarBulkBar();
     });
+
+    // ── Descarga masiva PDF ────────────────────────────────────────────────────
+    $('#btnDescargaPDF').on('click', function () {
+        var ids = $('.check-factura:checked').map(function () { return this.value; }).get();
+        if (!ids.length) return;
+        var $cont = $('#idsContainer').empty();
+        ids.forEach(function (id) {
+            $cont.append('<input type="hidden" name="ids[]" value="' + id + '">');
+        });
+        $('#formPdfMasivo').submit();
+    });
+
+    // ── Anular ─────────────────────────────────────────────────────────────────
+    $(document).on('click', '.btn-anular', function () {
+        $('#anularId').val($(this).data('id'));
+        $('#anularMotivo').val('');
+        $('#modalAnular').modal('show');
+    });
+
+    $('#btnConfirmarAnular').on('click', function () {
+        var id     = $('#anularId').val();
+        var motivo = $('#anularMotivo').val().trim();
+        if (!motivo) { alert('Digite el motivo'); return; }
+
+        $.ajax({
+            url: '/facturacion/facturas/' + id + '/anular',
+            method: 'POST',
+            data: { motivo: motivo, _token: CSRF },
+            success: function (r) {
+                if (r.ok) {
+                    $('#modalAnular').modal('hide');
+                    tabla.ajax.reload(null, false);
+                } else {
+                    alert(r.mensaje);
+                }
+            },
+            error: function () { alert('Error al anular'); }
+        });
+    });
+
 });
 </script>
 @endsection

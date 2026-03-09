@@ -8,7 +8,7 @@ class AddPorcentajeSubsidioToEstratos extends Migration
 {
     public function up()
     {
-        // Agregar la columna si no existe
+        // 1. Agregar la columna a estratos si no existe
         if (!Schema::hasColumn('estratos', 'porcentaje_subsidio')) {
             Schema::table('estratos', function (Blueprint $table) {
                 $table->decimal('porcentaje_subsidio', 5, 2)->default(0)
@@ -17,8 +17,7 @@ class AddPorcentajeSubsidioToEstratos extends Migration
             });
         }
 
-        // Actualizar los valores por número de estrato
-        // (tanto si la columna era nueva como si tenía todos en 0)
+        // 2. Asignar los porcentajes correctos por número de estrato
         $valores = [
             1 =>  70.00,  // E1 Bajo-bajo
             2 =>  40.00,  // E2 Bajo
@@ -35,6 +34,42 @@ class AddPorcentajeSubsidioToEstratos extends Migration
             DB::table('estratos')
                 ->where('numero', $numero)
                 ->update(['porcentaje_subsidio' => $pct]);
+        }
+
+        // 3. Recalcular subsidio_emergencia en facturas existentes
+        //    que tienen subsidio_emergencia = 0 pero su estrato tiene porcentaje != 0.
+        //    Se calcula desde consumo_basico_acueducto_valor (ya guardado en la factura).
+        //    NO se modifica total_a_pagar para no alterar montos históricos.
+        $estratos = DB::table('estratos')
+            ->where('porcentaje_subsidio', '!=', 0)
+            ->get(['numero', 'porcentaje_subsidio']);
+
+        foreach ($estratos as $estrato) {
+            $pct = (float) $estrato->porcentaje_subsidio;
+
+            // Obtener facturas de este estrato con subsidio en cero
+            $facturas = DB::table('facturas')
+                ->where('estrato_snapshot', $estrato->numero)
+                ->where('subsidio_emergencia', 0)
+                ->where('consumo_basico_acueducto_valor', '>', 0)
+                ->select('id', 'consumo_basico_acueducto_valor', 'total_facturacion_acueducto', 'subtotal_conexion_otros_acueducto', 'total_a_pagar')
+                ->get();
+
+            foreach ($facturas as $f) {
+                $subsidio = round((float)$f->consumo_basico_acueducto_valor * $pct / 100, 2);
+
+                // Actualizar solo los campos de display + recalcular totales derivados
+                $nuevoTotalAcueducto  = round((float)$f->total_facturacion_acueducto - $subsidio, 2);
+                $deltaSubtotal        = round((float)$f->subtotal_conexion_otros_acueducto - $subsidio, 2);
+                $nuevoTotal           = round((float)$f->total_a_pagar - $subsidio, 2);
+
+                DB::table('facturas')->where('id', $f->id)->update([
+                    'subsidio_emergencia'                => $subsidio,
+                    'total_facturacion_acueducto'        => $nuevoTotalAcueducto,
+                    'subtotal_conexion_otros_acueducto'  => $deltaSubtotal,
+                    'total_a_pagar'                      => $nuevoTotal,
+                ]);
+            }
         }
     }
 

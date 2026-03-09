@@ -339,7 +339,7 @@ public function exportarSeleccionadas(Request $request)
         );
 
         // Descontar cuotas de otros cobros
-        ClienteOtrosCobro::where('cliente_id', $cliente->id)->activo()->each->pagarCuota();
+        ClienteOtrosCobro::where('cliente_id', $cliente->id)->activo()->get()->each->pagarCuota();
 
         return response()->json(['ok' => true, 'factura_id' => $factura->id, 'mensaje' => 'Factura generada correctamente.']);
     }
@@ -546,7 +546,7 @@ public function exportarSeleccionadas(Request $request)
                     $calculo['consumo_m3'], $calculo['lectura_anterior'], $calculo['lectura_actual']
                 );
 
-                ClienteOtrosCobro::where('cliente_id', $cliente->id)->activo()->each->pagarCuota();
+                ClienteOtrosCobro::where('cliente_id', $cliente->id)->activo()->get()->each->pagarCuota();
 
                 $generadas++;
             }

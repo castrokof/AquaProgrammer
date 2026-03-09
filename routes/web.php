@@ -299,4 +299,10 @@ Route::group(['middleware' => 'auth', 'prefix' => 'facturacion'], function () {
         ->name('otros-cobros.anular');
     Route::get('otros-cobros/buscar-cliente', 'OtrosCobrosController@buscarCliente')
         ->name('otros-cobros.buscar-cliente');
+
+    // ── Configuración de Empresa ──────────────────────────────────
+    Route::get('empresa', 'EmpresaController@edit')
+        ->name('empresa.edit');
+    Route::put('empresa', 'EmpresaController@update')
+        ->name('empresa.update');
 });

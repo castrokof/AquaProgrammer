@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Cliente;
+use App\Models\Empresa;
 use App\Models\Factura;
 use App\Models\Pago;
 use App\Models\PeriodoLectura;
@@ -572,10 +573,11 @@ public function exportarSeleccionadas(Request $request)
 
     public function pdf($id)
     {
-        $factura = Factura::with(['cliente', 'pagos'])->findOrFail($id);
+        $factura  = Factura::with(['cliente', 'pagos', 'tarifaPeriodo'])->findOrFail($id);
         $facturas = collect([$factura]);
+        $empresa  = Empresa::instancia();
 
-        $pdf = PDF::loadView('facturacion.facturas.pdf', compact('facturas'))
+        $pdf = PDF::loadView('facturacion.facturas.pdf', compact('facturas', 'empresa'))
             ->setPaper('letter', 'portrait');
 
         return $pdf->download('factura-' . $factura->numero_factura . '.pdf');
@@ -590,7 +592,7 @@ public function exportarSeleccionadas(Request $request)
             'ids.*' => 'integer|exists:facturas,id',
         ]);
 
-        $facturas = Factura::with(['cliente', 'pagos'])
+        $facturas = Factura::with(['cliente', 'pagos', 'tarifaPeriodo'])
             ->whereIn('id', $request->ids)
             ->orderBy('periodo', 'desc')
             ->orderBy('numero_factura')
@@ -600,12 +602,13 @@ public function exportarSeleccionadas(Request $request)
             abort(404, 'No se encontraron facturas con los IDs indicados.');
         }
 
+        $empresa = Empresa::instancia();
         $periodo = $facturas->first()->periodo;
         $nombre  = count($request->ids) === 1
             ? 'factura-' . $facturas->first()->numero_factura . '.pdf'
             : 'facturas-' . $periodo . '-' . count($request->ids) . '.pdf';
 
-        $pdf = PDF::loadView('facturacion.facturas.pdf', compact('facturas'))
+        $pdf = PDF::loadView('facturacion.facturas.pdf', compact('facturas', 'empresa'))
             ->setPaper('letter', 'portrait');
 
         return $pdf->download($nombre);

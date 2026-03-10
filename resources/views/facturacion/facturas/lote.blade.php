@@ -251,12 +251,14 @@ var dt            = null;
 // ── Filtro personalizado DataTables (tipo + observación) ─────────────────
 $.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
     if (settings.nTable.id !== 'tablaLote') return true;
+    if (!dt) return true;   // dt aún no asignado durante el primer draw interno
     var $row = $(dt.row(dataIndex).node());
+    if (!$row || !$row.length) return true;
     var tipo = $row.data('tipo') || '';
-    var obs  = $row.data('obs')  || '';
+    var obs  = String($row.data('obs')  || '');
 
     if (tipoActivo !== 'todos' && tipo !== tipoActivo) return false;
-    if (obsActiva  !== ''     && obs  !== obsActiva)  return false;
+    if (obsActiva  !== ''     && obs  !== String(obsActiva)) return false;
     return true;
 });
 
@@ -389,6 +391,7 @@ function construirTabla() {
         ordering: true,
         searching: false,   // usamos nuestro buscador
         order:    [[1, 'asc']],
+        lengthMenu: [[25, 50, 100, 200, -1], ['25', '50', '100', '200', 'Mostrar Todo']],
         language: {
             lengthMenu:    'Mostrar _MENU_ registros',
             info:          'Mostrando _START_ a _END_ de _TOTAL_ suscriptores',

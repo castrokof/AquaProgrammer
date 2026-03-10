@@ -251,11 +251,12 @@ var dt            = null;
 // ── Filtro personalizado DataTables (tipo + observación) ─────────────────
 $.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
     if (settings.nTable.id !== 'tablaLote') return true;
-    if (!dt) return true;   // dt aún no asignado durante el primer draw interno
-    var $row = $(dt.row(dataIndex).node());
-    if (!$row || !$row.length) return true;
+    // settings.aoData[dataIndex].nTr es el nodo TR real (acceso directo al índice interno DT)
+    var nTr = settings.aoData[dataIndex] ? settings.aoData[dataIndex].nTr : null;
+    if (!nTr) return true;
+    var $row = $(nTr);
     var tipo = $row.data('tipo') || '';
-    var obs  = String($row.data('obs')  || '');
+    var obs  = String($row.data('obs') || '');
 
     if (tipoActivo !== 'todos' && tipo !== tipoActivo) return false;
     if (obsActiva  !== ''     && obs  !== String(obsActiva)) return false;
@@ -467,8 +468,9 @@ $.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
     if (settings.nTable.id !== 'tablaLote') return true;
     var q = window._buscarQ || '';
     if (!q) return true;
-    var $row = $(dt.row(dataIndex).node());
-    return ($row.data('q') || '').indexOf(q) !== -1;
+    var nTr = settings.aoData[dataIndex] ? settings.aoData[dataIndex].nTr : null;
+    if (!nTr) return true;
+    return ($(nTr).data('q') || '').indexOf(q) !== -1;
 });
 
 // ── Checkboxes con paginación ─────────────────────────────────────────────
@@ -535,11 +537,11 @@ function verFotos(clienteId) {
 
     $('#fotoSuscriptor').text('Suscriptor: ' + c.suscriptor + ' — ' + c.nombre);
 
+    var BASE_URL = '{{ rtrim(url("/"), "/") }}';
     var html = '';
     [c.foto1, c.foto2].forEach(function(foto, i) {
         if (!foto) return;
-        // Intentar construir URL: si es ruta absoluta la usamos, sino como asset
-        var src = foto.startsWith('http') ? foto : '/' + foto.replace(/^\//, '');
+        var src = foto.startsWith('http') ? foto : BASE_URL + '/' + foto.replace(/^\//, '');
         html += '<div style="flex:1;min-width:200px;max-width:420px;">'
               + '<p style="font-size:.75rem;color:#718096;margin-bottom:6px;">Foto ' + (i+1) + '</p>'
               + '<a href="' + src + '" target="_blank">'

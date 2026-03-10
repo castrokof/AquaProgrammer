@@ -3,6 +3,7 @@
 @section('titulo', 'Facturación por Lote')
 
 @section('styles')
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap4.min.css">
 <style>
 .modern-card { border-radius:20px; box-shadow:0 10px 40px rgba(0,0,0,.1); border:none; overflow:hidden; margin-bottom:20px; background:white; }
 .modern-card .card-header { background:linear-gradient(135deg,#2e50e4 0%,#2b0c49 100%); border:none; padding:22px 28px; display:flex; justify-content:space-between; align-items:center; }
@@ -14,35 +15,53 @@ label.lbl { font-weight:600; color:#4a5568; font-size:.8rem; text-transform:uppe
 /* Tabs tipo */
 .tipo-tabs { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
 .tipo-tab { padding:6px 18px; border-radius:20px; font-size:.8rem; font-weight:700; cursor:pointer; border:2px solid transparent; transition:all .2s; user-select:none; }
-.tipo-tab.sin_medidor  { background:#fef3c7; color:#92400e; border-color:#f6e05e; }
-.tipo-tab.alto         { background:#fee2e2; color:#991b1b; border-color:#fc8181; }
-.tipo-tab.bajo         { background:#e0e7ff; color:#3730a3; border-color:#818cf8; }
-.tipo-tab.causado      { background:#fef9c3; color:#713f12; border-color:#fde047; }
-.tipo-tab.normal       { background:#d1fae5; color:#065f46; border-color:#6ee7b7; }
-.tipo-tab.todos        { background:#e2e8f0; color:#2d3748; border-color:#cbd5e0; }
-.tipo-tab.active       { box-shadow:0 4px 12px rgba(0,0,0,.15); transform:translateY(-1px); }
-.tipo-tab .cnt         { background:rgba(0,0,0,.15); border-radius:10px; padding:0 7px; margin-left:5px; font-size:.75rem; }
+.tipo-tab.sin_medidor    { background:#fef3c7; color:#92400e; border-color:#f6e05e; }
+.tipo-tab.alto           { background:#fee2e2; color:#991b1b; border-color:#fc8181; }
+.tipo-tab.bajo           { background:#e0e7ff; color:#3730a3; border-color:#818cf8; }
+.tipo-tab.causado        { background:#fef9c3; color:#713f12; border-color:#fde047; }
+.tipo-tab.normal         { background:#d1fae5; color:#065f46; border-color:#6ee7b7; }
+.tipo-tab.consumo_cero   { background:#f1f5f9; color:#334155; border-color:#94a3b8; }
+.tipo-tab.promedio_medidor { background:#fdf4ff; color:#7e22ce; border-color:#c084fc; }
+.tipo-tab.todos          { background:#e2e8f0; color:#2d3748; border-color:#cbd5e0; }
+.tipo-tab.active         { box-shadow:0 4px 12px rgba(0,0,0,.15); transform:translateY(-1px); }
+.tipo-tab .cnt           { background:rgba(0,0,0,.15); border-radius:10px; padding:0 7px; margin-left:5px; font-size:.75rem; }
 
-/* Tabla lote */
+/* Tabla */
 #tablaLote { font-size:.82rem; }
 #tablaLote thead th { background:#f3f4f6; padding:7px 10px; font-size:.75rem; font-weight:700; text-transform:uppercase; color:#374151; white-space:nowrap; }
 #tablaLote tbody td { padding:5px 8px; vertical-align:middle; }
 #tablaLote tbody tr:hover { background:#f7fafc; }
-.inp-consumo, .inp-lect { width:80px; border:2px solid #e2e8f0; border-radius:8px; padding:4px 8px; font-size:.82rem; text-align:right; }
+.inp-consumo, .inp-lect { width:78px; border:2px solid #e2e8f0; border-radius:8px; padding:4px 8px; font-size:.82rem; text-align:right; }
 .inp-consumo:focus, .inp-lect:focus { border-color:#667eea; outline:none; }
+
+/* Badge tipo */
+.badge-tipo { display:inline-block; padding:2px 9px; border-radius:10px; font-size:.72rem; font-weight:700; white-space:nowrap; }
+.badge-tipo.sin_medidor    { background:#fef3c7; color:#92400e; }
+.badge-tipo.alto           { background:#fee2e2; color:#991b1b; }
+.badge-tipo.bajo           { background:#e0e7ff; color:#3730a3; }
+.badge-tipo.causado        { background:#fef9c3; color:#713f12; }
+.badge-tipo.normal         { background:#d1fae5; color:#065f46; }
+.badge-tipo.consumo_cero   { background:#f1f5f9; color:#334155; }
+.badge-tipo.promedio_medidor { background:#fdf4ff; color:#7e22ce; }
 
 /* Barra de acciones flotante */
 #barraAcciones { position:fixed; bottom:0; left:0; right:0; background:white; border-top:3px solid #667eea; padding:14px 30px; display:none; z-index:999; box-shadow:0 -4px 20px rgba(0,0,0,.12); }
 
-/* Badge tipo */
-.badge-tipo { display:inline-block; padding:2px 9px; border-radius:10px; font-size:.72rem; font-weight:700; }
-.badge-tipo.sin_medidor { background:#fef3c7; color:#92400e; }
-.badge-tipo.alto        { background:#fee2e2; color:#991b1b; }
-.badge-tipo.bajo        { background:#e0e7ff; color:#3730a3; }
-.badge-tipo.causado     { background:#fef9c3; color:#713f12; }
-.badge-tipo.normal      { background:#d1fae5; color:#065f46; }
-
 .spinner-wrap { text-align:center; padding:40px; color:#a0aec0; }
+
+/* DataTables overrides */
+.dataTables_wrapper .dataTables_filter { display:none; } /* usamos nuestro buscador */
+.dataTables_wrapper .dataTables_length select { border-radius:8px; border:2px solid #e2e8f0; padding:4px 8px; }
+.dataTables_wrapper .dataTables_info { font-size:.8rem; color:#718096; }
+.dataTables_wrapper .dataTables_paginate .paginate_button { border-radius:8px !important; font-size:.8rem; }
+.dataTables_wrapper .dataTables_paginate .paginate_button.current { background:#667eea !important; color:white !important; border-color:#667eea !important; }
+
+/* Foto btn */
+.btn-foto { background:none; border:none; padding:2px 6px; color:#667eea; cursor:pointer; font-size:.9rem; }
+.btn-foto:hover { color:#4338ca; }
+
+/* Obs filter */
+#filtroObs { min-width:200px; }
 </style>
 @endsection
 
@@ -106,30 +125,40 @@ label.lbl { font-weight:600; color:#4a5568; font-size:.8rem; text-transform:uppe
             <span class="tipo-tab causado" data-tipo="causado" onclick="filtrarTipo('causado',this)" style="display:none;">
                 Causados <span class="cnt" id="cnt-causado">0</span>
             </span>
+            <span class="tipo-tab consumo_cero" data-tipo="consumo_cero" onclick="filtrarTipo('consumo_cero',this)" style="display:none;">
+                <i class="fa fa-home"></i> Desocupados <span class="cnt" id="cnt-consumo_cero">0</span>
+            </span>
+            <span class="tipo-tab promedio_medidor" data-tipo="promedio_medidor" onclick="filtrarTipo('promedio_medidor',this)" style="display:none;">
+                <i class="fa fa-tachometer-alt"></i> Medidor Parado <span class="cnt" id="cnt-promedio_medidor">0</span>
+            </span>
             <span class="tipo-tab normal" data-tipo="normal" onclick="filtrarTipo('normal',this)" style="display:none;">
                 Normales <span class="cnt" id="cnt-normal">0</span>
             </span>
         </div>
 
-        {{-- Buscador en tabla --}}
         <div style="background:white;border-radius:14px;padding:16px 20px;box-shadow:0 4px 15px rgba(0,0,0,.06);">
+
+            {{-- Toolbar: buscador + filtro observación + botones selección --}}
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:10px;">
-                <div>
-                    <input type="text" id="buscarTabla" class="form-control form-control-gen" style="width:260px;"
+                <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+                    <input type="text" id="buscarTabla" class="form-control form-control-gen" style="width:240px;"
                            placeholder="Buscar suscriptor, nombre, sector...">
+                    <select id="filtroObs" class="form-control form-control-gen">
+                        <option value="">— Todas las observaciones —</option>
+                    </select>
                 </div>
                 <div style="display:flex;gap:8px;">
                     <button class="btn btn-sm btn-outline-secondary" onclick="selTodos(true)" style="border-radius:8px;font-size:.8rem;">
-                        Seleccionar visibles
+                        <i class="fa fa-check-square"></i> Seleccionar visibles
                     </button>
                     <button class="btn btn-sm btn-outline-secondary" onclick="selTodos(false)" style="border-radius:8px;font-size:.8rem;">
-                        Deseleccionar todos
+                        <i class="fa fa-square"></i> Deseleccionar todos
                     </button>
                 </div>
             </div>
 
             <div style="overflow-x:auto;">
-                <table id="tablaLote" style="width:100%;border-collapse:collapse;">
+                <table id="tablaLote" class="table table-sm table-bordered" style="width:100%;">
                     <thead>
                         <tr>
                             <th style="width:36px;"><input type="checkbox" id="chkAll"></th>
@@ -140,13 +169,15 @@ label.lbl { font-weight:600; color:#4a5568; font-size:.8rem; text-transform:uppe
                             <th>Servicios</th>
                             <th>Promedio m³</th>
                             <th>Tipo</th>
+                            <th>Observación</th>
                             <th>Lect. Ant.</th>
                             <th>Lect. Act.</th>
                             <th>Consumo m³</th>
+                            <th style="width:40px;">Foto</th>
                         </tr>
                     </thead>
                     <tbody id="tbodyLote">
-                        <tr><td colspan="11" class="spinner-wrap"><i class="fa fa-spinner fa-spin fa-2x"></i><br>Cargando...</td></tr>
+                        <tr><td colspan="13" class="spinner-wrap"><i class="fa fa-spinner fa-spin fa-2x"></i><br>Cargando...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -183,13 +214,48 @@ label.lbl { font-weight:600; color:#4a5568; font-size:.8rem; text-transform:uppe
     </div>
 
 </div>
+
+{{-- ── Modal Foto de Lectura ────────────────────────────────────────────── --}}
+<div class="modal fade" id="modalFoto" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content" style="border-radius:16px;overflow:hidden;">
+            <div class="modal-header" style="background:linear-gradient(135deg,#2e50e4,#2b0c49);color:white;border:none;">
+                <h5 class="modal-title"><i class="fa fa-camera"></i> Foto de Lectura</h5>
+                <button type="button" class="close" data-dismiss="modal" style="color:white;opacity:1;">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body text-center" style="padding:20px;">
+                <p id="fotoSuscriptor" style="font-weight:700;color:#2d3748;margin-bottom:14px;"></p>
+                <div id="fotosContainer" style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap;"></div>
+            </div>
+        </div>
+    </div>
+</div>
 @endsection
 
 @section('scripts')
+<script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap4.min.js"></script>
 <script>
-var CSRF        = $("meta[name='csrf-token']").attr("content");
-var todosClientes = [];      // array completo
-var tipoActivo  = 'todos';
+var CSRF          = $("meta[name='csrf-token']").attr("content");
+var todosClientes = [];
+var tipoActivo    = 'todos';
+var obsActiva     = '';
+var seleccionados = new Set(); // IDs de checkboxes seleccionados
+var dt            = null;
+
+// ── Filtro personalizado DataTables (tipo + observación) ─────────────────
+$.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
+    if (settings.nTable.id !== 'tablaLote') return true;
+    var $row = $(dt.row(dataIndex).node());
+    var tipo = $row.data('tipo') || '';
+    var obs  = $row.data('obs')  || '';
+
+    if (tipoActivo !== 'todos' && tipo !== tipoActivo) return false;
+    if (obsActiva  !== ''     && obs  !== obsActiva)  return false;
+    return true;
+});
 
 // ── Habilitar botón al seleccionar período ────────────────────────────────
 $('#selPeriodo').on('change', function () {
@@ -204,6 +270,7 @@ $('#btnCargar').on('click', function () {
     $('#contenidoLote').hide();
     $('#spinnerCarga').show();
     $('#barraAcciones').hide();
+    seleccionados.clear();
 
     $.ajax({
         url: '{{ route("facturas.clientes-sin-factura") }}',
@@ -216,8 +283,9 @@ $('#btnCargar').on('click', function () {
                 return;
             }
             todosClientes = r.clientes;
-            construirTabla(todosClientes);
+            construirTabla();
             actualizarContadores();
+            poblarFiltroObs();
             filtrarTipo('todos', document.querySelector('.tipo-tab.todos'));
             $('#contenidoLote').show();
             $('#resumenCounts').show();
@@ -229,50 +297,104 @@ $('#btnCargar').on('click', function () {
     });
 });
 
-// ── Construir filas de la tabla ───────────────────────────────────────────
-function construirTabla(clientes) {
+// ── Construir tabla con DataTables ────────────────────────────────────────
+function construirTabla() {
+    // Destruir instancia anterior si existe
+    if (dt) { dt.destroy(); }
+    seleccionados.clear();
+
+    var labelMap = {
+        sin_medidor:'Sin Medidor', alto:'Alto', bajo:'Bajo', causado:'Causado',
+        normal:'Normal', consumo_cero:'Desocupado', promedio_medidor:'Medidor Parado'
+    };
+
     var html = '';
-    if (clientes.length === 0) {
-        html = '<tr><td colspan="11" style="text-align:center;padding:30px;color:#a0aec0;">No hay suscriptores en esta categoría.</td></tr>';
-        $('#tbodyLote').html(html);
-        return;
-    }
-    clientes.forEach(function (c) {
-        var badgeMap = { sin_medidor:'sin_medidor', alto:'alto', bajo:'bajo', causado:'causado', normal:'normal' };
-        var labelMap = { sin_medidor:'Sin Medidor', alto:'Alto', bajo:'Bajo', causado:'Causado', normal:'Normal' };
-        var badge = '<span class="badge-tipo ' + (badgeMap[c.tipo]||'normal') + '">' + (labelMap[c.tipo]||c.tipo) + '</span>';
-
+    todosClientes.forEach(function (c) {
+        var badge = '<span class="badge-tipo ' + c.tipo + '">' + (labelMap[c.tipo] || c.tipo) + '</span>';
         var sinMedidor = !c.tiene_medidor;
-        var lectAnterior = c.lect_anterior !== null ? c.lect_anterior : '';
-        var lectActual   = c.lect_actual   !== null ? c.lect_actual   : '';
-        var consumo      = c.consumo_sugerido > 0 ? c.consumo_sugerido : '';
+        var esEditable = sinMedidor || c.tipo === 'promedio_medidor' || c.tipo === 'consumo_cero';
 
-        // Sin medidor: consumo EDITABLE (promedio como sugerencia); con medidor: desde lectura
-        var defaultConsumo = sinMedidor ? Math.round(c.promedio_consumo || 0) : (consumo !== '' ? consumo : 0);
-        var inpConsumo = '<input class="inp-consumo" type="number" min="0" value="' + defaultConsumo + '" data-id="' + c.id + '" name="consumo"'
-            + (sinMedidor ? ' title="Sin medidor: puede modificar el consumo a facturar" style="background:#fffbeb;"' : '') + '>';
+        var inpConsumo = '<input class="inp-consumo" type="number" min="0" value="' + c.consumo_sugerido
+            + '" data-id="' + c.id + '" name="consumo"'
+            + (esEditable ? ' style="background:#fffbeb;" title="Valor editable"' : '')
+            + '>';
 
         var inpLectAnt = sinMedidor ? '—' :
-            '<input class="inp-lect" type="number" min="0" value="' + lectAnterior + '" data-id="' + c.id + '" name="lect_ant" oninput="calcularConsumo(this)">';
+            '<input class="inp-lect" type="number" min="0" value="' + (c.lect_anterior !== null ? c.lect_anterior : '')
+            + '" data-id="' + c.id + '" name="lect_ant" oninput="calcularConsumo(this)">';
         var inpLectAct = sinMedidor ? '—' :
-            '<input class="inp-lect" type="number" min="0" value="' + lectActual + '" data-id="' + c.id + '" name="lect_act" oninput="calcularConsumo(this)">';
+            '<input class="inp-lect" type="number" min="0" value="' + (c.lect_actual !== null ? c.lect_actual : '')
+            + '" data-id="' + c.id + '" name="lect_act" oninput="calcularConsumo(this)">';
 
-        html += '<tr data-id="' + c.id + '" data-tipo="' + c.tipo + '" data-q="' + (c.suscriptor+' '+c.nombre+' '+c.sector).toLowerCase() + '">';
-        html += '<td><input type="checkbox" class="chk-fila" data-id="' + c.id + '"></td>';
+        var fotoBtn = '';
+        if (c.foto1 || c.foto2) {
+            fotoBtn = '<button class="btn-foto" onclick="verFotos(' + c.id + ')" title="Ver foto de lectura">'
+                    + '<i class="fa fa-camera"></i></button>';
+        }
+
+        var obsLabel = c.observacion_des
+            ? ('<small style="color:#475569;">' + c.observacion_des + '</small>')
+            : '<small style="color:#cbd5e0;">—</small>';
+
+        html += '<tr data-id="' + c.id + '" data-tipo="' + c.tipo
+            + '" data-obs="' + (c.observacion_id || '') + '"'
+            + ' data-q="' + (c.suscriptor + ' ' + c.nombre + ' ' + c.sector + ' ' + c.observacion_des).toLowerCase() + '">';
+        html += '<td style="text-align:center;"><input type="checkbox" class="chk-fila" data-id="' + c.id + '"></td>';
         html += '<td style="font-weight:700;color:#2d3748;">' + c.suscriptor + '</td>';
         html += '<td>' + c.nombre + '</td>';
-        html += '<td style="color:#718096;">' + (c.sector||'—') + '</td>';
+        html += '<td style="color:#718096;">' + (c.sector || '—') + '</td>';
         html += '<td>' + c.estrato + '</td>';
-        html += '<td>' + (c.servicios||'—') + '</td>';
-        html += '<td style="text-align:right;font-weight:600;">' + (c.promedio_consumo||0).toFixed(1) + '</td>';
+        html += '<td>' + (c.servicios || '—') + '</td>';
+        html += '<td style="text-align:right;font-weight:600;">' + (c.promedio_consumo || 0) + '</td>';
         html += '<td>' + badge + '</td>';
+        html += '<td>' + obsLabel + '</td>';
         html += '<td>' + inpLectAnt + '</td>';
         html += '<td>' + inpLectAct + '</td>';
         html += '<td>' + inpConsumo + '</td>';
+        html += '<td style="text-align:center;">' + fotoBtn + '</td>';
         html += '</tr>';
     });
+
     $('#tbodyLote').html(html);
+
+    dt = $('#tablaLote').DataTable({
+        paging:   true,
+        pageLength: 50,
+        ordering: true,
+        searching: false,   // usamos nuestro buscador
+        order:    [[1, 'asc']],
+        language: {
+            lengthMenu:    'Mostrar _MENU_ registros',
+            info:          'Mostrando _START_ a _END_ de _TOTAL_ suscriptores',
+            infoEmpty:     'Sin resultados',
+            infoFiltered:  '(filtrado de _MAX_ total)',
+            paginate:      { first:'«', last:'»', next:'›', previous:'‹' },
+            zeroRecords:   'No hay suscriptores para los filtros seleccionados.'
+        },
+        columnDefs: [
+            { orderable: false, targets: [0, 9, 10, 11, 12] }
+        ],
+        drawCallback: function() {
+            actualizarBarraAcciones();
+        }
+    });
+
     actualizarBarraAcciones();
+}
+
+// ── Poblar select de observaciones ───────────────────────────────────────
+function poblarFiltroObs() {
+    var obsMap = {};
+    todosClientes.forEach(function(c) {
+        if (c.observacion_id && c.observacion_des) {
+            obsMap[c.observacion_id] = c.observacion_des;
+        }
+    });
+    var $sel = $('#filtroObs');
+    $sel.find('option:not(:first)').remove();
+    Object.keys(obsMap).sort(function(a,b){ return a-b; }).forEach(function(id) {
+        $sel.append('<option value="' + id + '">' + id + ' – ' + obsMap[id] + '</option>');
+    });
 }
 
 // ── Auto-calcular consumo al ingresar lecturas ────────────────────────────
@@ -286,57 +408,71 @@ function calcularConsumo(el) {
     }
 }
 
-// ── Filtrar por tipo ──────────────────────────────────────────────────────
+// ── Filtrar por tipo (DataTables ext.search) ──────────────────────────────
 function filtrarTipo(tipo, el) {
     tipoActivo = tipo;
     document.querySelectorAll('.tipo-tab').forEach(function(t){ t.classList.remove('active'); });
-    el.classList.add('active');
-
-    $('#tbodyLote tr').each(function () {
-        var $tr = $(this);
-        if (!$tr.data('tipo')) { $tr.show(); return; }
-        if (tipo === 'todos') {
-            $tr.show();
-        } else {
-            $tr.data('tipo') === tipo ? $tr.show() : $tr.hide();
-        }
-    });
-    aplicarBusqueda();
+    if (el) el.classList.add('active');
+    if (dt) dt.draw();
 }
 
-// ── Buscador inline ───────────────────────────────────────────────────────
-$('#buscarTabla').on('input', aplicarBusqueda);
-function aplicarBusqueda() {
-    var q = $('#buscarTabla').val().toLowerCase();
-    $('#tbodyLote tr').each(function () {
-        var $tr = $(this);
-        if (!$tr.data('tipo')) return;
-        if (!$tr.is(':visible') && tipoActivo !== 'todos') return; // respeta filtro tipo
-        if (!q) { if (tipoActivo === 'todos' || $tr.data('tipo') === tipoActivo) $tr.show(); return; }
-        var match = ($tr.data('q') || '').indexOf(q) !== -1;
-        if (tipoActivo !== 'todos' && $tr.data('tipo') !== tipoActivo) return;
-        match ? $tr.show() : $tr.hide();
-    });
-}
+// ── Filtro por observación ────────────────────────────────────────────────
+$('#filtroObs').on('change', function () {
+    obsActiva = $(this).val();
+    if (dt) dt.draw();
+});
 
-// ── Checkboxes ────────────────────────────────────────────────────────────
+// ── Buscador de texto ─────────────────────────────────────────────────────
+$('#buscarTabla').on('input', function () {
+    if (!dt) return;
+    // Filtro manual sobre data-q para evitar conflicto con DataTables ext.search
+    var q = $(this).val().toLowerCase();
+    // Usamos $.fn.dataTable.ext.search para el texto también
+    // Guardamos la query globalmente
+    window._buscarQ = q;
+    dt.draw();
+});
+
+// Añadir filtro de texto al array de búsqueda personalizada
+$.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
+    if (settings.nTable.id !== 'tablaLote') return true;
+    var q = window._buscarQ || '';
+    if (!q) return true;
+    var $row = $(dt.row(dataIndex).node());
+    return ($row.data('q') || '').indexOf(q) !== -1;
+});
+
+// ── Checkboxes con paginación ─────────────────────────────────────────────
 $('#chkAll').on('change', function () {
     var checked = $(this).is(':checked');
-    $('#tbodyLote tr:visible .chk-fila').prop('checked', checked);
+    // Solo afecta las filas VISIBLES en la página actual
+    $('#tablaLote tbody tr:visible .chk-fila').prop('checked', checked).each(function() {
+        var id = $(this).data('id');
+        checked ? seleccionados.add(id) : seleccionados.delete(id);
+    });
     actualizarBarraAcciones();
 });
 
 $(document).on('change', '.chk-fila', function () {
+    var id = $(this).data('id');
+    $(this).is(':checked') ? seleccionados.add(id) : seleccionados.delete(id);
     actualizarBarraAcciones();
 });
 
 function selTodos(estado) {
-    $('#tbodyLote tr:visible .chk-fila').prop('checked', estado);
+    if (!dt) return;
+    // Aplicar a TODAS las filas filtradas (no solo la página actual)
+    dt.rows({ search: 'applied' }).nodes().each(function(row) {
+        var $chk = $(row).find('.chk-fila');
+        $chk.prop('checked', estado);
+        var id = $chk.data('id');
+        estado ? seleccionados.add(id) : seleccionados.delete(id);
+    });
     actualizarBarraAcciones();
 }
 
 function actualizarBarraAcciones() {
-    var n = $('.chk-fila:checked').length;
+    var n = seleccionados.size;
     if (n > 0) {
         $('#textoSeleccionados').text(n);
         $('#barraAcciones').show();
@@ -347,53 +483,84 @@ function actualizarBarraAcciones() {
 
 // ── Actualizar contadores de tabs ─────────────────────────────────────────
 function actualizarContadores() {
-    var counts = { todos: todosClientes.length, sin_medidor:0, alto:0, bajo:0, causado:0, normal:0 };
+    var tiposConocidos = ['sin_medidor','alto','bajo','causado','consumo_cero','promedio_medidor','normal'];
+    var counts = { todos: todosClientes.length };
+    tiposConocidos.forEach(function(t){ counts[t] = 0; });
     todosClientes.forEach(function(c){ if (counts[c.tipo] !== undefined) counts[c.tipo]++; });
 
     var resumen = [];
-    ['sin_medidor','alto','bajo','causado','normal'].forEach(function(tipo) {
+    tiposConocidos.forEach(function(tipo) {
         $('#cnt-'+tipo).text(counts[tipo]);
         var tab = $('[data-tipo="'+tipo+'"]');
-        if (counts[tipo] > 0) { tab.show(); resumen.push('<b>'+counts[tipo]+'</b> '+tipo.replace('_',' ')); }
+        if (counts[tipo] > 0) { tab.show(); resumen.push('<b>'+counts[tipo]+'</b> '+tipo.replace(/_/g,' ')); }
         else { tab.hide(); }
     });
     $('#cnt-todos').text(counts.todos);
     $('#resumenCounts').html('<span style="color:#718096;font-size:.82rem;">Total pendientes: <b>'+counts.todos+'</b> | '+resumen.join(' · ')+'</span>');
 }
 
+// ── Ver fotos de lectura ──────────────────────────────────────────────────
+function verFotos(clienteId) {
+    var c = todosClientes.find(function(x){ return x.id == clienteId; });
+    if (!c) return;
+
+    $('#fotoSuscriptor').text('Suscriptor: ' + c.suscriptor + ' — ' + c.nombre);
+
+    var html = '';
+    [c.foto1, c.foto2].forEach(function(foto, i) {
+        if (!foto) return;
+        // Intentar construir URL: si es ruta absoluta la usamos, sino como asset
+        var src = foto.startsWith('http') ? foto : '/' + foto.replace(/^\//, '');
+        html += '<div style="flex:1;min-width:200px;max-width:420px;">'
+              + '<p style="font-size:.75rem;color:#718096;margin-bottom:6px;">Foto ' + (i+1) + '</p>'
+              + '<a href="' + src + '" target="_blank">'
+              + '<img src="' + src + '" style="max-width:100%;border-radius:10px;box-shadow:0 4px 15px rgba(0,0,0,.15);" '
+              + 'onerror="this.parentElement.innerHTML=\'<span style=\\\"color:#e11d48\\\">No se pudo cargar la foto</span>\'">'
+              + '</a></div>';
+    });
+
+    if (!html) html = '<p style="color:#718096;">No hay fotos disponibles.</p>';
+    $('#fotosContainer').html(html);
+    $('#modalFoto').modal('show');
+}
+
 // ── Generar facturas del lote ─────────────────────────────────────────────
 $('#btnGenerarLote').on('click', function () {
-    var seleccionados = [];
-    $('.chk-fila:checked').each(function () {
-        var id = $(this).data('id');
-        seleccionados.push({
-            cliente_id:      id,
-            consumo_m3:      parseInt($('input[data-id="'+id+'"][name="consumo"]').val()) || 0,
+    if (seleccionados.size === 0) {
+        Swal.fire('Sin selección', 'Seleccione al menos un suscriptor.', 'warning');
+        return;
+    }
+
+    var rows = [];
+    seleccionados.forEach(function(id) {
+        var consumoVal = parseInt($('input[data-id="'+id+'"][name="consumo"]').val());
+        if (isNaN(consumoVal)) consumoVal = 0;
+        rows.push({
+            cliente_id:       id,
+            consumo_m3:       consumoVal,
             lectura_anterior: $('input[data-id="'+id+'"][name="lect_ant"]').length
                                 ? ($('input[data-id="'+id+'"][name="lect_ant"]').val() || null)
                                 : null,
-            lectura_actual:  $('input[data-id="'+id+'"][name="lect_act"]').length
+            lectura_actual:   $('input[data-id="'+id+'"][name="lect_act"]').length
                                 ? ($('input[data-id="'+id+'"][name="lect_act"]').val() || null)
                                 : null,
         });
     });
 
-    if (seleccionados.length === 0) { Swal.fire('Sin selección', 'Seleccione al menos un suscriptor.', 'warning'); return; }
-
-    // Validar que ninguno tenga consumo negativo (0 es válido: predio desocupado → solo básico)
-    var sinConsumo = seleccionados.filter(function(r){ return r.consumo_m3 === null || r.consumo_m3 === undefined || r.consumo_m3 < 0; });
-    if (sinConsumo.length > 0) {
-        Swal.fire('Consumo inválido', 'Hay ' + sinConsumo.length + ' suscriptor(es) con consumo negativo.', 'warning');
+    // Validar consumo negativo (0 es válido)
+    var invalidos = rows.filter(function(r){ return r.consumo_m3 < 0; });
+    if (invalidos.length > 0) {
+        Swal.fire('Consumo inválido', invalidos.length + ' suscriptor(es) con consumo negativo.', 'warning');
         return;
     }
 
     Swal.fire({
-        title: '¿Generar ' + seleccionados.length + ' facturas?',
-        html: 'Se generarán las facturas para los suscriptores seleccionados.<br>Esta acción no se puede deshacer.',
+        title: '¿Generar ' + rows.length + ' facturas?',
+        html:  'Se generarán las facturas para los suscriptores seleccionados.<br>Esta acción no se puede deshacer.',
         icon: 'question', showCancelButton: true,
         confirmButtonText: 'Generar', cancelButtonText: 'Cancelar',
         confirmButtonColor: '#2e50e4'
-    }).then(function(res){
+    }).then(function(res) {
         if (!res.value) return;
         $('#spinnerGen').show();
         $('#btnGenerarLote').prop('disabled', true);
@@ -406,23 +573,21 @@ $('#btnGenerarLote').on('click', function () {
                 _token: CSRF,
                 periodo_lectura_id: $('#selPeriodo').val(),
                 observaciones: $('#obsLote').val().trim() || null,
-                rows: seleccionados
+                rows: rows
             }),
-            success: function(r){
+            success: function(r) {
                 $('#spinnerGen').hide();
                 $('#btnGenerarLote').prop('disabled', false);
                 if (r.ok) {
                     Swal.fire({
                         title: '¡Listo!', icon: 'success',
                         html: r.mensaje + '<br><small>Se recargará la lista automáticamente.</small>'
-                    }).then(function(){
-                        $('#btnCargar').click(); // recargar
-                    });
+                    }).then(function() { $('#btnCargar').click(); });
                 } else {
                     Swal.fire('Error', r.mensaje, 'error');
                 }
             },
-            error: function(xhr){
+            error: function(xhr) {
                 $('#spinnerGen').hide();
                 $('#btnGenerarLote').prop('disabled', false);
                 Swal.fire('Error', xhr.responseJSON?.mensaje || 'Error al generar facturas.', 'error');

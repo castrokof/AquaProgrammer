@@ -476,10 +476,18 @@ public function exportarSeleccionadas(Request $request)
         // Solo órdenes EJECUTADAS en campo (Estado = 4) para este período
         $ordenes = \App\Models\Admin\Ordenesmtl::where('periodo_lectura_id', $periodo->id)
             ->where('Estado', 4)
-            ->get(['Suscriptor', 'Critica', 'Lect_Actual', 'LA', 'Cons_Act', 'Estado'])
+            ->get([
+                'Suscriptor', 'Critica', 'Lect_Actual', 'LA', 'Cons_Act', 'Estado',
+                'Observacion_id', 'Observacion_des', 'foto1', 'foto2', 'Promedio',
+            ])
             ->keyBy('Suscriptor');
 
-        $resultado = $clientes->map(function ($c) use ($ordenes) {
+        // Observacion_id 30,31,32,15,16 → predio desocupado → facturar consumo 0
+        // Observacion_id 33             → medidor parado    → facturar con promedio
+        $codigosConsumoCero     = [15, 16, 30, 31, 32];
+        $codigosPromedioMedidor = [33];
+
+        $resultado = $clientes->map(function ($c) use ($ordenes, $codigosConsumoCero, $codigosPromedioMedidor) {
             $orden = $ordenes->get($c->suscriptor);
 
             // Con medidor: solo aparece si la lectura fue ejecutada en campo (Estado=4).
@@ -491,16 +499,40 @@ public function exportarSeleccionadas(Request $request)
             $critica      = $orden ? ($orden->Critica ?? '') : '';
             $criticaUpper = strtoupper($critica);
 
+            $observacionId  = $orden ? (int) ($orden->Observacion_id ?? 0) : 0;
+            $observacionDes = $orden ? ($orden->Observacion_des ?? '') : '';
+
+            // Promedio real: preferir el registrado en la orden de lectura (más actualizado)
+            $promedioOrden   = $orden ? (int) ($orden->Promedio ?? 0) : 0;
+            $promedioCliente = (int) round((float) ($c->promedio_consumo ?? 0));
+            $promedioReal    = $promedioOrden > 0 ? $promedioOrden : $promedioCliente;
+
+            // Clasificación de tipo
             if (!$c->tiene_medidor) {
                 $tipo = 'sin_medidor';
+            } elseif (str_contains($criticaUpper, 'IGUAL') && in_array($observacionId, $codigosConsumoCero)) {
+                $tipo = 'consumo_cero';      // desocupado → solo básico, consumo 0
+            } elseif (str_contains($criticaUpper, 'IGUAL') && in_array($observacionId, $codigosPromedioMedidor)) {
+                $tipo = 'promedio_medidor';  // medidor parado → cobrar promedio
+            } elseif (str_contains($criticaUpper, 'IGUAL')) {
+                $tipo = 'causado';           // iguales sin obs. específica → analista decide
             } elseif (str_contains($criticaUpper, 'ALTO') || str_contains($criticaUpper, 'ELEVADO')) {
                 $tipo = 'alto';
-            } elseif (str_contains($criticaUpper, 'BAJO') || str_contains($criticaUpper, 'CERO')) {
+            } elseif (str_contains($criticaUpper, 'BAJO')) {
                 $tipo = 'bajo';
             } elseif ($critica !== '' && !str_contains($criticaUpper, 'NORMAL')) {
                 $tipo = 'causado';
             } else {
                 $tipo = 'normal';
+            }
+
+            // Consumo sugerido según tipo
+            if ($tipo === 'consumo_cero') {
+                $consumoSugerido = 0;
+            } elseif ($tipo === 'promedio_medidor' || !$orden) {
+                $consumoSugerido = $promedioReal;
+            } else {
+                $consumoSugerido = (int) $orden->Cons_Act;
             }
 
             return [
@@ -513,15 +545,16 @@ public function exportarSeleccionadas(Request $request)
                 'servicios'        => $c->servicios,
                 'tiene_medidor'    => $c->tiene_medidor,
                 'serie_medidor'    => $c->serie_medidor,
-                'promedio_consumo' => (float) $c->promedio_consumo,
+                'promedio_consumo' => $promedioReal,
                 'tipo'             => $tipo,
                 'critica'          => $critica,
+                'observacion_id'   => $observacionId,
+                'observacion_des'  => $observacionDes,
+                'foto1'            => $orden ? ($orden->foto1 ?? null) : null,
+                'foto2'            => $orden ? ($orden->foto2 ?? null) : null,
                 'lect_anterior'    => $orden ? $orden->LA          : null,
                 'lect_actual'      => $orden ? $orden->Lect_Actual : null,
-                // Sin medidor: valor editable, por defecto el promedio (puede ser 0)
-                'consumo_sugerido' => $orden
-                    ? (int) $orden->Cons_Act
-                    : (int) round($c->promedio_consumo ?: 0),
+                'consumo_sugerido' => $consumoSugerido,
             ];
         })->filter()->values();
 

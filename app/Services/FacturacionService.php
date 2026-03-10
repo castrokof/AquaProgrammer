@@ -84,16 +84,32 @@ class FacturacionService
         );
 
         // ── Subsidio / Contribución por estrato ───────────────────────────────
-        // porcentaje_subsidio > 0  → estratos 1-3 reciben descuento (subsidio)
-        // porcentaje_subsidio < 0  → estratos 5-6/COM/IND pagan sobretasa (contribución)
-        // Se aplica sobre el consumo básico de acueducto únicamente.
-        $pctSubsidio = $cliente->estrato ? (float) $cliente->estrato->porcentaje_subsidio : 0.0;
+        // Aplica sobre consumo básico de ACUEDUCTO y ALCANTARILLADO.
+        // Prioridad: valor fijo (subsidio_fijo_*) > porcentaje (porcentaje_subsidio).
+        // porcentaje_subsidio > 0 → estratos 1-3: descuento
+        // porcentaje_subsidio < 0 → estratos 5-6/COM/IND: sobretasa
+        $estrato           = $cliente->estrato;
+        $pctSubsidio       = $estrato ? (float) $estrato->porcentaje_subsidio       : 0.0;
+        $fijoAcueducto     = $estrato ? (float) ($estrato->subsidio_fijo_acueducto     ?? 0) : 0.0;
+        $fijoAlcantarillado= $estrato ? (float) ($estrato->subsidio_fijo_alcantarillado ?? 0) : 0.0;
+
+        // — Acueducto —
         $subsidioAcueducto = 0.0;
-        if ($pctSubsidio != 0 && $acueducto['basico_valor'] > 0) {
+        if ($fijoAcueducto != 0) {
+            $subsidioAcueducto = round($fijoAcueducto, 2);           // fijo: positivo=descuento
+        } elseif ($pctSubsidio != 0 && $acueducto['basico_valor'] > 0) {
             $subsidioAcueducto = round($acueducto['basico_valor'] * $pctSubsidio / 100, 2);
-            // Positivo = descuenta del total; negativo = aumenta el total.
-            $acueducto['total'] = round($acueducto['total'] - $subsidioAcueducto, 2);
         }
+        $acueducto['total'] = round($acueducto['total'] - $subsidioAcueducto, 2);
+
+        // — Alcantarillado —
+        $subsidioAlcantarillado = 0.0;
+        if ($fijoAlcantarillado != 0) {
+            $subsidioAlcantarillado = round($fijoAlcantarillado, 2);
+        } elseif ($pctSubsidio != 0 && $alcantarillado['basico_valor'] > 0) {
+            $subsidioAlcantarillado = round($alcantarillado['basico_valor'] * $pctSubsidio / 100, 2);
+        }
+        $alcantarillado['total'] = round($alcantarillado['total'] - $subsidioAlcantarillado, 2);
 
         // ── Otros cobros activos ──────────────────────────────────────────────
         $otrosAcueducto      = ClienteOtrosCobro::where('cliente_id', $cliente->id)
@@ -174,6 +190,8 @@ class FacturacionService
             'consumo_suntuario_alcantarillado_m3'            => $alcantarillado['suntuario_m3'],
             'consumo_suntuario_alcantarillado_valor'         => $alcantarillado['suntuario_valor'],
             'subtotal_alcantarillado'                        => $alcantarillado['subtotal'],
+            'subsidio_alcantarillado'                        => $subsidioAlcantarillado,
+            'total_facturacion_alcantarillado'               => $alcantarillado['total'],
             'otros_cobros_alcantarillado'                    => $otrosAlcantarillado,
             'cuota_otros_cobros_alcantarillado'              => $otrosAlcantarillado,
             'saldo_otros_cobros_alcantarillado'              => max(0, $saldoOtrosAlcantarillado - $otrosAlcantarillado),

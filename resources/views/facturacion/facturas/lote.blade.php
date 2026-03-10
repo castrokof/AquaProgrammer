@@ -247,10 +247,10 @@ function construirTabla(clientes) {
         var lectActual   = c.lect_actual   !== null ? c.lect_actual   : '';
         var consumo      = c.consumo_sugerido > 0 ? c.consumo_sugerido : '';
 
-        // Para sin medidor: consumo fijo = promedio, no editable
-        var inpConsumo = sinMedidor
-            ? '<input class="inp-consumo" type="number" min="0" value="' + Math.round(c.promedio_consumo||1) + '" data-id="' + c.id + '" name="consumo" readonly style="background:#fffbeb;">'
-            : '<input class="inp-consumo" type="number" min="0" value="' + consumo + '" data-id="' + c.id + '" name="consumo">';
+        // Sin medidor: consumo EDITABLE (promedio como sugerencia); con medidor: desde lectura
+        var defaultConsumo = sinMedidor ? Math.round(c.promedio_consumo || 0) : (consumo !== '' ? consumo : 0);
+        var inpConsumo = '<input class="inp-consumo" type="number" min="0" value="' + defaultConsumo + '" data-id="' + c.id + '" name="consumo"'
+            + (sinMedidor ? ' title="Sin medidor: puede modificar el consumo a facturar" style="background:#fffbeb;"' : '') + '>';
 
         var inpLectAnt = sinMedidor ? '—' :
             '<input class="inp-lect" type="number" min="0" value="' + lectAnterior + '" data-id="' + c.id + '" name="lect_ant" oninput="calcularConsumo(this)">';
@@ -380,10 +380,10 @@ $('#btnGenerarLote').on('click', function () {
 
     if (seleccionados.length === 0) { Swal.fire('Sin selección', 'Seleccione al menos un suscriptor.', 'warning'); return; }
 
-    // Validar que todos tengan consumo > 0
-    var sinConsumo = seleccionados.filter(function(r){ return !r.consumo_m3 || r.consumo_m3 < 0; });
+    // Validar que ninguno tenga consumo negativo (0 es válido: predio desocupado → solo básico)
+    var sinConsumo = seleccionados.filter(function(r){ return r.consumo_m3 === null || r.consumo_m3 === undefined || r.consumo_m3 < 0; });
     if (sinConsumo.length > 0) {
-        Swal.fire('Consumo inválido', 'Hay ' + sinConsumo.length + ' suscriptor(es) sin consumo ingresado.', 'warning');
+        Swal.fire('Consumo inválido', 'Hay ' + sinConsumo.length + ' suscriptor(es) con consumo negativo.', 'warning');
         return;
     }
 

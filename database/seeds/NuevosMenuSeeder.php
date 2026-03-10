@@ -62,6 +62,12 @@ class NuevosMenuSeeder extends Seeder
                 'icono'  => 'fas fa-globe',
                 'orden'  => $maxOrdenHijo + 4,
             ],
+            [
+                'nombre' => 'Subsidios por Estrato',
+                'url'    => 'facturacion/estratos/subsidios',
+                'icono'  => 'fas fa-percentage',
+                'orden'  => $maxOrdenHijo + 5,
+            ],
         ];
 
         $idsPorNombre = [];
@@ -93,7 +99,7 @@ class NuevosMenuSeeder extends Seeder
         // ── 4. Asignar a roles ────────────────────────────────────────────────
         // administrador → todos
         // supervisor    → Facturación Lote, Especial, Portal de Pagos
-        //                 (NO Configuración Empresa — solo admin)
+        //                 (NO Configuración Empresa ni Subsidios por Estrato — solo admin)
 
         $roles = DB::table('rol')
             ->whereIn('nombre', ['administrador', 'supervisor'])
@@ -105,10 +111,11 @@ class NuevosMenuSeeder extends Seeder
         }
 
         // Qué ve cada rol
+        $soloAdmin = ['Configuración Empresa', 'Subsidios por Estrato'];
         $permisosPorRol = [
-            'administrador' => array_values($idsPorNombre),                 // todos los ítems nuevos
-            'supervisor'    => array_values(array_filter($idsPorNombre,    // solo los que no son config
-                fn($nombre) => $nombre !== 'Configuración Empresa',
+            'administrador' => array_values($idsPorNombre),
+            'supervisor'    => array_values(array_filter($idsPorNombre,
+                fn($nombre) => !in_array($nombre, $soloAdmin),
                 ARRAY_FILTER_USE_KEY
             )),
         ];

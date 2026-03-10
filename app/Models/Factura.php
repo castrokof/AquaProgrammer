@@ -33,7 +33,7 @@ class Factura extends Model
         'consumo_basico_alcantarillado_m3', 'consumo_basico_alcantarillado_valor',
         'consumo_complementario_alcantarillado_m3', 'consumo_complementario_alcantarillado_valor',
         'consumo_suntuario_alcantarillado_m3', 'consumo_suntuario_alcantarillado_valor',
-        'subtotal_alcantarillado',
+        'subtotal_alcantarillado', 'subsidio_alcantarillado', 'total_facturacion_alcantarillado',
         'otros_cobros_alcantarillado', 'cuota_otros_cobros_alcantarillado',
         'saldo_otros_cobros_alcantarillado', 'subtotal_conexion_otros_alcantarillado',
         // Conexión

@@ -11,12 +11,17 @@ class Estrato extends Model
     public $incrementing = true;
     protected $keyType = 'int';
 
-    protected $fillable = ['numero', 'nombre', 'codigo', 'porcentaje_subsidio', 'activo'];
+    protected $fillable = [
+        'numero', 'nombre', 'codigo', 'porcentaje_subsidio',
+        'subsidio_fijo_acueducto', 'subsidio_fijo_alcantarillado', 'activo',
+    ];
 
     protected $casts = [
-        'numero'               => 'integer',
-        'porcentaje_subsidio'  => 'decimal:2',
-        'activo'               => 'boolean',
+        'numero'                       => 'integer',
+        'porcentaje_subsidio'          => 'decimal:2',
+        'subsidio_fijo_acueducto'      => 'decimal:2',
+        'subsidio_fijo_alcantarillado' => 'decimal:2',
+        'activo'                       => 'boolean',
     ];
 
     public function clientes()

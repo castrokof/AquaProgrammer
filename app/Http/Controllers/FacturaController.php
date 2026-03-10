@@ -473,17 +473,24 @@ public function exportarSeleccionadas(Request $request)
             ->orderBy('suscriptor')
             ->get();
 
-        // Órdenes de lectura para este período (si existen)
+        // Solo órdenes EJECUTADAS en campo (Estado = 4) para este período
         $ordenes = \App\Models\Admin\Ordenesmtl::where('periodo_lectura_id', $periodo->id)
+            ->where('Estado', 4)
             ->get(['Suscriptor', 'Critica', 'Lect_Actual', 'LA', 'Cons_Act', 'Estado'])
             ->keyBy('Suscriptor');
 
         $resultado = $clientes->map(function ($c) use ($ordenes) {
-            $orden  = $ordenes->get($c->suscriptor);
-            $critica = $orden ? ($orden->Critica ?? '') : '';
+            $orden = $ordenes->get($c->suscriptor);
+
+            // Con medidor: solo aparece si la lectura fue ejecutada en campo (Estado=4).
+            // Sin medidor: siempre aparece; se factura por promedio editable.
+            if ($c->tiene_medidor && !$orden) {
+                return null;
+            }
+
+            $critica      = $orden ? ($orden->Critica ?? '') : '';
             $criticaUpper = strtoupper($critica);
 
-            // Clasificación
             if (!$c->tiene_medidor) {
                 $tipo = 'sin_medidor';
             } elseif (str_contains($criticaUpper, 'ALTO') || str_contains($criticaUpper, 'ELEVADO')) {
@@ -509,12 +516,14 @@ public function exportarSeleccionadas(Request $request)
                 'promedio_consumo' => (float) $c->promedio_consumo,
                 'tipo'             => $tipo,
                 'critica'          => $critica,
-                // Pre-llenar con lectura de la orden si existe
-                'lect_anterior'    => $orden ? $orden->LA        : null,
+                'lect_anterior'    => $orden ? $orden->LA          : null,
                 'lect_actual'      => $orden ? $orden->Lect_Actual : null,
-                'consumo_sugerido' => $orden ? $orden->Cons_Act  : (int) round($c->promedio_consumo ?: 1),
+                // Sin medidor: valor editable, por defecto el promedio (puede ser 0)
+                'consumo_sugerido' => $orden
+                    ? (int) $orden->Cons_Act
+                    : (int) round($c->promedio_consumo ?: 0),
             ];
-        });
+        })->filter()->values();
 
         return response()->json([
             'ok'       => true,

@@ -4,77 +4,77 @@
 <meta charset="UTF-8">
 <title>Facturas</title>
 <style>
-@page { size: letter; margin: 10mm 12mm; }
+@page { size: letter; margin: 7mm 9mm; }
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: 'DejaVu Sans', 'Arial', sans-serif; font-size: 8.5pt; color: #111; line-height: 1.35; }
+body { font-family: 'DejaVu Sans', 'Arial', sans-serif; font-size: 7pt; color: #111; line-height: 1.2; }
 .page-break { page-break-after: always; }
 
 /* ── Bordes tipo tabla ── */
 .tbl { width:100%; border-collapse:collapse; }
-.tbl th, .tbl td { border:1px solid #bbb; padding:3px 5px; vertical-align:middle; }
-.tbl th { background:#f0f0f0; font-weight:700; font-size:7.5pt; text-align:center; }
-.cell-lbl { font-weight:700; font-size:7.5pt; }
+.tbl th, .tbl td { border:1px solid #bbb; padding:2px 3px; vertical-align:middle; }
+.tbl th { background:#f0f0f0; font-weight:700; font-size:6.5pt; text-align:center; }
+.cell-lbl { font-weight:700; font-size:6.5pt; }
 .r { text-align:right; }
 .c { text-align:center; }
 
 /* ── Header empresa / datos suscriptor ── */
-.hdr-outer { border:1.5px solid #888; border-collapse:collapse; width:100%; margin-bottom:6px; }
-.hdr-empresa { border-right:1.5px solid #888; padding:7px 10px; vertical-align:top; width:42%; }
+.hdr-outer { border:1.5px solid #888; border-collapse:collapse; width:100%; margin-bottom:4px; }
+.hdr-empresa { border-right:1.5px solid #888; padding:5px 7px; vertical-align:top; width:42%; }
 .hdr-suscriptor { padding:0; vertical-align:top; width:58%; }
-.hdr-suscriptor-title { background:#2e50e4; color:white; font-weight:700; font-size:8pt;
-    text-transform:uppercase; padding:4px 8px; letter-spacing:.4px; }
+.hdr-suscriptor-title { background:#2e50e4; color:white; font-weight:700; font-size:7pt;
+    text-transform:uppercase; padding:3px 6px; letter-spacing:.4px; }
 .hdr-suscriptor-body { padding:0; }
 .hdr-suscriptor-body table { width:100%; border-collapse:collapse; }
-.hdr-suscriptor-body table td { padding:3px 7px; font-size:8pt; border-bottom:1px solid #e8e8e8; }
+.hdr-suscriptor-body table td { padding:2px 5px; font-size:7pt; border-bottom:1px solid #e8e8e8; }
 .hdr-suscriptor-body table tr:last-child td { border-bottom:none; }
-.empresa-name { font-size:11pt; font-weight:bold; color:#1a1a1a; }
-.empresa-sub { font-size:7.5pt; color:#555; margin-top:2px; }
-.empresa-num { font-size:8pt; color:#333; margin-top:4px; }
-.num-fact { font-size:16pt; font-weight:bold; color:#2e50e4; }
-.fact-badge { display:inline-block; padding:1px 7px; border-radius:4px; font-size:6.5pt; font-weight:bold; }
+.empresa-name { font-size:9pt; font-weight:bold; color:#1a1a1a; }
+.empresa-sub { font-size:6.5pt; color:#555; margin-top:1px; }
+.empresa-num { font-size:7pt; color:#333; margin-top:3px; }
+.num-fact { font-size:13pt; font-weight:bold; color:#2e50e4; }
+.fact-badge { display:inline-block; padding:1px 5px; border-radius:4px; font-size:6pt; font-weight:bold; }
 .badge-auto   { background:#e0f2fe; color:#0369a1; }
 .badge-manual { background:#fef3c7; color:#b45309; }
 .badge-obs    { background:#fef9c3; color:#713f12; border:1px solid #fde047; border-radius:4px;
-    padding:2px 6px; font-size:7pt; margin-top:3px; display:block; }
+    padding:1px 5px; font-size:6.5pt; margin-top:2px; display:block; }
 
 /* ── Sección de consumo (2 columnas) ── */
-.detalle-title { background:#2e50e4; color:white; font-weight:700; font-size:8pt;
-    padding:4px 8px; text-transform:uppercase; letter-spacing:.4px; margin-bottom:0; }
-.servicio-title { background:#e8eeff; color:#1e3a8a; font-weight:700; font-size:8pt;
-    padding:3px 7px; text-align:center; border:1px solid #bbb; border-bottom:none; }
-.tabla-consumo th { font-size:7pt; padding:3px 4px; background:#f5f7ff; color:#374151; }
-.tabla-consumo td { font-size:7.5pt; padding:3px 5px; }
-.tabla-consumo tfoot td { font-weight:700; background:#eef2ff; font-size:8pt; }
+.detalle-title { background:#2e50e4; color:white; font-weight:700; font-size:7pt;
+    padding:3px 6px; text-transform:uppercase; letter-spacing:.4px; margin-bottom:0; }
+.servicio-title { background:#e8eeff; color:#1e3a8a; font-weight:700; font-size:7pt;
+    padding:2px 5px; text-align:center; border:1px solid #bbb; border-bottom:none; }
+.tabla-consumo th { font-size:6.5pt; padding:2px 3px; background:#f5f7ff; color:#374151; }
+.tabla-consumo td { font-size:6.5pt; padding:2px 3px; }
+.tabla-consumo tfoot td { font-weight:700; background:#eef2ff; font-size:7pt; }
 .subsidio-pos { color:#166534; }
 .subsidio-neg { color:#991b1b; }
 
 /* ── Resumen del cobro ── */
-.resumen-title { background:#2e50e4; color:white; font-weight:700; font-size:8pt;
-    padding:4px 8px; text-transform:uppercase; letter-spacing:.4px; }
-.resumen-tbl td { padding:3px 8px; font-size:8pt; border-bottom:1px solid #f0f0f0; }
+.resumen-title { background:#2e50e4; color:white; font-weight:700; font-size:7pt;
+    padding:3px 6px; text-transform:uppercase; letter-spacing:.4px; }
+.resumen-tbl td { padding:2px 6px; font-size:7pt; border-bottom:1px solid #f0f0f0; }
 .resumen-tbl tr:last-child td { border-bottom:none; }
-.resumen-total td { background:#2e50e4; color:white; font-weight:700; font-size:10pt; padding:5px 8px; }
+.resumen-total td { background:#2e50e4; color:white; font-weight:700; font-size:9pt; padding:4px 6px; }
 
 /* ── Gráfica de barras (SVG) ── */
-.barras-title { font-size:7.5pt; font-weight:700; color:#374151; margin-bottom:4px; text-align:center; }
+.barras-title { font-size:6.5pt; font-weight:700; color:#374151; margin-bottom:2px; text-align:center; }
 
 /* ── Créditos ── */
-.creditos-title { background:#f3f4f6; font-weight:700; font-size:7.5pt; padding:3px 7px;
+.creditos-title { background:#f3f4f6; font-weight:700; font-size:6.5pt; padding:2px 5px;
     border:1px solid #bbb; border-bottom:none; color:#374151; text-transform:uppercase; }
 
 /* ── Último pago / estado ── */
-.estado-bar { border:1.5px solid #888; border-collapse:collapse; width:100%; margin-top:6px; }
-.estado-cell { padding:6px 10px; vertical-align:top; font-size:8pt; }
-.estado-lbl  { font-weight:700; font-size:7.5pt; color:#555; text-transform:uppercase;
-    letter-spacing:.3px; display:block; margin-bottom:2px; }
-.total-pagar-box { background:#2e50e4; color:white; border-radius:0; padding:5px 10px;
+.estado-bar { border:1.5px solid #888; border-collapse:collapse; width:100%; margin-top:4px; }
+.estado-cell { padding:4px 7px; vertical-align:top; font-size:7pt; }
+.estado-lbl  { font-weight:700; font-size:6.5pt; color:#555; text-transform:uppercase;
+    letter-spacing:.3px; display:block; margin-bottom:1px; }
+.total-pagar-box { background:#2e50e4; color:white; border-radius:0; padding:4px 8px;
     text-align:right; }
-.total-pagar-box .lbl { font-size:8pt; font-weight:700; }
-.total-pagar-box .val { font-size:14pt; font-weight:bold; }
-.footer-txt { text-align:center; font-size:7pt; color:#777; margin-top:5px;
-    border-top:1px solid #ccc; padding-top:4px; }
-.obs-box { border:1px solid #fde047; background:#fefce8; border-radius:4px; padding:4px 8px;
-    font-size:7.5pt; color:#713f12; margin-top:5px; }
+.total-pagar-box .lbl { font-size:7pt; font-weight:700; }
+.total-pagar-box .val { font-size:12pt; font-weight:bold; }
+.footer-txt { text-align:center; font-size:6.5pt; color:#777; margin-top:3px;
+    border-top:1px solid #ccc; padding-top:3px; }
+.obs-box { border:1px solid #fde047; background:#fefce8; border-radius:4px; padding:2px 6px;
+    font-size:6.5pt; color:#713f12; margin-top:3px; }
 </style>
 </head>
 <body>
@@ -145,7 +145,7 @@ body { font-family: 'DejaVu Sans', 'Arial', sans-serif; font-size: 8.5pt; color:
         @if($empresa->logo_path)
             @php $logoB64 = $empresa->logoBase64(); @endphp
             @if($logoB64)
-            <img src="{{ $logoB64 }}" style="max-height:50px;max-width:130px;object-fit:contain;display:block;margin-bottom:5px;">
+            <img src="{{ $logoB64 }}" style="max-height:38px;max-width:100px;object-fit:contain;display:block;margin-bottom:3px;">
             @endif
         @endif
         <div class="empresa-name">{{ strtoupper($empresa->nombre) }}</div>
@@ -154,14 +154,14 @@ body { font-family: 'DejaVu Sans', 'Arial', sans-serif; font-size: 8.5pt; color:
         @endif
         <div class="empresa-sub">{{ $empresa->texto_documento_equivalente }}</div>
         <div class="empresa-num">No. <strong>{{ $numFacturaMostrar }}</strong></div>
-        <div style="margin-top:5px;font-size:7.5pt;color:#444;">
+        <div style="margin-top:3px;font-size:6.5pt;color:#444;">
             Período: <strong>{{ $factura->mes_cuenta }}</strong><br>
             Del {{ $fmtF($factura->fecha_del) }} al {{ $fmtF($factura->fecha_hasta) }}<br>
             Expedición: {{ $fmtF($factura->fecha_expedicion) }}
             &nbsp;|&nbsp; Vence: <strong>{{ $fmtF($factura->fecha_vencimiento) }}</strong><br>
             Corte: {{ $fmtF($factura->fecha_corte) }}
         </div>
-        <div style="margin-top:4px;">
+        <div style="margin-top:2px;">
             @if($factura->es_automatica)
                 <span class="fact-badge badge-auto">AUTO</span>
             @else
@@ -212,8 +212,8 @@ body { font-family: 'DejaVu Sans', 'Arial', sans-serif; font-size: 8.5pt; color:
 {{-- ══════════════════════════════════════════════════════════════════════ --}}
 {{-- LECTURA + DETALLE DEL CONSUMO                                         --}}
 {{-- ══════════════════════════════════════════════════════════════════════ --}}
-<div class="detalle-title" style="margin-bottom:4px;">Detalle del Consumo</div>
-<table class="tbl" style="margin-bottom:5px;">
+<div class="detalle-title" style="margin-bottom:3px;">Detalle del Consumo</div>
+<table class="tbl" style="margin-bottom:3px;">
     <thead>
         <tr>
             <th>Lect. Anterior</th><th>Lect. Actual</th>
@@ -233,7 +233,7 @@ body { font-family: 'DejaVu Sans', 'Arial', sans-serif; font-size: 8.5pt; color:
 </table>
 
 {{-- ACUEDUCTO | ALCANTARILLADO side by side --}}
-<table style="width:100%;border-collapse:collapse;margin-bottom:5px;">
+<table style="width:100%;border-collapse:collapse;margin-bottom:3px;">
 <tr style="vertical-align:top;">
 
 @if($hasAcueducto)
@@ -404,11 +404,11 @@ body { font-family: 'DejaVu Sans', 'Arial', sans-serif; font-size: 8.5pt; color:
 {{-- ══════════════════════════════════════════════════════════════════════ --}}
 {{-- CRÉDITOS + BARRAS | RESUMEN DEL COBRO                                 --}}
 {{-- ══════════════════════════════════════════════════════════════════════ --}}
-<table style="width:100%;border-collapse:collapse;margin-bottom:5px;">
+<table style="width:100%;border-collapse:collapse;margin-bottom:3px;">
 <tr style="vertical-align:top;">
 
 {{-- Columna izquierda: créditos + barras --}}
-<td style="width:46%;padding-right:4px;">
+<td style="width:46%;padding-right:3px;">
 
     {{-- Créditos y financiación --}}
     <div class="creditos-title">Créditos Otorgados y Financiación</div>
@@ -452,36 +452,33 @@ body { font-family: 'DejaVu Sans', 'Arial', sans-serif; font-size: 8.5pt; color:
     </table>
 
     {{-- Últimos 6 consumos (barras SVG) --}}
-    <div style="margin-top:8px;border:1px solid #bbb;padding:6px 8px;border-radius:0;">
+    <div style="margin-top:4px;border:1px solid #bbb;padding:3px 5px;border-radius:0;">
         <div class="barras-title">Últimos 6 consumos + actual (m³)</div>
         @php
             $labels = ['M-6','M-5','M-4','M-3','M-2','M-1','Actual'];
-            $barW   = 22;
-            $barGap = 6;
-            $chartH = 55;
+            $barW   = 18;
+            $barGap = 5;
+            $chartH = 38;
             $svgW   = count($consumos) * ($barW + $barGap) + $barGap;
         @endphp
-        <svg width="{{ $svgW }}" height="{{ $chartH + 22 }}" xmlns="http://www.w3.org/2000/svg">
+        <svg width="{{ $svgW }}" height="{{ $chartH + 16 }}" xmlns="http://www.w3.org/2000/svg">
         @foreach($consumos as $i => $val)
             @php
-                $v       = (int)($val ?? 0);
-                $barH    = $v > 0 ? max(3, round($v / $maxConsumo * $chartH)) : 2;
-                $x       = $barGap + $i * ($barW + $barGap);
-                $y       = $chartH - $barH;
+                $v        = (int)($val ?? 0);
+                $barH     = $v > 0 ? max(3, round($v / $maxConsumo * $chartH)) : 2;
+                $x        = $barGap + $i * ($barW + $barGap);
+                $y        = $chartH - $barH;
                 $isActual = ($i === count($consumos) - 1);
-                $color   = $isActual ? '#2e50e4' : '#93c5fd';
+                $color    = $isActual ? '#2e50e4' : '#93c5fd';
             @endphp
             <rect x="{{ $x }}" y="{{ $y }}" width="{{ $barW }}" height="{{ $barH }}"
                   fill="{{ $color }}" rx="2"/>
-            {{-- valor encima --}}
-            <text x="{{ $x + $barW/2 }}" y="{{ $y - 1 }}" text-anchor="middle"
-                  font-size="6" fill="#374151">{{ $v > 0 ? $v : '' }}</text>
-            {{-- etiqueta abajo --}}
-            <text x="{{ $x + $barW/2 }}" y="{{ $chartH + 14 }}" text-anchor="middle"
-                  font-size="6" fill="{{ $isActual ? '#2e50e4' : '#6b7280' }}"
+            <text x="{{ $x + $barW/2 }}" y="{{ max($y - 1, 6) }}" text-anchor="middle"
+                  font-size="5" fill="#374151">{{ $v > 0 ? $v : '' }}</text>
+            <text x="{{ $x + $barW/2 }}" y="{{ $chartH + 11 }}" text-anchor="middle"
+                  font-size="5" fill="{{ $isActual ? '#2e50e4' : '#6b7280' }}"
                   font-weight="{{ $isActual ? 'bold' : 'normal' }}">{{ $labels[$i] }}</text>
         @endforeach
-        {{-- línea base --}}
         <line x1="0" y1="{{ $chartH }}" x2="{{ $svgW }}" y2="{{ $chartH }}"
               stroke="#ccc" stroke-width="1"/>
         </svg>
@@ -490,7 +487,7 @@ body { font-family: 'DejaVu Sans', 'Arial', sans-serif; font-size: 8.5pt; color:
 </td>
 
 {{-- Columna derecha: Resumen del cobro --}}
-<td style="width:54%;padding-left:4px;vertical-align:top;">
+<td style="width:54%;padding-left:3px;vertical-align:top;">
     <div class="resumen-title">Resumen del Cobro</div>
     <table class="tbl resumen-tbl" style="border-top:none;">
         <tbody>
@@ -606,7 +603,7 @@ body { font-family: 'DejaVu Sans', 'Arial', sans-serif; font-size: 8.5pt; color:
 </table>
 
 {{-- Código de barras --}}
-<div style="font-family:'Courier New',monospace;font-size:9pt;letter-spacing:3px;text-align:center;margin:5px 0 2px;">
+<div style="font-family:'Courier New',monospace;font-size:7.5pt;letter-spacing:2px;text-align:center;margin:3px 0 1px;">
     {{ str_pad($factura->numero_factura, 22, '0', STR_PAD_LEFT) }}
 </div>
 

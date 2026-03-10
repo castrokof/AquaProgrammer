@@ -121,11 +121,11 @@ class RevisionController extends Controller
             });
         }
 
-        // Contadores antes de paginar
-        $totalCriticas = (clone $query)->count();
-        $totalMarcadas = (clone $query)->where('Coordenada', 'generar')->count();
-
-        $criticas = $query->orderBy('id', 'desc')->paginate(30)->withQueryString();
+        // Contadores: se clona ANTES de ordenar/paginar para no corromper el builder
+        $queryMarcadas = clone $query;
+        $criticas      = $query->orderBy('id', 'desc')->paginate(30)->appends($request->query());
+        $totalCriticas = $criticas->total();
+        $totalMarcadas = $queryMarcadas->where('Coordenada', 'generar')->count();
 
         // Tipos de crítica disponibles
         $tiposCritica = Ordenesmtl::where('Estado', 4)

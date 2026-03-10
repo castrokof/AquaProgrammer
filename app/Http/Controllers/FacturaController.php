@@ -573,13 +573,14 @@ public function exportarSeleccionadas(Request $request)
     public function storeLote(Request $request)
     {
         $request->validate([
-            'periodo_lectura_id'    => 'required|exists:periodos_lectura,id',
-            'observaciones'         => 'nullable|string|max:500',
-            'rows'                  => 'required|array|min:1|max:500',
-            'rows.*.cliente_id'     => 'required|exists:clientes,id',
-            'rows.*.consumo_m3'     => 'required|integer|min:0',
+            'periodo_lectura_id'      => 'required|exists:periodos_lectura,id',
+            'observaciones'           => 'nullable|string|max:500',
+            'rows'                    => 'required|array|min:1|max:500',
+            'rows.*.cliente_id'       => 'required|exists:clientes,id',
+            'rows.*.consumo_m3'       => 'required|integer|min:0',
             'rows.*.lectura_anterior' => 'nullable|integer|min:0',
             'rows.*.lectura_actual'   => 'nullable|integer|min:0',
+            'rows.*.observacion'      => 'nullable|string|max:500',
         ]);
 
         $periodo  = PeriodoLectura::with('tarifa')->findOrFail($request->periodo_lectura_id);
@@ -605,8 +606,13 @@ public function exportarSeleccionadas(Request $request)
                 );
                 $calculo['usuario_id']    = auth()->id();
                 $calculo['es_automatica'] = false;
-                if ($request->observaciones) {
-                    $calculo['observaciones'] = $request->observaciones;
+                // Observación por fila tiene prioridad; si no, se usa la global del lote
+                $obsRow    = trim($row['observacion'] ?? '');
+                $obsGlobal = trim($request->observaciones ?? '');
+                if ($obsRow) {
+                    $calculo['observaciones'] = $obsRow;
+                } elseif ($obsGlobal) {
+                    $calculo['observaciones'] = $obsGlobal;
                 }
 
                 $factura = Factura::create($calculo);

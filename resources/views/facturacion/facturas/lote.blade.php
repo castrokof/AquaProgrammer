@@ -33,6 +33,9 @@ label.lbl { font-weight:600; color:#4a5568; font-size:.8rem; text-transform:uppe
 #tablaLote tbody tr:hover { background:#f7fafc; }
 .inp-consumo, .inp-lect { width:78px; border:2px solid #e2e8f0; border-radius:8px; padding:4px 8px; font-size:.82rem; text-align:right; }
 .inp-consumo:focus, .inp-lect:focus { border-color:#667eea; outline:none; }
+.inp-obs-fila { width:160px; border:2px solid #e2e8f0; border-radius:8px; padding:3px 7px; font-size:.78rem; color:#374151; }
+.inp-obs-fila:focus { border-color:#f59e0b; outline:none; background:#fffbeb; }
+.inp-obs-fila.filled { border-color:#f59e0b; background:#fffbeb; }
 
 /* Badge tipo */
 .badge-tipo { display:inline-block; padding:2px 9px; border-radius:10px; font-size:.72rem; font-weight:700; white-space:nowrap; }
@@ -166,13 +169,13 @@ label.lbl { font-weight:600; color:#4a5568; font-size:.8rem; text-transform:uppe
                             <th>Nombre</th>
                             <th>Sector</th>
                             <th>Estrato</th>
-                            <th>Servicios</th>
                             <th>Promedio m³</th>
                             <th>Tipo</th>
-                            <th>Observación</th>
+                            <th>Obs. Campo</th>
                             <th>Lect. Ant.</th>
                             <th>Lect. Act.</th>
                             <th>Consumo m³</th>
+                            <th>Obs. Analista</th>
                             <th style="width:40px;">Foto</th>
                         </tr>
                     </thead>
@@ -312,29 +315,43 @@ function construirTabla() {
     todosClientes.forEach(function (c) {
         var badge = '<span class="badge-tipo ' + c.tipo + '">' + (labelMap[c.tipo] || c.tipo) + '</span>';
         var sinMedidor = !c.tiene_medidor;
-        var esEditable = sinMedidor || c.tipo === 'promedio_medidor' || c.tipo === 'consumo_cero';
+
+        // Estilo de edición según tipo (todos editables; color diferenciado por tipo)
+        var bgConsumo = '#fff';
+        if (c.tipo === 'consumo_cero')     bgConsumo = '#f1f5f9'; // gris: desocupado
+        else if (c.tipo === 'promedio_medidor') bgConsumo = '#fdf4ff'; // violeta: medidor parado
+        else if (sinMedidor)               bgConsumo = '#fffbeb'; // amarillo: sin medidor
+        else                               bgConsumo = '#f0fdf4'; // verde: tiene lectura
 
         var inpConsumo = '<input class="inp-consumo" type="number" min="0" value="' + c.consumo_sugerido
-            + '" data-id="' + c.id + '" name="consumo"'
-            + (esEditable ? ' style="background:#fffbeb;" title="Valor editable"' : '')
-            + '>';
+            + '" data-id="' + c.id + '" name="consumo" style="background:' + bgConsumo + ';"'
+            + ' title="Editable — valor sugerido: ' + c.consumo_sugerido + '">';
 
-        var inpLectAnt = sinMedidor ? '—' :
+        // Lecturas: editables para todos los que tienen medidor
+        var inpLectAnt = sinMedidor ? '<span style="color:#cbd5e0;">—</span>' :
             '<input class="inp-lect" type="number" min="0" value="' + (c.lect_anterior !== null ? c.lect_anterior : '')
-            + '" data-id="' + c.id + '" name="lect_ant" oninput="calcularConsumo(this)">';
-        var inpLectAct = sinMedidor ? '—' :
+            + '" data-id="' + c.id + '" name="lect_ant" oninput="calcularConsumo(this)" style="background:#f0fdf4;">';
+        var inpLectAct = sinMedidor ? '<span style="color:#cbd5e0;">—</span>' :
             '<input class="inp-lect" type="number" min="0" value="' + (c.lect_actual !== null ? c.lect_actual : '')
-            + '" data-id="' + c.id + '" name="lect_act" oninput="calcularConsumo(this)">';
+            + '" data-id="' + c.id + '" name="lect_act" oninput="calcularConsumo(this)" style="background:#f0fdf4;">';
 
+        // Observación de campo (del sistema de lectura)
+        var obsLabel = c.observacion_des
+            ? ('<small style="color:#475569;" title="Cód. ' + c.observacion_id + '">' + c.observacion_des + '</small>')
+            : '<small style="color:#cbd5e0;">—</small>';
+
+        // Foto
         var fotoBtn = '';
         if (c.foto1 || c.foto2) {
             fotoBtn = '<button class="btn-foto" onclick="verFotos(' + c.id + ')" title="Ver foto de lectura">'
                     + '<i class="fa fa-camera"></i></button>';
         }
 
-        var obsLabel = c.observacion_des
-            ? ('<small style="color:#475569;">' + c.observacion_des + '</small>')
-            : '<small style="color:#cbd5e0;">—</small>';
+        // Observación del analista (por fila, para trazabilidad)
+        var inpObsFila = '<input class="inp-obs-fila" type="text" maxlength="300"'
+            + ' data-id="' + c.id + '" name="obs_fila"'
+            + ' placeholder="Motivo del ajuste..."'
+            + ' oninput="this.classList.toggle(\'filled\', this.value.length>0)">';
 
         html += '<tr data-id="' + c.id + '" data-tipo="' + c.tipo
             + '" data-obs="' + (c.observacion_id || '') + '"'
@@ -344,13 +361,13 @@ function construirTabla() {
         html += '<td>' + c.nombre + '</td>';
         html += '<td style="color:#718096;">' + (c.sector || '—') + '</td>';
         html += '<td>' + c.estrato + '</td>';
-        html += '<td>' + (c.servicios || '—') + '</td>';
         html += '<td style="text-align:right;font-weight:600;">' + (c.promedio_consumo || 0) + '</td>';
         html += '<td>' + badge + '</td>';
         html += '<td>' + obsLabel + '</td>';
         html += '<td>' + inpLectAnt + '</td>';
         html += '<td>' + inpLectAct + '</td>';
         html += '<td>' + inpConsumo + '</td>';
+        html += '<td>' + inpObsFila + '</td>';
         html += '<td style="text-align:center;">' + fotoBtn + '</td>';
         html += '</tr>';
     });
@@ -372,7 +389,7 @@ function construirTabla() {
             zeroRecords:   'No hay suscriptores para los filtros seleccionados.'
         },
         columnDefs: [
-            { orderable: false, targets: [0, 9, 10, 11, 12] }
+            { orderable: false, targets: [0, 8, 9, 10, 11, 12] }
         ],
         drawCallback: function() {
             actualizarBarraAcciones();
@@ -535,6 +552,7 @@ $('#btnGenerarLote').on('click', function () {
     seleccionados.forEach(function(id) {
         var consumoVal = parseInt($('input[data-id="'+id+'"][name="consumo"]').val());
         if (isNaN(consumoVal)) consumoVal = 0;
+        var obsFila = $('input[data-id="'+id+'"][name="obs_fila"]').val().trim() || null;
         rows.push({
             cliente_id:       id,
             consumo_m3:       consumoVal,
@@ -544,6 +562,7 @@ $('#btnGenerarLote').on('click', function () {
             lectura_actual:   $('input[data-id="'+id+'"][name="lect_act"]').length
                                 ? ($('input[data-id="'+id+'"][name="lect_act"]').val() || null)
                                 : null,
+            observacion:      obsFila,
         });
     });
 

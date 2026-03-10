@@ -140,6 +140,79 @@ class FacturaController extends Controller
         ]);
     }
 
+    /** AJAX: Datos para reporte de liquidación (DataTables server-side) */
+    public function reporteData(Request $request)
+    {
+        $query = Factura::with('cliente')->select('facturas.*');
+
+        if ($request->filled('periodo'))    $query->where('periodo', $request->periodo);
+        if ($request->filled('suscriptor')) $query->where('suscriptor', 'like', '%'.$request->suscriptor.'%');
+        if ($request->filled('estado'))     $query->where('estado', $request->estado);
+
+        if ($request->filled('id_ruta')) {
+            if (\Schema::hasColumn('facturas', 'id_ruta')) {
+                $query->where('id_ruta', $request->id_ruta);
+            } else {
+                $subs = \App\Models\Admin\Ordenesmtl::where('id_Ruta', $request->id_ruta)->pluck('Suscriptor');
+                $query->whereIn('suscriptor', $subs);
+            }
+        }
+
+        if ($request->filled('critica')) {
+            $subs = \App\Models\Admin\Ordenesmtl::where('Critica', 'like', '%'.$request->critica.'%')->pluck('Suscriptor');
+            $query->whereIn('suscriptor', $subs);
+        }
+
+        $total    = Factura::count();
+        $filtered = $query->count();
+
+        $facturas = $query->orderBy('fecha_expedicion', 'desc')
+            ->skip((int) $request->input('start', 0))
+            ->take((int) $request->input('length', 50))
+            ->get();
+
+        $nf = fn($v) => number_format((float)($v ?? 0), 0, ',', '.');
+
+        $data = $facturas->map(function ($f) use ($nf) {
+            $nombre = $f->cliente ? trim($f->cliente->nombre . ' ' . $f->cliente->apellido) : '—';
+            return [
+                'numero'      => $f->numero_factura,
+                'suscriptor'  => $f->suscriptor,
+                'nombre'      => $nombre,
+                'periodo'     => $f->periodo,
+                'estrato'     => $f->estrato_snapshot ?? '—',
+                'consumo_m3'  => $f->consumo_m3 ?? 0,
+                // Acueducto
+                'cf_ac'       => $nf($f->cargo_fijo_acueducto),
+                'cb_ac'       => $nf($f->consumo_basico_acueducto_valor),
+                'cc_ac'       => $nf($f->consumo_complementario_acueducto_valor),
+                'cs_ac'       => $nf($f->consumo_suntuario_acueducto_valor),
+                'subsidio_ac' => $nf($f->subsidio_emergencia ?? 0),
+                'total_ac'    => $nf($f->total_facturacion_acueducto ?? $f->subtotal_conexion_otros_acueducto),
+                // Alcantarillado
+                'cf_al'       => $nf($f->cargo_fijo_alcantarillado),
+                'cb_al'       => $nf($f->consumo_basico_alcantarillado_valor),
+                'cc_al'       => $nf($f->consumo_complementario_alcantarillado_valor),
+                'cs_al'       => $nf($f->consumo_suntuario_alcantarillado_valor),
+                'subsidio_al' => $nf($f->subsidio_alcantarillado ?? 0),
+                'total_al'    => $nf($f->subtotal_alcantarillado ?? $f->subtotal_conexion_otros_alcantarillado),
+                // Otros
+                'otros_ac'    => $nf($f->cuota_otros_cobros_acueducto ?? 0),
+                'otros_al'    => $nf($f->cuota_otros_cobros_alcantarillado ?? 0),
+                'saldo_ant'   => $nf($f->saldo_anterior ?? 0),
+                'total_pagar' => $nf($f->total_a_pagar),
+                'estado'      => $f->estado,
+            ];
+        });
+
+        return response()->json([
+            'draw'            => (int) $request->input('draw', 1),
+            'recordsTotal'    => $total,
+            'recordsFiltered' => $filtered,
+            'data'            => $data,
+        ]);
+    }
+
     /**
      * Exportar masivamente las facturas del resultado actual en un ZIP
      */

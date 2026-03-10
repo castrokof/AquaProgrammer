@@ -22,7 +22,6 @@
 #tblReporte tbody tr:hover { background:#f8f9ff; }
 .th-group { background:#1a2e72 !important; }
 .th-group-al { background:#155e4e !important; }
-</style>
 
 .filtros-box { background:white; border-radius:16px; padding:20px; box-shadow:0 4px 15px rgba(0,0,0,.05); margin-bottom:20px; }
 .filtros-box .form-control { border-radius:10px; border:2px solid #e2e8f0; }

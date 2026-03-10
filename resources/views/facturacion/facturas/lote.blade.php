@@ -177,10 +177,12 @@ label.lbl { font-weight:600; color:#4a5568; font-size:.8rem; text-transform:uppe
                             <th>Consumo m³</th>
                             <th>Obs. Analista</th>
                             <th style="width:40px;">Foto</th>
+                            <th>_tipo</th>
+                            <th>_obs</th>
                         </tr>
                     </thead>
                     <tbody id="tbodyLote">
-                        <tr><td colspan="13" class="spinner-wrap"><i class="fa fa-spinner fa-spin fa-2x"></i><br>Cargando...</td></tr>
+                        <tr><td colspan="15" class="spinner-wrap"><i class="fa fa-spinner fa-spin fa-2x"></i><br>Cargando...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -248,20 +250,7 @@ var obsActiva     = '';
 var seleccionados = new Set(); // IDs de checkboxes seleccionados
 var dt            = null;
 
-// ── Filtro personalizado DataTables (tipo + observación) ─────────────────
-$.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
-    if (settings.nTable.id !== 'tablaLote') return true;
-    // settings.aoData[dataIndex].nTr es el nodo TR real (acceso directo al índice interno DT)
-    var nTr = settings.aoData[dataIndex] ? settings.aoData[dataIndex].nTr : null;
-    if (!nTr) return true;
-    var $row = $(nTr);
-    var tipo = $row.data('tipo') || '';
-    var obs  = String($row.data('obs') || '');
-
-    if (tipoActivo !== 'todos' && tipo !== tipoActivo) return false;
-    if (obsActiva  !== ''     && obs  !== String(obsActiva)) return false;
-    return true;
-});
+// (filtros tipo y obs se aplican vía dt.column().search — ver filtrarTipo y #filtroObs)
 
 // ── Habilitar botón al seleccionar período ────────────────────────────────
 $('#selPeriodo').on('change', function () {
@@ -381,6 +370,8 @@ function construirTabla() {
         html += '<td>' + inpConsumo + '</td>';
         html += '<td>' + inpObsFila + '</td>';
         html += '<td style="text-align:center;">' + fotoBtn + '</td>';
+        html += '<td>' + c.tipo + '</td>';
+        html += '<td>' + (c.observacion_id || '') + '</td>';
         html += '</tr>';
     });
 
@@ -402,7 +393,8 @@ function construirTabla() {
             zeroRecords:   'No hay suscriptores para los filtros seleccionados.'
         },
         columnDefs: [
-            { orderable: false, targets: [0, 8, 9, 10, 11, 12] }
+            { orderable: false, targets: [0, 8, 9, 10, 11, 12] },
+            { visible: false, targets: [13, 14] }
         ],
         drawCallback: function() {
             actualizarBarraAcciones();
@@ -438,39 +430,29 @@ function calcularConsumo(el) {
     }
 }
 
-// ── Filtrar por tipo (DataTables ext.search) ──────────────────────────────
+// ── Filtrar por tipo — columna oculta 13 ─────────────────────────────────
 function filtrarTipo(tipo, el) {
     tipoActivo = tipo;
     document.querySelectorAll('.tipo-tab').forEach(function(t){ t.classList.remove('active'); });
     if (el) el.classList.add('active');
-    if (dt) dt.draw();
+    if (!dt) return;
+    // Búsqueda exacta con regex: ^ y $ para evitar coincidencias parciales
+    dt.column(13).search(tipo === 'todos' ? '' : '^' + tipo + '$', true, false).draw();
 }
 
-// ── Filtro por observación ────────────────────────────────────────────────
+// ── Filtro por observación — columna oculta 14 ───────────────────────────
 $('#filtroObs').on('change', function () {
     obsActiva = $(this).val();
-    if (dt) dt.draw();
+    if (!dt) return;
+    dt.column(14).search(obsActiva ? '^' + obsActiva + '$' : '', true, false).draw();
 });
 
-// ── Buscador de texto ─────────────────────────────────────────────────────
+// ── Buscador de texto — búsqueda global de DataTables ────────────────────
 $('#buscarTabla').on('input', function () {
     if (!dt) return;
-    // Filtro manual sobre data-q para evitar conflicto con DataTables ext.search
-    var q = $(this).val().toLowerCase();
-    // Usamos $.fn.dataTable.ext.search para el texto también
-    // Guardamos la query globalmente
-    window._buscarQ = q;
-    dt.draw();
-});
-
-// Añadir filtro de texto al array de búsqueda personalizada
-$.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
-    if (settings.nTable.id !== 'tablaLote') return true;
-    var q = window._buscarQ || '';
-    if (!q) return true;
-    var nTr = settings.aoData[dataIndex] ? settings.aoData[dataIndex].nTr : null;
-    if (!nTr) return true;
-    return ($(nTr).data('q') || '').indexOf(q) !== -1;
+    // dt.search() hace búsqueda en todas las columnas visibles (suscriptor, nombre, sector…)
+    // Las columnas ocultas 13/14 no interfieren porque searching:false no aplica a ellas
+    dt.search($(this).val()).draw();
 });
 
 // ── Checkboxes con paginación ─────────────────────────────────────────────

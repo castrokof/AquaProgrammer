@@ -106,12 +106,14 @@ body { font-family: 'DejaVu Sans', 'Arial', sans-serif; font-size: 7pt; color: #
                     ? round($factura->consumo_suntuario_alcantarillado_valor / $factura->consumo_suntuario_alcantarillado_m3, 2) : 0;
 
     // ── Subsidio / contribución ──
-    $subsidioAc = (float)($factura->subsidio_emergencia ?? 0);   // + = subsidio (descuento), - = contribución (cargo)
-    $esSubsidio  = $subsidioAc > 0;
+    $subsidioAc   = (float)($factura->subsidio_emergencia    ?? 0); // + = subsidio (descuento), - = contribución (cargo)
+    $esSubsidio   = $subsidioAc > 0;
+    $subsidioAl   = (float)($factura->subsidio_alcantarillado ?? 0);
+    $esSubsidioAl = $subsidioAl > 0;
 
-    // ── Neto acueducto (subtotal - subsidio) ──
-    $netoAcueducto = (float)($factura->total_facturacion_acueducto ?? 0);
-    $netoAlcantarillado = (float)($factura->subtotal_alcantarillado ?? 0);
+    // ── Neto (subtotal ya incluye subsidio aplicado) ──
+    $netoAcueducto      = (float)($factura->total_facturacion_acueducto ?? 0);
+    $netoAlcantarillado = (float)($factura->subtotal_alcantarillado      ?? 0);
 
     // ── Total pagado ──
     $totalPagado    = $factura->pagos->sum('total_pago_realizado');
@@ -198,11 +200,6 @@ body { font-family: 'DejaVu Sans', 'Arial', sans-serif; font-size: 7pt; color: #
                 <td><span class="cell-lbl">Ciclo / Período:</span> {{ $factura->periodo }}</td>
                 <td><span class="cell-lbl">Tarifa:</span> {{ $tarifaNombre }}</td>
             </tr>
-            @if($factura->observaciones)
-            <tr>
-                <td colspan="2"><span class="badge-obs"><i>Obs:</i> {{ $factura->observaciones }}</span></td>
-            </tr>
-            @endif
         </table>
         </div>
     </td>
@@ -356,8 +353,16 @@ body { font-family: 'DejaVu Sans', 'Arial', sans-serif; font-size: 7pt; color: #
                 <td class="r">{{ number_format($refBasAl,2,',','.') }}</td>
                 <td class="r">{{ number_format($factura->consumo_basico_alcantarillado_valor,2,',','.') }}</td>
                 <td class="r">{{ number_format($factura->consumo_basico_alcantarillado_valor,2,',','.') }}</td>
+                @if($esSubsidioAl)
+                <td class="r subsidio-pos">-{{ number_format(abs($subsidioAl),2,',','.') }}</td>
+                <td class="r subsidio-pos">{{ number_format($factura->consumo_basico_alcantarillado_valor - abs($subsidioAl),2,',','.') }}</td>
+                @elseif($subsidioAl < 0)
+                <td class="r subsidio-neg">+{{ number_format(abs($subsidioAl),2,',','.') }}</td>
+                <td class="r subsidio-neg">{{ number_format($factura->consumo_basico_alcantarillado_valor + abs($subsidioAl),2,',','.') }}</td>
+                @else
                 <td class="c">0,00</td>
                 <td class="r">{{ number_format($factura->consumo_basico_alcantarillado_valor,2,',','.') }}</td>
+                @endif
             </tr>
             @endif
             @if($factura->consumo_complementario_alcantarillado_m3 > 0)
@@ -388,9 +393,12 @@ body { font-family: 'DejaVu Sans', 'Arial', sans-serif; font-size: 7pt; color: #
                 <td>Total</td>
                 <td class="c">{{ $factura->consumo_m3 }}</td>
                 <td></td>
-                <td class="r">{{ number_format($netoAlcantarillado,2,',','.') }}</td>
-                <td class="r">{{ number_format($netoAlcantarillado,2,',','.') }}</td>
-                <td class="c">0,00</td>
+                @php $brutoAl = (float)($factura->subtotal_facturacion_alcantarillado ?? $netoAlcantarillado); @endphp
+                <td class="r">{{ number_format($brutoAl,2,',','.') }}</td>
+                <td class="r">{{ number_format($brutoAl,2,',','.') }}</td>
+                <td class="r {{ $esSubsidioAl ? 'subsidio-pos' : ($subsidioAl < 0 ? 'subsidio-neg':'') }}">
+                    {{ $subsidioAl != 0 ? ($esSubsidioAl?'-':'+').number_format(abs($subsidioAl),2,',','.') : '0,00' }}
+                </td>
                 <td class="r">{{ number_format($netoAlcantarillado,2,',','.') }}</td>
             </tr>
         </tfoot>

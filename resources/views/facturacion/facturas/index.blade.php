@@ -8,6 +8,22 @@
 .modern-card .card-header { background:linear-gradient(135deg,#2e50e4 0%,#2b0c49 100%); border:none; padding:22px 28px; display:flex; justify-content:space-between; align-items:center; }
 .modern-card .card-header h3 { color:white; font-weight:700; font-size:1.3rem; margin:0; }
 
+/* Tabs */
+.vista-tabs { display:flex; gap:6px; margin-bottom:16px; }
+.vista-tab { padding:9px 22px; border-radius:12px; font-weight:700; font-size:.83rem; cursor:pointer; border:2px solid transparent; transition:all .2s; }
+.vista-tab.activo { background:#2e50e4; color:white; border-color:#2e50e4; }
+.vista-tab:not(.activo) { background:white; color:#2e50e4; border-color:#2e50e4; }
+.vista-tab:not(.activo):hover { background:#eef2ff; }
+
+/* Tabla reporte */
+#tblReporte thead th { background:linear-gradient(135deg,#1e3a8a 0%,#2e50e4 100%); color:white; font-weight:600; font-size:.65rem; text-transform:uppercase; padding:8px 5px; border:none; white-space:nowrap; text-align:center; }
+#tblReporte tbody td { padding:7px 5px; vertical-align:middle; border-bottom:1px solid #f0f0f0; text-align:right; font-size:.75rem; }
+#tblReporte tbody td:first-child, #tblReporte tbody td:nth-child(2), #tblReporte tbody td:nth-child(3), #tblReporte tbody td:nth-child(4) { text-align:left; }
+#tblReporte tbody tr:hover { background:#f8f9ff; }
+.th-group { background:#1a2e72 !important; }
+.th-group-al { background:#155e4e !important; }
+</style>
+
 .filtros-box { background:white; border-radius:16px; padding:20px; box-shadow:0 4px 15px rgba(0,0,0,.05); margin-bottom:20px; }
 .filtros-box .form-control { border-radius:10px; border:2px solid #e2e8f0; }
 .filtros-box .form-control:focus { border-color:#667eea; box-shadow:0 0 0 3px rgba(102,126,234,.12); outline:none; }
@@ -69,6 +85,19 @@
             </div>
         </div>
     </div>
+
+    {{-- Tabs --}}
+    <div class="vista-tabs">
+        <div class="vista-tab activo" id="tabListado" onclick="switchTab('listado')">
+            <i class="fa fa-list"></i> Listado de Facturas
+        </div>
+        <div class="vista-tab" id="tabReporte" onclick="switchTab('reporte')">
+            <i class="fa fa-table"></i> Reporte de Liquidación
+        </div>
+    </div>
+
+    {{-- ═══ PANEL LISTADO ═══ --}}
+    <div id="panelListado">
 
     {{-- KPI Cards --}}
     <div class="kpi-row" id="kpiRow">
@@ -172,7 +201,50 @@
             <tbody></tbody>
         </table>
     </div>
-</div>
+
+    </div>{{-- /panelListado --}}
+
+    {{-- ═══ PANEL REPORTE ═══ --}}
+    <div id="panelReporte" style="display:none;">
+        <div style="background:white;border-radius:16px;padding:20px;box-shadow:0 10px 40px rgba(0,0,0,.08);overflow-x:auto;">
+            <table id="tblReporte" class="table" style="width:100%;font-size:.75rem;">
+                <thead>
+                    <tr>
+                        <th rowspan="2">N° Factura</th>
+                        <th rowspan="2">Suscriptor</th>
+                        <th rowspan="2">Nombre</th>
+                        <th rowspan="2">Período</th>
+                        <th rowspan="2">Estrato</th>
+                        <th rowspan="2">m³</th>
+                        <th colspan="6" class="th-group" style="text-align:center;">ACUEDUCTO</th>
+                        <th colspan="6" class="th-group-al" style="text-align:center;">ALCANTARILLADO</th>
+                        <th rowspan="2">Otros Ac.</th>
+                        <th rowspan="2">Otros Al.</th>
+                        <th rowspan="2">Saldo Ant.</th>
+                        <th rowspan="2">Total a Pagar</th>
+                        <th rowspan="2">Estado</th>
+                    </tr>
+                    <tr>
+                        <th class="th-group">CF</th>
+                        <th class="th-group">C. Básico</th>
+                        <th class="th-group">C. Comp.</th>
+                        <th class="th-group">C. Sunt.</th>
+                        <th class="th-group">Subsidio</th>
+                        <th class="th-group">Total Ac.</th>
+                        <th class="th-group-al">CF</th>
+                        <th class="th-group-al">C. Básico</th>
+                        <th class="th-group-al">C. Comp.</th>
+                        <th class="th-group-al">C. Sunt.</th>
+                        <th class="th-group-al">Subsidio</th>
+                        <th class="th-group-al">Total Al.</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+</div>{{-- /container-fluid --}}
 
 {{-- Modal anular --}}
 <div class="modal fade" id="modalAnular" tabindex="-1">
@@ -210,9 +282,10 @@
 
 @section('scripts')
 <script>
-var CSRF     = '{{ csrf_token() }}';
-var DATA_URL = '{{ route("facturas.data") }}';
-var KPIS_URL = '{{ route("facturas.kpis") }}';
+var CSRF        = '{{ csrf_token() }}';
+var DATA_URL    = '{{ route("facturas.data") }}';
+var KPIS_URL    = '{{ route("facturas.kpis") }}';
+var REPORTE_URL = '{{ route("facturas.reporte-data") }}';
 
 function fmtCOP(n) {
     return '$ ' + parseFloat(n || 0).toLocaleString('es-CO', {minimumFractionDigits:0, maximumFractionDigits:0});
@@ -236,6 +309,88 @@ function cargarKpis() {
         $('#kpiAnuladaCnt').text(r.anulada.cantidad);
         $('#kpiAnuladaVal').text(fmtCOP(r.anulada.total));
     });
+}
+
+// ── Tabs ──────────────────────────────────────────────────────────────────────
+var tablaReporte = null;
+
+function switchTab(tab) {
+    if (tab === 'listado') {
+        $('#panelListado').show();
+        $('#panelReporte').hide();
+        $('#tabListado').addClass('activo');
+        $('#tabReporte').removeClass('activo');
+    } else {
+        $('#panelListado').hide();
+        $('#panelReporte').show();
+        $('#tabListado').removeClass('activo');
+        $('#tabReporte').addClass('activo');
+        if (!tablaReporte) {
+            tablaReporte = $('#tblReporte').DataTable({
+                processing: true,
+                serverSide: true,
+                scrollX: true,
+                ajax: {
+                    url: REPORTE_URL,
+                    data: function(d) {
+                        d.periodo    = $('#fPeriodo').val();
+                        d.id_ruta    = $('#fRuta').val();
+                        d.critica    = $('#fCritica').val();
+                        d.suscriptor = $('#fSuscriptor').val();
+                        d.estado     = $('#fEstado').val();
+                    }
+                },
+                columns: [
+                    { data: 'numero',      title: 'N° Factura' },
+                    { data: 'suscriptor',  title: 'Suscriptor' },
+                    { data: 'nombre',      title: 'Nombre' },
+                    { data: 'periodo',     title: 'Período' },
+                    { data: 'estrato',     title: 'Estrato', className: 'dt-center' },
+                    { data: 'consumo_m3',  title: 'm³', className: 'dt-center' },
+                    // Acueducto
+                    { data: 'cf_ac',      title: 'CF Ac.' },
+                    { data: 'cb_ac',      title: 'C.Básico Ac.' },
+                    { data: 'cc_ac',      title: 'C.Comp. Ac.' },
+                    { data: 'cs_ac',      title: 'C.Sunt. Ac.' },
+                    { data: 'subsidio_ac',title: 'Subsidio Ac.' },
+                    { data: 'total_ac',   title: 'Total Ac.', render: function(v) { return '<strong>'+v+'</strong>'; } },
+                    // Alcantarillado
+                    { data: 'cf_al',      title: 'CF Al.' },
+                    { data: 'cb_al',      title: 'C.Básico Al.' },
+                    { data: 'cc_al',      title: 'C.Comp. Al.' },
+                    { data: 'cs_al',      title: 'C.Sunt. Al.' },
+                    { data: 'subsidio_al',title: 'Subsidio Al.' },
+                    { data: 'total_al',   title: 'Total Al.', render: function(v) { return '<strong>'+v+'</strong>'; } },
+                    // Resumen
+                    { data: 'otros_ac',   title: 'Otros Ac.' },
+                    { data: 'otros_al',   title: 'Otros Al.' },
+                    { data: 'saldo_ant',  title: 'Saldo Ant.', render: function(v) { return v !== '$0' ? '<span style="color:#dc2626;font-weight:700;">'+v+'</span>' : v; } },
+                    { data: 'total_pagar',title: 'Total a Pagar', render: function(v) { return '<strong style="color:#2e50e4;">'+v+'</strong>'; } },
+                    { data: 'estado',     title: 'Estado', render: function(v) { return '<span class="badge-est badge-'+v+'">'+v+'</span>'; } },
+                ],
+                pageLength: 50,
+                order: [[3, 'desc']],
+                language: { url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json' },
+                dom: 'Bfrtip',
+                buttons: [
+                    { extend: 'excelHtml5', text: '<i class="fa fa-file-excel"></i> Exportar Excel', className: 'btn btn-success btn-sm',
+                      title: 'Reporte de Liquidación',
+                      exportOptions: { columns: ':visible' }
+                    },
+                    { extend: 'print', text: '<i class="fa fa-print"></i> Imprimir', className: 'btn btn-info btn-sm',
+                      title: 'Reporte de Liquidación',
+                      exportOptions: { columns: ':visible' }
+                    },
+                    { extend: 'csvHtml5', text: '<i class="fa fa-file-csv"></i> CSV', className: 'btn btn-secondary btn-sm',
+                      title: 'Reporte de Liquidacion',
+                      exportOptions: { columns: ':visible' }
+                    }
+                ]
+            });
+        } else {
+            tablaReporte.ajax.reload();
+        }
+    }
 }
 
 $(function () {
@@ -331,6 +486,7 @@ $(function () {
     $('#btnFiltrar').on('click', function () {
         tabla.ajax.reload();
         cargarKpis();
+        if (tablaReporte) tablaReporte.ajax.reload();
     });
 
     // Filtrar también al presionar Enter en los inputs

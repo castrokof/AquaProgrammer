@@ -44,8 +44,8 @@ label.lbl { font-weight:600; color:#4a5568; font-size:.8rem; text-transform:uppe
 .badge-tipo.bajo           { background:#e0e7ff; color:#3730a3; }
 .badge-tipo.causado        { background:#fef9c3; color:#713f12; }
 .badge-tipo.normal         { background:#d1fae5; color:#065f46; }
-.badge-tipo.consumo_cero   { background:#f1f5f9; color:#334155; }
-.badge-tipo.promedio_medidor { background:#fdf4ff; color:#7e22ce; }
+.badge-tipo.consumo_cero   { background:#fff7ed; color:#9a3412; }
+.badge-tipo.promedio_medidor { background:#fff7ed; color:#9a3412; }
 
 /* Barra de acciones flotante */
 #barraAcciones { position:fixed; bottom:0; left:0; right:0; background:white; border-top:3px solid #667eea; padding:14px 30px; display:none; z-index:999; box-shadow:0 -4px 20px rgba(0,0,0,.12); }
@@ -316,12 +316,20 @@ function construirTabla() {
         var badge = '<span class="badge-tipo ' + c.tipo + '">' + (labelMap[c.tipo] || c.tipo) + '</span>';
         var sinMedidor = !c.tiene_medidor;
 
-        // Estilo de edición según tipo (todos editables; color diferenciado por tipo)
-        var bgConsumo = '#fff';
-        if (c.tipo === 'consumo_cero')     bgConsumo = '#f1f5f9'; // gris: desocupado
-        else if (c.tipo === 'promedio_medidor') bgConsumo = '#fdf4ff'; // violeta: medidor parado
-        else if (sinMedidor)               bgConsumo = '#fffbeb'; // amarillo: sin medidor
-        else                               bgConsumo = '#f0fdf4'; // verde: tiene lectura
+        // Fondo del consumo según critica del campo (lo que reportó el operario)
+        var criticaUp = (c.critica || '').toUpperCase();
+        var bgConsumo = '#f0fdf4'; // verde por defecto (normal)
+        if (sinMedidor) {
+            bgConsumo = '#fffbeb'; // amarillo — sin medidor
+        } else if (criticaUp.indexOf('IGUAL') !== -1) {
+            bgConsumo = '#fff7ed'; // naranja suave — lecturas iguales (desocupado / medidor parado)
+        } else if (criticaUp.indexOf('ALTO') !== -1 || criticaUp.indexOf('ELEVADO') !== -1) {
+            bgConsumo = '#fee2e2'; // rojo suave — consumo alto
+        } else if (criticaUp.indexOf('BAJO') !== -1) {
+            bgConsumo = '#eff6ff'; // azul suave — consumo bajo
+        } else if (c.tipo === 'causado') {
+            bgConsumo = '#fef9c3'; // amarillo pálido — causado sin clasificar
+        }
 
         var inpConsumo = '<input class="inp-consumo" type="number" min="0" value="' + c.consumo_sugerido
             + '" data-id="' + c.id + '" name="consumo" style="background:' + bgConsumo + ';"'
@@ -335,9 +343,10 @@ function construirTabla() {
             '<input class="inp-lect" type="number" min="0" value="' + (c.lect_actual !== null ? c.lect_actual : '')
             + '" data-id="' + c.id + '" name="lect_act" oninput="calcularConsumo(this)" style="background:#f0fdf4;">';
 
-        // Observación de campo (del sistema de lectura)
-        var obsLabel = c.observacion_des
-            ? ('<small style="color:#475569;" title="Cód. ' + c.observacion_id + '">' + c.observacion_des + '</small>')
+        // Observación de campo (del sistema de lectura) — sortable por texto
+        var obsTexto = c.observacion_des || '';
+        var obsLabel = obsTexto
+            ? ('<small style="color:#475569;" title="Cód. ' + c.observacion_id + '">' + obsTexto + '</small>')
             : '<small style="color:#cbd5e0;">—</small>';
 
         // Foto
@@ -363,7 +372,7 @@ function construirTabla() {
         html += '<td>' + c.estrato + '</td>';
         html += '<td style="text-align:right;font-weight:600;">' + (c.promedio_consumo || 0) + '</td>';
         html += '<td>' + badge + '</td>';
-        html += '<td>' + obsLabel + '</td>';
+        html += '<td data-order="' + obsTexto + '">' + obsLabel + '</td>';
         html += '<td>' + inpLectAnt + '</td>';
         html += '<td>' + inpLectAct + '</td>';
         html += '<td>' + inpConsumo + '</td>';

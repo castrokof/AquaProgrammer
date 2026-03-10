@@ -25,6 +25,10 @@
 .cuota-preview { background:#f0f9ff; border:2px solid #bee3f8; border-radius:12px; padding:14px 18px; margin-top:10px; display:none; }
 .cuota-preview .val { font-size:1.4rem; font-weight:800; color:#2b6cb0; }
 .cuota-preview .lbl { font-size:.78rem; color:#4a5568; }
+/* Evitar que overflow:hidden corte el modal-footer */
+#modalNuevoCobro .modal-content { overflow:visible; }
+#modalNuevoCobro .modal-body    { max-height:72vh; overflow-y:auto; }
+#modalAnular .modal-content     { overflow:visible; }
 </style>
 @endsection
 

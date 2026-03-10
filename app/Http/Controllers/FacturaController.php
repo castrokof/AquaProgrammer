@@ -473,27 +473,66 @@ public function exportarSeleccionadas(Request $request)
             ->orderBy('suscriptor')
             ->get();
 
-        // Órdenes de lectura para este período (si existen)
+        // Solo órdenes EJECUTADAS en campo (Estado = 4) para este período
         $ordenes = \App\Models\Admin\Ordenesmtl::where('periodo_lectura_id', $periodo->id)
-            ->get(['Suscriptor', 'Critica', 'Lect_Actual', 'LA', 'Cons_Act', 'Estado'])
+            ->where('Estado', 4)
+            ->get([
+                'Suscriptor', 'Critica', 'Lect_Actual', 'LA', 'Cons_Act', 'Estado',
+                'Observacion_id', 'Observacion_des', 'foto1', 'foto2', 'Promedio',
+            ])
             ->keyBy('Suscriptor');
 
-        $resultado = $clientes->map(function ($c) use ($ordenes) {
-            $orden  = $ordenes->get($c->suscriptor);
-            $critica = $orden ? ($orden->Critica ?? '') : '';
+        // Observacion_id 30,31,32,15,16 → predio desocupado → facturar consumo 0
+        // Observacion_id 33             → medidor parado    → facturar con promedio
+        $codigosConsumoCero     = [15, 16, 30, 31, 32];
+        $codigosPromedioMedidor = [33];
+
+        $resultado = $clientes->map(function ($c) use ($ordenes, $codigosConsumoCero, $codigosPromedioMedidor) {
+            $orden = $ordenes->get($c->suscriptor);
+
+            // Con medidor: solo aparece si la lectura fue ejecutada en campo (Estado=4).
+            // Sin medidor: siempre aparece; se factura por promedio editable.
+            if ($c->tiene_medidor && !$orden) {
+                return null;
+            }
+
+            $critica      = $orden ? ($orden->Critica ?? '') : '';
             $criticaUpper = strtoupper($critica);
 
-            // Clasificación
+            $observacionId  = $orden ? (int) ($orden->Observacion_id ?? 0) : 0;
+            $observacionDes = $orden ? ($orden->Observacion_des ?? '') : '';
+
+            // Promedio real: preferir el registrado en la orden de lectura (más actualizado)
+            $promedioOrden   = $orden ? (int) ($orden->Promedio ?? 0) : 0;
+            $promedioCliente = (int) round((float) ($c->promedio_consumo ?? 0));
+            $promedioReal    = $promedioOrden > 0 ? $promedioOrden : $promedioCliente;
+
+            // Clasificación de tipo
             if (!$c->tiene_medidor) {
                 $tipo = 'sin_medidor';
+            } elseif (str_contains($criticaUpper, 'IGUAL') && in_array($observacionId, $codigosConsumoCero)) {
+                $tipo = 'consumo_cero';      // desocupado → solo básico, consumo 0
+            } elseif (str_contains($criticaUpper, 'IGUAL') && in_array($observacionId, $codigosPromedioMedidor)) {
+                $tipo = 'promedio_medidor';  // medidor parado → cobrar promedio
+            } elseif (str_contains($criticaUpper, 'IGUAL')) {
+                $tipo = 'causado';           // iguales sin obs. específica → analista decide
             } elseif (str_contains($criticaUpper, 'ALTO') || str_contains($criticaUpper, 'ELEVADO')) {
                 $tipo = 'alto';
-            } elseif (str_contains($criticaUpper, 'BAJO') || str_contains($criticaUpper, 'CERO')) {
+            } elseif (str_contains($criticaUpper, 'BAJO')) {
                 $tipo = 'bajo';
             } elseif ($critica !== '' && !str_contains($criticaUpper, 'NORMAL')) {
                 $tipo = 'causado';
             } else {
                 $tipo = 'normal';
+            }
+
+            // Consumo sugerido según tipo
+            if ($tipo === 'consumo_cero') {
+                $consumoSugerido = 0;
+            } elseif ($tipo === 'promedio_medidor' || !$orden) {
+                $consumoSugerido = $promedioReal;
+            } else {
+                $consumoSugerido = (int) $orden->Cons_Act;
             }
 
             return [
@@ -506,15 +545,18 @@ public function exportarSeleccionadas(Request $request)
                 'servicios'        => $c->servicios,
                 'tiene_medidor'    => $c->tiene_medidor,
                 'serie_medidor'    => $c->serie_medidor,
-                'promedio_consumo' => (float) $c->promedio_consumo,
+                'promedio_consumo' => $promedioReal,
                 'tipo'             => $tipo,
                 'critica'          => $critica,
-                // Pre-llenar con lectura de la orden si existe
-                'lect_anterior'    => $orden ? $orden->LA        : null,
+                'observacion_id'   => $observacionId,
+                'observacion_des'  => $observacionDes,
+                'foto1'            => $orden ? ($orden->foto1 ?? null) : null,
+                'foto2'            => $orden ? ($orden->foto2 ?? null) : null,
+                'lect_anterior'    => $orden ? $orden->LA          : null,
                 'lect_actual'      => $orden ? $orden->Lect_Actual : null,
-                'consumo_sugerido' => $orden ? $orden->Cons_Act  : (int) round($c->promedio_consumo ?: 1),
+                'consumo_sugerido' => $consumoSugerido,
             ];
-        });
+        })->filter()->values();
 
         return response()->json([
             'ok'       => true,
@@ -531,13 +573,14 @@ public function exportarSeleccionadas(Request $request)
     public function storeLote(Request $request)
     {
         $request->validate([
-            'periodo_lectura_id'    => 'required|exists:periodos_lectura,id',
-            'observaciones'         => 'nullable|string|max:500',
-            'rows'                  => 'required|array|min:1|max:500',
-            'rows.*.cliente_id'     => 'required|exists:clientes,id',
-            'rows.*.consumo_m3'     => 'required|integer|min:0',
+            'periodo_lectura_id'      => 'required|exists:periodos_lectura,id',
+            'observaciones'           => 'nullable|string|max:500',
+            'rows'                    => 'required|array|min:1|max:500',
+            'rows.*.cliente_id'       => 'required|exists:clientes,id',
+            'rows.*.consumo_m3'       => 'required|integer|min:0',
             'rows.*.lectura_anterior' => 'nullable|integer|min:0',
             'rows.*.lectura_actual'   => 'nullable|integer|min:0',
+            'rows.*.observacion'      => 'nullable|string|max:500',
         ]);
 
         $periodo  = PeriodoLectura::with('tarifa')->findOrFail($request->periodo_lectura_id);
@@ -563,8 +606,13 @@ public function exportarSeleccionadas(Request $request)
                 );
                 $calculo['usuario_id']    = auth()->id();
                 $calculo['es_automatica'] = false;
-                if ($request->observaciones) {
-                    $calculo['observaciones'] = $request->observaciones;
+                // Observación por fila tiene prioridad; si no, se usa la global del lote
+                $obsRow    = trim($row['observacion'] ?? '');
+                $obsGlobal = trim($request->observaciones ?? '');
+                if ($obsRow) {
+                    $calculo['observaciones'] = $obsRow;
+                } elseif ($obsGlobal) {
+                    $calculo['observaciones'] = $obsGlobal;
                 }
 
                 $factura = Factura::create($calculo);

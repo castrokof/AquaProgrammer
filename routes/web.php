@@ -308,4 +308,10 @@ Route::group(['middleware' => 'auth', 'prefix' => 'facturacion'], function () {
         ->name('empresa.edit');
     Route::put('empresa', 'EmpresaController@update')
         ->name('empresa.update');
+
+    // ── Subsidios por Estrato ─────────────────────────────────────
+    Route::get('estratos/subsidios', 'EstratoController@index')
+        ->name('estratos.subsidios');
+    Route::put('estratos/{id}', 'EstratoController@update')
+        ->name('estratos.update');
 });

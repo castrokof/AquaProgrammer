@@ -146,7 +146,7 @@ function guardarEstrato(id) {
     msg.hide();
 
     $.ajax({
-        url: '/facturacion/estratos/' + id,
+        url: '{{ url("facturacion/estratos") }}/' + id,
         method: 'PUT',
         data: {
             _token:                        CSRF,

@@ -381,7 +381,7 @@ function construirTabla() {
         paging:   true,
         pageLength: 50,
         ordering: true,
-        searching: false,   // usamos nuestro buscador
+        searching: true,    // necesario para dt.column().search() — UI oculto vía CSS
         order:    [[1, 'asc']],
         lengthMenu: [[25, 50, 100, 200, -1], ['25', '50', '100', '200', 'Mostrar Todo']],
         language: {

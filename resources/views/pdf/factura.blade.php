@@ -4,64 +4,64 @@
     <meta charset="utf-8">
     <title>Factura {{ $factura->numero_factura }}</title>
     <style>
-        @page { size: A4; margin: 1cm 1.2cm; }
+        @page { size: A4; margin: 0.8cm 1cm; }
         * { margin:0; padding:0; box-sizing:border-box; }
-        body { font-family: Arial, sans-serif; font-size: 10px; color: #333; }
+        body { font-family: Arial, sans-serif; font-size: 8.5px; color: #333; }
 
         /* ── Header (table para DomPDF) ── */
-        .header { background: #2e50e4; color: white; padding: 12px 14px; border-radius: 6px 6px 0 0; margin-bottom: 10px; }
+        .header { background: #2e50e4; color: white; padding: 8px 12px; border-radius: 6px 6px 0 0; margin-bottom: 8px; }
         .header table { width: 100%; border-collapse: collapse; }
         .header td { vertical-align: top; color: white; padding: 0; }
-        .empresa  { font-size: 14px; font-weight: bold; }
-        .sub-emp  { font-size: 9px; margin-top: 3px; }
-        .num-fac  { font-size: 20px; font-weight: bold; text-align: right; }
-        .lbl-fac  { font-size: 8px; text-align: right; text-transform: uppercase; }
-        .fechas   { font-size: 9px; margin-top: 4px; line-height: 1.5; }
+        .empresa  { font-size: 12px; font-weight: bold; }
+        .sub-emp  { font-size: 7.5px; margin-top: 2px; }
+        .num-fac  { font-size: 17px; font-weight: bold; text-align: right; }
+        .lbl-fac  { font-size: 7px; text-align: right; text-transform: uppercase; }
+        .fechas   { font-size: 7.5px; margin-top: 3px; line-height: 1.4; }
 
         /* ── Secciones ── */
-        .section { margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid #e0e0e0; page-break-inside: avoid; }
+        .section { margin-bottom: 7px; padding-bottom: 7px; border-bottom: 1px solid #e0e0e0; page-break-inside: avoid; }
         .section:last-child { border-bottom: none; }
-        .section-title { font-size: 9px; font-weight: bold; color: #4a5568; text-transform: uppercase;
-                         border-bottom: 2px solid #e2e8f0; padding-bottom: 4px; margin-bottom: 8px; }
+        .section-title { font-size: 7.5px; font-weight: bold; color: #4a5568; text-transform: uppercase;
+                         border-bottom: 2px solid #e2e8f0; padding-bottom: 3px; margin-bottom: 6px; }
 
         /* ── Info grid (tabla HTML real para DomPDF) ── */
         .info-table { width: 100%; border-collapse: collapse; }
-        .info-table td { width: 33.33%; padding: 3px 4px; vertical-align: top; }
-        .info-label { color: #a0aec0; font-size: 7.5px; text-transform: uppercase; font-weight: bold; }
-        .info-value { font-weight: 600; color: #2d3748; margin-top: 1px; font-size: 9.5px; }
+        .info-table td { width: 33.33%; padding: 2px 3px; vertical-align: top; }
+        .info-label { color: #a0aec0; font-size: 6.5px; text-transform: uppercase; font-weight: bold; }
+        .info-value { font-weight: 600; color: #2d3748; margin-top: 1px; font-size: 8px; }
 
         /* ── Tabla de consumos ── */
-        .tabla { width: 100%; border-collapse: collapse; margin-top: 6px; font-size: 9.5px; }
-        .tabla th { background: #f7fafc; padding: 5px 6px; font-weight: bold; color: #4a5568;
-                    font-size: 8px; text-transform: uppercase; text-align: right; border: 1px solid #e2e8f0; }
+        .tabla { width: 100%; border-collapse: collapse; margin-top: 4px; font-size: 8px; }
+        .tabla th { background: #f7fafc; padding: 4px 5px; font-weight: bold; color: #4a5568;
+                    font-size: 7px; text-transform: uppercase; text-align: right; border: 1px solid #e2e8f0; }
         .tabla th:first-child { text-align: left; }
-        .tabla td { padding: 5px 6px; border: 1px solid #e2e8f0; text-align: right; }
+        .tabla td { padding: 4px 5px; border: 1px solid #e2e8f0; text-align: right; }
         .tabla td:first-child { text-align: left; }
         .tabla tfoot td { font-weight: bold; background: #f7fafc; }
         .td-green { color: #059669; }
         .td-red   { color: #dc2626; }
 
         /* ── Total a pagar ── */
-        .total-box { background: #2e50e4; color: white; padding: 10px 14px; border-radius: 6px; margin-top: 10px; page-break-inside: avoid; }
+        .total-box { background: #2e50e4; color: white; padding: 8px 12px; border-radius: 6px; margin-top: 8px; page-break-inside: avoid; }
         .total-box table { width: 100%; border-collapse: collapse; }
         .total-box td { color: white; vertical-align: middle; }
-        .total-lbl { font-size: 11px; font-weight: 600; }
-        .total-val { font-size: 17px; font-weight: bold; text-align: right; }
+        .total-lbl { font-size: 9.5px; font-weight: 600; }
+        .total-val { font-size: 15px; font-weight: bold; text-align: right; }
 
         /* ── Badge ── */
-        .badge { display: inline; padding: 2px 8px; border-radius: 8px; font-size: 8px; font-weight: bold; text-transform: uppercase; }
+        .badge { display: inline; padding: 2px 6px; border-radius: 8px; font-size: 7px; font-weight: bold; text-transform: uppercase; }
         .badge-PENDIENTE { background: #fef3c7; color: #92400e; }
         .badge-PAGADA    { background: #c6f6d5; color: #22543d; }
         .badge-VENCIDA   { background: #fed7d7; color: #742a2a; }
         .badge-ANULADA   { background: #e2e8f0; color: #718096; }
 
         /* ── Saldo mora ── */
-        .mora-box { background: #fff5f5; padding: 8px 10px; border-radius: 5px; margin-bottom: 8px; page-break-inside: avoid; }
+        .mora-box { background: #fff5f5; padding: 6px 8px; border-radius: 5px; margin-bottom: 6px; page-break-inside: avoid; }
         .mora-box table { width: 100%; border-collapse: collapse; }
 
         /* ── Footer ── */
-        .footer-info { margin-top: 12px; padding-top: 10px; border-top: 2px solid #e2e8f0;
-                       font-size: 8.5px; color: #718096; line-height: 1.6; }
+        .footer-info { margin-top: 8px; padding-top: 8px; border-top: 2px solid #e2e8f0;
+                       font-size: 7.5px; color: #718096; line-height: 1.5; }
     </style>
 </head>
 <body>

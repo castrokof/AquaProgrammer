@@ -147,7 +147,7 @@ body { font-family: 'DejaVu Sans', 'Arial', sans-serif; font-size: 7pt; color: #
         @if($empresa->logo_path)
             @php $logoB64 = $empresa->logoBase64(); @endphp
             @if($logoB64)
-            <img src="{{ $logoB64 }}" style="max-height:38px;max-width:100px;object-fit:contain;display:block;margin-bottom:3px;">
+            <img src="{{ $logoB64 }}" style="max-height:100px;max-width:100px;object-fit:contain;display:block;margin-bottom:2px;margin-top:6px;">
             @endif
         @endif
         <div class="empresa-name">{{ strtoupper($empresa->nombre) }}</div>
@@ -522,6 +522,17 @@ body { font-family: 'DejaVu Sans', 'Arial', sans-serif; font-size: 7pt; color: #
             @if($hasAlcantarillado)
             <tr><td>Cargo fijo alcantarillado</td><td class="r">{{ $nf($factura->cargo_fijo_alcantarillado) }}</td></tr>
             <tr><td>Vertimiento alcantarillado</td><td class="r">{{ $nf($netoAlcantarillado - $factura->cargo_fijo_alcantarillado) }}</td></tr>
+             @if($subsidioAl != 0)
+            <tr>
+                <td class="{{ $esSubsidioAl ? 'subsidio-pos' : 'subsidio-neg' }}">
+                    {{ $esSubsidioAl ? 'Subsidio alcantarillado' : 'Contribución alcantarillado' }}
+                </td>
+                <td class="r {{ $esSubsidioAl ? 'subsidio-pos' : 'subsidio-neg' }}">
+                    {{ $esSubsidioAl ? '-' : '+' }}{{ $nf(abs($subsidioAl)) }}
+                </td>
+            </tr>
+            @endif
+
             @if($factura->cuota_otros_cobros_alcantarillado > 0)
             <tr><td>Otros cobros alcantarillado</td><td class="r">{{ $nf($factura->cuota_otros_cobros_alcantarillado) }}</td></tr>
             @endif

@@ -117,6 +117,71 @@
                 </div>
 
                 <hr class="section-sep">
+                <h6 style="font-weight:700;color:#2e50e4;margin-bottom:6px;"><i class="fa fa-credit-card"></i> Pasarela de Pago — Wompi</h6>
+                <p style="font-size:.78rem;color:#718096;margin-bottom:14px;">
+                    <a href="https://comercios.wompi.co" target="_blank">Regístrate en Wompi</a> (gratis) para obtener tus llaves.
+                    La comisión es del 2,9% por transacción aprobada. Con el modo sandbox puedes probar sin cobros reales.
+                    URL del webhook a configurar en Wompi: <code>{{ route('pago-publico.webhook') }}</code>
+                </p>
+
+                <div class="row">
+                    <div class="col-md-5">
+                        <div class="form-group">
+                            <label class="form-lbl">Llave Pública (pub_test_… / pub_prod_…)</label>
+                            <input name="wompi_public_key" class="form-control form-inp"
+                                   value="{{ old('wompi_public_key', $empresa->wompi_public_key) }}"
+                                   placeholder="pub_test_xxxxxxxxxxxxxxxxxxxxxxxx">
+                        </div>
+                    </div>
+                    <div class="col-md-5">
+                        <div class="form-group">
+                            <label class="form-lbl">Llave Privada (prv_test_… / prv_prod_…)</label>
+                            <input name="wompi_private_key" class="form-control form-inp"
+                                   value="{{ old('wompi_private_key', $empresa->wompi_private_key) }}"
+                                   placeholder="prv_test_xxxxxxxxxxxxxxxxxxxxxxxx">
+                            <small class="text-muted">Usada para consultar transacciones y validar webhooks</small>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <label class="form-lbl">Modo</label>
+                            <select name="wompi_test_mode" class="form-control form-inp">
+                                <option value="1" {{ ($empresa->wompi_test_mode ?? true) ? 'selected':'' }}>Sandbox (pruebas)</option>
+                                <option value="0" {{ !($empresa->wompi_test_mode ?? true) ? 'selected':'' }}>Producción</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-lbl">Llave de Integridad (Firma SHA-256)</label>
+                            <input name="wompi_integrity_key" class="form-control form-inp"
+                                   value="{{ old('wompi_integrity_key', $empresa->wompi_integrity_key) }}"
+                                   placeholder="test_integrity_xxxxxxxxxxxxxxx">
+                            <small class="text-muted">Se encuentra en el panel Wompi → Llaves</small>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-lbl">URL de Redirección tras el pago</label>
+                            <input name="wompi_redirect_url" class="form-control form-inp"
+                                   value="{{ old('wompi_redirect_url', $empresa->wompi_redirect_url) }}"
+                                   placeholder="https://tudominio.com/pagar/resultado">
+                            <small class="text-muted">Debe ser una URL pública accesible desde internet</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="margin-bottom:12px;">
+                    <a href="{{ route('pago-publico.index') }}" target="_blank"
+                       style="font-size:.83rem;color:#2e50e4;font-weight:600;">
+                        <i class="fa fa-external-link-alt"></i> Ver página de pago público
+                    </a>
+                </div>
+
+                <hr class="section-sep">
                 <h6 style="font-weight:700;color:#2e50e4;margin-bottom:16px;"><i class="fa fa-image"></i> Logo de la Empresa</h6>
 
                 <div class="row align-items-center">

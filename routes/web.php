@@ -13,8 +13,11 @@
 
 if(version_compare(PHP_VERSION, '7.2.0', '>=')) { error_reporting(E_ALL ^ E_NOTICE ^ E_WARNING); }
 
-
-
+// ── Pasarela de pago pública (sin autenticación) ───────────────────────────
+Route::get('/pagar',         'PagoPublicoController@index')   ->name('pago-publico.index');
+Route::post('/pagar/buscar', 'PagoPublicoController@buscar')  ->name('pago-publico.buscar');
+Route::get('/pagar/resultado','PagoPublicoController@resultado')->name('pago-publico.resultado');
+Route::post('/webhook/wompi','PagoPublicoController@webhook')  ->name('pago-publico.webhook');
 
 /* RUTAS IMAGENES TEXTO */
 

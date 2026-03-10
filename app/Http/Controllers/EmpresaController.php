@@ -28,6 +28,11 @@ class EmpresaController extends Controller
             'texto_pie'                   => 'nullable|string|max:300',
             'nombre_banco'                => 'nullable|string|max:100',
             'numero_cuenta'               => 'nullable|string|max:50',
+            'wompi_public_key'            => 'nullable|string|max:120',
+            'wompi_private_key'           => 'nullable|string|max:120',
+            'wompi_integrity_key'         => 'nullable|string|max:120',
+            'wompi_test_mode'             => 'nullable|boolean',
+            'wompi_redirect_url'          => 'nullable|url|max:300',
         ]);
 
         $empresa = Empresa::instancia();
@@ -36,7 +41,11 @@ class EmpresaController extends Controller
             'nombre', 'nit', 'direccion', 'telefono', 'email',
             'prefijo_factura', 'texto_documento_equivalente',
             'texto_pie', 'nombre_banco', 'numero_cuenta',
+            'wompi_public_key', 'wompi_private_key', 'wompi_integrity_key',
+            'wompi_redirect_url',
         ]);
+
+        $data['wompi_test_mode'] = $request->input('wompi_test_mode', 1) ? true : false;
 
         if ($request->hasFile('logo')) {
             if ($empresa->logo_path) {

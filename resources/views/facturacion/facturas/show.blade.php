@@ -306,6 +306,8 @@ body { background:#f0f4f8; }
                         <i class="fa fa-receipt"></i>
                         {{ $p->numero_recibo ? 'Recibo: ' . $p->numero_recibo : 'Sin número' }}
                         — {{ $p->medio_pago }}
+                        @if($p->banco) <span style="font-size:.75rem;color:#718096;">({{ $p->banco }})</span>@endif
+                        @if($p->referencia_pasarela) <span style="font-size:.72rem;color:#3b82f6;" title="Pago en línea">· Wompi: {{ $p->referencia_pasarela }}</span>@endif
                     </div>
                     <div class="fechas">{{ $p->fecha_pago ? $p->fecha_pago->format('d/m/Y') : '—' }}</div>
                 </div>
@@ -368,8 +370,26 @@ body { background:#f0f4f8; }
                         </div>
                     </div>
                 </div>
+                {{-- Banco: solo visible para Transferencia / Consignación --}}
+                <div class="form-group" id="grupoBanco" style="display:none;">
+                    <label>Banco <span style="color:red">*</span></label>
+                    <select class="form-control" id="pBanco">
+                        <option value="">— Seleccione banco —</option>
+                        <option>Bancolombia</option>
+                        <option>Banco de Bogotá</option>
+                        <option>Davivienda</option>
+                        <option>BBVA</option>
+                        <option>Banco Popular</option>
+                        <option>Banco Agrario</option>
+                        <option>Nequi</option>
+                        <option>Daviplata</option>
+                        <option>Scotiabank Colpatria</option>
+                        <option>Banco Occidente</option>
+                        <option>Otro</option>
+                    </select>
+                </div>
                 <div class="form-group">
-                    <label>N° de Recibo</label>
+                    <label>N° de Recibo / Comprobante</label>
                     <input type="text" class="form-control" id="pRecibo" placeholder="Número de recibo o comprobante">
                 </div>
 
@@ -442,6 +462,13 @@ var saldoActual  = Math.max(0, totalFactura - totalPagado);
 
 function fmt(n) { return '$ ' + Math.abs(parseFloat(n)||0).toLocaleString('es-CO',{minimumFractionDigits:0,maximumFractionDigits:0}); }
 
+// ── Mostrar/ocultar banco según medio de pago ──────────────────────────────
+$('#pMedio').on('change', function () {
+    var requiereBanco = ['TRANSFERENCIA','CONSIGNACION'].indexOf($(this).val()) >= 0;
+    $('#grupoBanco').toggle(requiereBanco);
+    if (!requiereBanco) $('#pBanco').val('');
+}).trigger('change');
+
 // ── Calcular total de pago en tiempo real ──────────────────────────────────
 function recalcularPago() {
     var total = (parseFloat($('#pAcueducto').val())||0)
@@ -458,17 +485,24 @@ recalcularPago();
 
 // ── Confirmar pago ─────────────────────────────────────────────────────────
 $('#btnConfirmarPago').on('click', function () {
-    
     var btn = $(this);
-    var facturaId = '{{ $factura->id }}';
+    var medio = $('#pMedio').val();
+    var requiereBanco = ['TRANSFERENCIA','CONSIGNACION'].indexOf(medio) >= 0;
+    if (requiereBanco && !$('#pBanco').val()) {
+        Swal.fire('Atención', 'Seleccione el banco para continuar.', 'warning');
+        return;
+    }
 
+    var facturaId = '{{ $factura->id }}';
     btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Guardando...');
+
     $.ajax({
         url:    "{{ route('facturas.pago', ':id') }}".replace(':id', facturaId),
         method: 'POST',
         data: {
             fecha_pago:                       $('#pFecha').val(),
-            medio_pago:                       $('#pMedio').val(),
+            medio_pago:                       medio,
+            banco:                            $('#pBanco').val() || null,
             numero_recibo:                    $('#pRecibo').val(),
             pagos_acueducto:                  $('#pAcueducto').val()  || 0,
             pagos_alcantarillado:             $('#pAlcantarillado').val() || 0,

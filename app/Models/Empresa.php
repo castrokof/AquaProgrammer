@@ -12,6 +12,12 @@ class Empresa extends Model
         'nombre', 'nit', 'direccion', 'telefono', 'email',
         'logo_path', 'prefijo_factura', 'texto_documento_equivalente',
         'texto_pie', 'nombre_banco', 'numero_cuenta',
+        'wompi_public_key', 'wompi_private_key', 'wompi_integrity_key',
+        'wompi_test_mode', 'wompi_redirect_url',
+    ];
+
+    protected $casts = [
+        'wompi_test_mode' => 'boolean',
     ];
 
     /** Obtiene (o crea) el único registro de configuración. */

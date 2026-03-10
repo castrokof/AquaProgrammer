@@ -257,6 +257,14 @@ body { background:#f0f4f8; }
                     @if($factura->consumo_suntuario_alcantarillado_m3 > 0)
                     <tr><td>Consumo Suntuario</td><td>{{ $factura->consumo_suntuario_alcantarillado_m3 }}</td><td>$ {{ $nf($factura->consumo_suntuario_alcantarillado_valor) }}</td></tr>
                     @endif
+                    @if(($factura->subsidio_alcantarillado ?? 0) != 0)
+                    @php $esSubAl = ($factura->subsidio_alcantarillado ?? 0) > 0; @endphp
+                    <tr style="color:{{ $esSubAl ? '#059669' : '#dc2626' }};">
+                        <td>{{ $esSubAl ? 'Subsidio' : 'Sobretasa' }} Alcantarillado</td>
+                        <td>—</td>
+                        <td>{{ $esSubAl ? '- ' : '+ ' }}$ {{ $nf(abs($factura->subsidio_alcantarillado)) }}</td>
+                    </tr>
+                    @endif
                     @if($factura->otros_cobros_alcantarillado > 0)
                     <tr><td>Otros Cobros — Cuota</td><td>—</td><td>$ {{ $nf($factura->cuota_otros_cobros_alcantarillado) }}</td></tr>
                     @endif

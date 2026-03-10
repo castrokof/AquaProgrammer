@@ -6,6 +6,7 @@ use App\Models\OrdenRevision;
 use App\Models\ListaParametro;
 use App\Models\Seguridad\Usuario;
 use App\Models\Admin\Ordenesmtl;
+use App\Models\PeriodoLectura;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -66,12 +67,34 @@ class RevisionController extends Controller
      */
     public function criticas(Request $request)
     {
-        $query = Ordenesmtl::where('Estado', 4)
-    ->where('Critica', '!=', '54-NORMAL')
-    ->whereMonth('fecha_de_ejecucion', now()->month)
-    ->whereYear('fecha_de_ejecucion', now()->year);
+        // ── Determinar el scope temporal ─────────────────────────────────────
+        // Prioridad: 1) rango de fechas manual  2) periodo seleccionado  3) último período
+        $periodos       = PeriodoLectura::orderBy('id', 'desc')->get(['id','nombre','codigo','fecha_inicio_lectura','fecha_fin_lectura']);
+        $ultimoPeriodo  = $periodos->first();
+        $periodoActivo  = null;
 
-        // Filtros
+        $query = Ordenesmtl::where('Estado', 4)->where('Critica', '!=', '54-NORMAL');
+
+        if ($request->filled('fecha_desde') || $request->filled('fecha_hasta')) {
+            // Rango de fechas manual — ignora periodo
+            if ($request->filled('fecha_desde')) {
+                $query->whereDate('fecha_de_ejecucion', '>=', $request->fecha_desde);
+            }
+            if ($request->filled('fecha_hasta')) {
+                $query->whereDate('fecha_de_ejecucion', '<=', $request->fecha_hasta);
+            }
+        } elseif ($request->filled('periodo_id')) {
+            $periodoActivo = $periodos->firstWhere('id', $request->periodo_id);
+            $query->where('periodo_lectura_id', $request->periodo_id);
+        } else {
+            // Por defecto: último período
+            $periodoActivo = $ultimoPeriodo;
+            if ($ultimoPeriodo) {
+                $query->where('periodo_lectura_id', $ultimoPeriodo->id);
+            }
+        }
+
+        // Filtros adicionales
         if ($request->filled('critica')) {
             $query->where('Critica', $request->critica);
         }
@@ -98,33 +121,23 @@ class RevisionController extends Controller
             });
         }
 
-        $criticas = $query->orderBy('id', 'desc')->paginate(30);
+        // Contadores antes de paginar
+        $totalCriticas = (clone $query)->count();
+        $totalMarcadas = (clone $query)->where('Coordenada', 'generar')->count();
 
-        // Valores unicos para filtro de critica
+        $criticas = $query->orderBy('id', 'desc')->paginate(30)->withQueryString();
+
+        // Tipos de crítica disponibles
         $tiposCritica = Ordenesmtl::where('Estado', 4)
-            ->whereNotNull('Critica')
-            ->where('Critica', '!=', '')
-            ->distinct()
-            ->pluck('Critica');
+            ->whereNotNull('Critica')->where('Critica', '!=', '')
+            ->distinct()->pluck('Critica');
 
-        // Contadores
-        $totalCriticas = Ordenesmtl::whereMonth('fecha_de_ejecucion', now()->month)
-                        ->whereYear('fecha_de_ejecucion', now()->year)
-                        ->where('Estado', 4)
-                        ->where('Critica', '!=', '54-NORMAL')
-                        ->count();
-       
-                        $totalMarcadas = Ordenesmtl::where([['Estado', 4],['Critica', '!=', '54-NORMAL']])
-                        ->where('Coordenada', 'generar')
-                        ->whereMonth('fecha_de_ejecucion', now()->month)
-                        ->whereYear('fecha_de_ejecucion', now()->year)
-                        ->count();
-
-        // Usuarios revisores para asignar
         $revisores = Usuario::orderBy('nombre')->pluck('nombre', 'id');
 
         return view('revisiones.criticas', compact(
-            'criticas', 'tiposCritica', 'revisores', 'totalCriticas', 'totalMarcadas'
+            'criticas', 'tiposCritica', 'revisores',
+            'totalCriticas', 'totalMarcadas',
+            'periodos', 'periodoActivo'
         ));
     }
 

@@ -95,40 +95,81 @@
             {{-- FILTROS --}}
             <div class="filtros-container">
                 <form method="GET" action="{{ route('revisiones.criticas') }}">
+
+                    {{-- Fila 1: Período y fechas --}}
+                    <div class="row" style="margin-bottom:8px;">
+                        <div class="col-md-4 col-sm-6" style="margin-bottom:8px;">
+                            <label style="font-size:.75rem;font-weight:700;color:#718096;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;display:block;">Período</label>
+                            <select name="periodo_id" class="form-control" id="selPeriodo" onchange="document.getElementById('fFechaDesde').value=''; document.getElementById('fFechaHasta').value='';">
+                                <option value="">— Todos los períodos —</option>
+                                @foreach($periodos as $p)
+                                    <option value="{{ $p->id }}"
+                                        {{ (request('periodo_id') == $p->id || (!request('periodo_id') && !request('fecha_desde') && !request('fecha_hasta') && $periodoActivo && $periodoActivo->id == $p->id)) ? 'selected' : '' }}>
+                                        {{ $p->nombre }} ({{ $p->codigo }})
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-2 col-sm-3" style="margin-bottom:8px;">
+                            <label style="font-size:.75rem;font-weight:700;color:#718096;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;display:block;">Fecha desde</label>
+                            <input type="date" id="fFechaDesde" name="fecha_desde" class="form-control" value="{{ request('fecha_desde') }}"
+                                onchange="document.getElementById('selPeriodo').value='';">
+                        </div>
+                        <div class="col-md-2 col-sm-3" style="margin-bottom:8px;">
+                            <label style="font-size:.75rem;font-weight:700;color:#718096;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;display:block;">Fecha hasta</label>
+                            <input type="date" id="fFechaHasta" name="fecha_hasta" class="form-control" value="{{ request('fecha_hasta') }}"
+                                onchange="document.getElementById('selPeriodo').value='';">
+                        </div>
+                        @if($periodoActivo)
+                        <div class="col-md-4 col-sm-6" style="margin-bottom:8px;display:flex;align-items:flex-end;">
+                            <small style="color:#718096;font-size:.78rem;">
+                                <i class="fa fa-calendar"></i>
+                                <strong>{{ $periodoActivo->nombre }}</strong>
+                                @if($periodoActivo->fecha_inicio_lectura && $periodoActivo->fecha_fin_lectura)
+                                    — {{ \Carbon\Carbon::parse($periodoActivo->fecha_inicio_lectura)->format('d/m/Y') }}
+                                    al {{ \Carbon\Carbon::parse($periodoActivo->fecha_fin_lectura)->format('d/m/Y') }}
+                                @endif
+                            </small>
+                        </div>
+                        @endif
+                    </div>
+
+                    {{-- Fila 2: Filtros adicionales --}}
                     <div class="row">
-                        <div class="col-md-2 col-sm-4" style="margin-bottom:10px;">
+                        <div class="col-md-2 col-sm-4" style="margin-bottom:8px;">
                             <select name="critica" class="form-control">
-                                <option value="">-- Tipo critica --</option>
+                                <option value="">-- Tipo crítica --</option>
                                 @foreach($tiposCritica as $tipo)
                                     <option value="{{ $tipo }}" {{ request('critica') == $tipo ? 'selected' : '' }}>{{ $tipo }}</option>
                                 @endforeach
                             </select>
                         </div>
-                        <div class="col-md-2 col-sm-4" style="margin-bottom:10px;">
+                        <div class="col-md-2 col-sm-4" style="margin-bottom:8px;">
                             <select name="marcadas" class="form-control">
                                 <option value="">-- Todas --</option>
                                 <option value="si" {{ request('marcadas') == 'si' ? 'selected' : '' }}>Marcadas</option>
                                 <option value="no" {{ request('marcadas') == 'no' ? 'selected' : '' }}>Sin marcar</option>
                             </select>
                         </div>
-                        <div class="col-md-1 col-sm-4" style="margin-bottom:10px;">
+                        <div class="col-md-1 col-sm-3" style="margin-bottom:8px;">
                             <input type="text" name="ciclo" class="form-control" placeholder="Ciclo" value="{{ request('ciclo') }}">
                         </div>
-                        <div class="col-md-1 col-sm-4" style="margin-bottom:10px;">
+                        <div class="col-md-1 col-sm-3" style="margin-bottom:8px;">
                             <input type="text" name="ruta" class="form-control" placeholder="Ruta" value="{{ request('ruta') }}">
                         </div>
-                        <div class="col-md-3 col-sm-6" style="margin-bottom:10px;">
+                        <div class="col-md-3 col-sm-6" style="margin-bottom:8px;">
                             <input type="text" name="buscar" class="form-control" placeholder="Buscar suscriptor, nombre..." value="{{ request('buscar') }}">
                         </div>
-                        <div class="col-md-3 col-sm-6" style="margin-bottom:10px;">
+                        <div class="col-md-3 col-sm-6" style="margin-bottom:8px;">
                             <button type="submit" class="btn" style="background:linear-gradient(135deg,#667eea,#764ba2); color:white; border:none; border-radius:10px; padding:10px 18px; font-weight:600; margin-right:5px;">
                                 <i class="fa fa-search"></i> Filtrar
                             </button>
-                            <a href="{{ route('revisiones.criticas') }}" class="btn" style="background:#e2e8f0; color:#4a5568; border:none; border-radius:10px; padding:10px 14px; font-weight:600;">
+                            <a href="{{ route('revisiones.criticas') }}" class="btn" style="background:#e2e8f0; color:#4a5568; border:none; border-radius:10px; padding:10px 14px; font-weight:600;" title="Limpiar filtros">
                                 <i class="fa fa-refresh"></i>
                             </a>
                         </div>
                     </div>
+
                 </form>
             </div>
 

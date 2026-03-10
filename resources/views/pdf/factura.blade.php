@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <title>Factura {{ $factura->numero_factura }}</title>
     <style>
-        @page { size: A4; margin: 0.8cm 1cm; }
+        @page { size: letter; margin: 0.7cm 1.1cm; }
         * { margin:0; padding:0; box-sizing:border-box; }
         body { font-family: Arial, sans-serif; font-size: 8.5px; color: #333; }
 

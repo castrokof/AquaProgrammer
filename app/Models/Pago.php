@@ -9,7 +9,8 @@ class Pago extends Model
     protected $table = 'pagos';
 
     protected $fillable = [
-        'factura_id', 'fecha_pago', 'numero_recibo', 'medio_pago',
+        'factura_id', 'fecha_pago', 'numero_recibo', 'medio_pago', 'banco',
+        'referencia_pasarela', 'estado_pasarela',
         'pagos_acueducto', 'pagos_alcantarillado',
         'pago_otros_cobros_acueducto', 'pago_otros_cobros_alcantarillado',
         'pago_conexion_acueducto', 'pago_conexion_alcantarillado',

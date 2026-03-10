@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Cliente;
+use App\Models\Empresa;
 use App\Models\Factura;
 use App\Models\Pago;
 use App\Models\PeriodoLectura;
@@ -369,11 +370,28 @@ public function exportarSeleccionadas(Request $request)
 
     public function registrarPago(Request $request, $id)
     {
-        $factura = Factura::findOrFail($id);
+        $factura = Factura::with('pagos')->findOrFail($id);
+
+        // Bloquear si la factura ya está totalmente pagada o anulada
+        if (in_array($factura->estado, ['PAGADA', 'ANULADA'])) {
+            return response()->json([
+                'ok'      => false,
+                'mensaje' => 'Esta factura ya se encuentra ' . $factura->estado . ' y no admite más pagos.',
+            ], 422);
+        }
+
+        $saldoActual = $factura->saldoPendiente();
+        if ($saldoActual <= 0) {
+            return response()->json([
+                'ok'      => false,
+                'mensaje' => 'El saldo de esta factura ya está en $0. No se requiere ningún pago adicional.',
+            ], 422);
+        }
 
         $request->validate([
             'fecha_pago'                       => 'required|date',
             'medio_pago'                       => 'required|in:EFECTIVO,TRANSFERENCIA,CONSIGNACION,DATAFONO,OTRO',
+            'banco'                            => 'nullable|string|max:100',
             'numero_recibo'                    => 'nullable|string|max:60',
             'pagos_acueducto'                  => 'nullable|numeric|min:0',
             'pagos_alcantarillado'             => 'nullable|numeric|min:0',
@@ -383,21 +401,27 @@ public function exportarSeleccionadas(Request $request)
         ]);
 
         $pago = new Pago($request->only([
-            'fecha_pago','medio_pago','numero_recibo',
+            'fecha_pago','medio_pago','banco','numero_recibo',
             'pagos_acueducto','pagos_alcantarillado',
             'pago_otros_cobros_acueducto','pago_otros_cobros_alcantarillado',
             'pago_conexion_acueducto','pago_conexion_alcantarillado','observaciones',
         ]));
+
+        // Banco solo aplica a TRANSFERENCIA / CONSIGNACION
+        if (!in_array($request->medio_pago, ['TRANSFERENCIA', 'CONSIGNACION'])) {
+            $pago->banco = null;
+        }
 
         $pago->factura_id = $factura->id;
         $pago->usuario_id = auth()->id();
         $pago->total_pago_realizado = $pago->calcularTotal();
         $pago->save();
 
+        $facturaFresh = $factura->fresh();
         return response()->json([
             'ok'      => true,
-            'saldo'   => $factura->fresh()->saldoPendiente(),
-            'estado'  => $factura->fresh()->estado,
+            'saldo'   => $facturaFresh->saldoPendiente(),
+            'estado'  => $facturaFresh->estado,
             'mensaje' => 'Pago registrado correctamente.',
         ]);
     }
@@ -508,6 +532,7 @@ public function exportarSeleccionadas(Request $request)
     {
         $request->validate([
             'periodo_lectura_id'    => 'required|exists:periodos_lectura,id',
+            'observaciones'         => 'nullable|string|max:500',
             'rows'                  => 'required|array|min:1|max:500',
             'rows.*.cliente_id'     => 'required|exists:clientes,id',
             'rows.*.consumo_m3'     => 'required|integer|min:0',
@@ -538,6 +563,9 @@ public function exportarSeleccionadas(Request $request)
                 );
                 $calculo['usuario_id']    = auth()->id();
                 $calculo['es_automatica'] = false;
+                if ($request->observaciones) {
+                    $calculo['observaciones'] = $request->observaciones;
+                }
 
                 $factura = Factura::create($calculo);
 
@@ -568,10 +596,11 @@ public function exportarSeleccionadas(Request $request)
 
     public function pdf($id)
     {
-        $factura = Factura::with(['cliente', 'pagos'])->findOrFail($id);
+        $factura  = Factura::with(['cliente', 'pagos', 'tarifaPeriodo'])->findOrFail($id);
         $facturas = collect([$factura]);
+        $empresa  = Empresa::instancia();
 
-        $pdf = PDF::loadView('facturacion.facturas.pdf', compact('facturas'))
+        $pdf = PDF::loadView('facturacion.facturas.pdf', compact('facturas', 'empresa'))
             ->setPaper('letter', 'portrait');
 
         return $pdf->download('factura-' . $factura->numero_factura . '.pdf');
@@ -586,7 +615,7 @@ public function exportarSeleccionadas(Request $request)
             'ids.*' => 'integer|exists:facturas,id',
         ]);
 
-        $facturas = Factura::with(['cliente', 'pagos'])
+        $facturas = Factura::with(['cliente', 'pagos', 'tarifaPeriodo'])
             ->whereIn('id', $request->ids)
             ->orderBy('periodo', 'desc')
             ->orderBy('numero_factura')
@@ -596,12 +625,13 @@ public function exportarSeleccionadas(Request $request)
             abort(404, 'No se encontraron facturas con los IDs indicados.');
         }
 
+        $empresa = Empresa::instancia();
         $periodo = $facturas->first()->periodo;
         $nombre  = count($request->ids) === 1
             ? 'factura-' . $facturas->first()->numero_factura . '.pdf'
             : 'facturas-' . $periodo . '-' . count($request->ids) . '.pdf';
 
-        $pdf = PDF::loadView('facturacion.facturas.pdf', compact('facturas'))
+        $pdf = PDF::loadView('facturacion.facturas.pdf', compact('facturas', 'empresa'))
             ->setPaper('letter', 'portrait');
 
         return $pdf->download($nombre);

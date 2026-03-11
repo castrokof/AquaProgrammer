@@ -106,13 +106,13 @@
                     <td>
                         @if($cobro->cliente)
                         <strong>{{ $cobro->cliente->suscriptor }}</strong>
-                        <br><span style="font-size:.75rem;color:#718096;">{{ Str::limit(trim($cobro->cliente->nombre . ' ' . $cobro->cliente->apellido), 22) }}</span>
+                        <br><span style="font-size:.75rem;color:#718096;">{{ \Illuminate\Support\Str::limit(trim($cobro->cliente->nombre . ' ' . $cobro->cliente->apellido), 22) }}</span>
                         @else
                         <span style="color:#a0aec0;">—</span>
                         @endif
                     </td>
                     <td>{{ optional($cobro->catalogo)->nombre ?? '—' }}</td>
-                    <td style="text-align:left;max-width:180px;">{{ Str::limit($cobro->concepto, 40) }}</td>
+                    <td style="text-align:left;max-width:180px;">{{ \Illuminate\Support\Str::limit($cobro->concepto, 40) }}</td>
                     <td>
                         <span style="font-size:.7rem;padding:3px 9px;border-radius:20px;font-weight:700;
                             background:{{ $cobro->tipo_servicio === 'ACUEDUCTO' ? '#e0f2fe' : '#fef3c7' }};
@@ -263,15 +263,16 @@
                         <textarea id="inpObservaciones" class="form-control" rows="2"
                                   placeholder="Opcional..." style="border-radius:10px;border:2px solid #e2e8f0;"></textarea>
                     </div>
+                     <button class="btn btn-secondary" data-dismiss="modal" style="border-radius:12px;">Cancelar</button>
+                <button class="btn btn-primary" id="btnGuardarCobro" style="border-radius:12px;font-weight:700;">
+                    <i class="fa fa-save"></i> Guardar Cobro
+                </button>
 
                 </div>
             </div>
 
             <div class="modal-footer" style="border-top:2px solid #e2e8f0;">
-                <button class="btn btn-secondary" data-dismiss="modal" style="border-radius:12px;">Cancelar</button>
-                <button class="btn btn-primary" id="btnGuardarCobro" style="border-radius:12px;font-weight:700;">
-                    <i class="fa fa-save"></i> Guardar Cobro
-                </button>
+               
             </div>
 
         </div>

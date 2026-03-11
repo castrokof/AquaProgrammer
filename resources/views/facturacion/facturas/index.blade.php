@@ -259,12 +259,13 @@
                     <textarea class="form-control" id="anularMotivo" rows="3" placeholder="Describa el motivo..."
                               style="border-radius:10px;border:2px solid #e2e8f0;"></textarea>
                 </div>
-            </div>
-            <div class="modal-footer" style="border-top:2px solid #e2e8f0;">
                 <button class="btn btn-secondary" data-dismiss="modal" style="border-radius:12px;">Cancelar</button>
                 <button class="btn btn-danger" id="btnConfirmarAnular" style="border-radius:12px;font-weight:700;">
                     <i class="fa fa-ban"></i> Anular
                 </button>
+            </div>
+            <div class="modal-footer" style="border-top:2px solid #e2e8f0;">
+                
             </div>
         </div>
     </div>
@@ -276,6 +277,15 @@
     <div id="idsContainer"></div>
 </form>
 
+@endsection
+@section('scriptsPlugins')
+<link href="{{asset("assets/$theme/plugins/datatables-bs4/css/dataTables.bootstrap4.css")}}" rel="stylesheet" type="text/css"/>   
+<script src="{{asset("assets/$theme/plugins/datatables/jquery.dataTables.js")}}" type="text/javascript"></script>
+<script src="{{asset("assets/$theme/plugins/datatables-bs4/js/dataTables.bootstrap4.js")}}" type="text/javascript"></script>
+<script src="{{asset("assets/$theme/plugins/select2/js/select2.full.min.js")}}" type="text/javascript"></script>
+<!-- <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap4.min.css">
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap4.min.js"></script> -->
 @endsection
 
 @section('scripts')
@@ -544,7 +554,7 @@ $(function () {
         if (!motivo) { alert('Digite el motivo'); return; }
 
         $.ajax({
-            url: '/facturacion/facturas/' + id + '/anular',
+            url: "{{ route('facturas.anular', ':id') }}".replace(':id', id),
             method: 'POST',
             data: { motivo: motivo, _token: CSRF },
             success: function (r) {

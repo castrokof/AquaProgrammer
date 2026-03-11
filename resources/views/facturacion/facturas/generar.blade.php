@@ -466,7 +466,8 @@ $('#btnGenerar').on('click', function () {
                         html: 'N° <b>' + r.factura_id + '</b> registrada correctamente.',
                         confirmButtonText: 'Ver factura'
                     }).then(function () {
-                        window.location = '/facturacion/facturas/' + r.factura_id;
+                        window.location = 
+                         "{{ route('facturas.show', ':id') }}".replace(':id', r.factura_id);
                     });
                 }
             },

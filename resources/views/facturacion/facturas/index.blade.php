@@ -209,33 +209,32 @@
             <table id="tblReporte" class="table" style="width:100%;font-size:.75rem;">
                 <thead>
                     <tr>
-                        <th rowspan="2">N° Factura</th>
-                        <th rowspan="2">Suscriptor</th>
-                        <th rowspan="2">Nombre</th>
-                        <th rowspan="2">Período</th>
-                        <th rowspan="2">Estrato</th>
-                        <th rowspan="2">m³</th>
-                        <th colspan="6" class="th-group" style="text-align:center;">ACUEDUCTO</th>
-                        <th colspan="6" class="th-group-al" style="text-align:center;">ALCANTARILLADO</th>
-                        <th rowspan="2">Otros Ac.</th>
-                        <th rowspan="2">Otros Al.</th>
-                        <th rowspan="2">Saldo Ant.</th>
-                        <th rowspan="2">Total a Pagar</th>
-                        <th rowspan="2">Estado</th>
-                    </tr>
-                    <tr>
-                        <th class="th-group">CF</th>
-                        <th class="th-group">C. Básico</th>
-                        <th class="th-group">C. Comp.</th>
-                        <th class="th-group">C. Sunt.</th>
-                        <th class="th-group">Subsidio</th>
-                        <th class="th-group">Total Ac.</th>
-                        <th class="th-group-al">CF</th>
-                        <th class="th-group-al">C. Básico</th>
-                        <th class="th-group-al">C. Comp.</th>
-                        <th class="th-group-al">C. Sunt.</th>
-                        <th class="th-group-al">Subsidio</th>
-                        <th class="th-group-al">Total Al.</th>
+                        <th>N° Factura</th>
+                        <th>Suscriptor</th>
+                        <th>Nombre</th>
+                        <th>Período</th>
+                        <th>Estrato</th>
+                        <th>m³</th>
+                        {{-- Acueducto --}}
+                        <th class="th-group">AC · CF</th>
+                        <th class="th-group">AC · Básico</th>
+                        <th class="th-group">AC · Comp.</th>
+                        <th class="th-group">AC · Sunt.</th>
+                        <th class="th-group">AC · Subsidio</th>
+                        <th class="th-group" style="border-right:3px solid #1a2e72;">AC · Total</th>
+                        {{-- Alcantarillado --}}
+                        <th class="th-group-al">AL · CF</th>
+                        <th class="th-group-al">AL · Básico</th>
+                        <th class="th-group-al">AL · Comp.</th>
+                        <th class="th-group-al">AL · Sunt.</th>
+                        <th class="th-group-al">AL · Subsidio</th>
+                        <th class="th-group-al" style="border-right:3px solid #155e4e;">AL · Total</th>
+                        {{-- Resumen --}}
+                        <th>Otros Ac.</th>
+                        <th>Otros Al.</th>
+                        <th>Saldo Ant.</th>
+                        <th style="background:#2e50e4;color:white;">Total Pagar</th>
+                        <th>Estado</th>
                     </tr>
                 </thead>
                 <tbody></tbody>

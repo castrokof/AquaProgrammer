@@ -382,9 +382,10 @@ public function exportarSeleccionadas(Request $request)
             'observaciones'      => 'nullable|string',
         ]);
 
-        // Verificar que no existe factura para este cliente en este período
+        // Verificar que no existe factura vigente (ANULADA permite re-facturar)
         $existe = Factura::where('cliente_id', $request->cliente_id)
             ->where('periodo_lectura_id', $request->periodo_lectura_id)
+            ->where('estado', '!=', 'ANULADA')
             ->exists();
 
         if ($existe) {
@@ -534,8 +535,10 @@ public function exportarSeleccionadas(Request $request)
 
         $periodo = PeriodoLectura::findOrFail($request->periodo_lectura_id);
 
-        // IDs de clientes que ya tienen factura en este período
+        // IDs de clientes que ya tienen factura vigente en este período
+        // (las ANULADAS no bloquean, se puede volver a facturar)
         $yaFacturados = Factura::where('periodo_lectura_id', $periodo->id)
+            ->where('estado', '!=', 'ANULADA')
             ->pluck('cliente_id')->toArray();
 
         // Clientes activos sin factura aún
@@ -663,9 +666,10 @@ public function exportarSeleccionadas(Request $request)
         \DB::beginTransaction();
         try {
             foreach ($request->rows as $row) {
-                // Saltar si ya existe factura
+                // Saltar si ya existe factura vigente (ANULADA permite re-facturar)
                 $existe = Factura::where('cliente_id', $row['cliente_id'])
                     ->where('periodo_lectura_id', $periodo->id)
+                    ->where('estado', '!=', 'ANULADA')
                     ->exists();
                 if ($existe) { continue; }
 

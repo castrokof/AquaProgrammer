@@ -23,6 +23,74 @@ use Illuminate\Support\Facades\DB;
 class RevisionController extends Controller
 {
     // ========================================
+    // TABLERO DE CONTROL
+    // ========================================
+
+    /**
+     * GET /revisiones/tablero
+     */
+    public function tablero(Request $request)
+    {
+        $query = OrdenRevision::query();
+
+        if ($request->filled('motivo'))      $query->where('motivo_revision', $request->motivo);
+        if ($request->filled('usuario_id'))  $query->where('usuario_id', $request->usuario_id);
+        if ($request->filled('fecha_desde')) $query->whereDate('created_at', '>=', $request->fecha_desde);
+        if ($request->filled('fecha_hasta')) $query->whereDate('created_at', '<=', $request->fecha_hasta);
+
+        // ── KPIs globales ──────────────────────────────────────────────────────
+        $total      = (clone $query)->count();
+        $ejecutadas = (clone $query)->where('estado_orden', 'EJECUTADO')->count();
+        $pendientes = (clone $query)->where('estado_orden', 'PENDIENTE')->count();
+        $porcentaje = $total > 0 ? round(($ejecutadas / $total) * 100, 1) : 0;
+
+        // ── Resumen por revisor ────────────────────────────────────────────────
+        $porUsuario = (clone $query)
+            ->select(
+                'usuario_id',
+                DB::raw('COUNT(*) as total'),
+                DB::raw("SUM(CASE WHEN estado_orden='EJECUTADO' THEN 1 ELSE 0 END) as ejecutadas"),
+                DB::raw("SUM(CASE WHEN estado_orden='PENDIENTE' THEN 1 ELSE 0 END) as pendientes"),
+                DB::raw('SUM((SELECT COUNT(*) FROM revision_fotos rf WHERE rf.orden_revision_id = ordenes_revision.id)) as total_fotos')
+            )
+            ->with('usuario')
+            ->groupBy('usuario_id')
+            ->orderByDesc('total')
+            ->get();
+
+        // ── Resumen por motivo ─────────────────────────────────────────────────
+        $porMotivo = (clone $query)
+            ->select(
+                'motivo_revision',
+                DB::raw('COUNT(*) as total'),
+                DB::raw("SUM(CASE WHEN estado_orden='EJECUTADO' THEN 1 ELSE 0 END) as ejecutadas"),
+                DB::raw("SUM(CASE WHEN estado_orden='PENDIENTE' THEN 1 ELSE 0 END) as pendientes")
+            )
+            ->groupBy('motivo_revision')
+            ->orderByDesc('total')
+            ->get();
+
+        // ── Resumen por estado_acometida (campo de ejecución) ─────────────────
+        $porAcometida = OrdenRevision::where('estado_orden', 'EJECUTADO')
+            ->when($request->filled('motivo'),      fn($q) => $q->where('motivo_revision', $request->motivo))
+            ->when($request->filled('usuario_id'),  fn($q) => $q->where('usuario_id', $request->usuario_id))
+            ->when($request->filled('fecha_desde'), fn($q) => $q->whereDate('created_at', '>=', $request->fecha_desde))
+            ->when($request->filled('fecha_hasta'), fn($q) => $q->whereDate('created_at', '<=', $request->fecha_hasta))
+            ->select('estado_acometida', DB::raw('COUNT(*) as cnt'))
+            ->whereNotNull('estado_acometida')
+            ->groupBy('estado_acometida')
+            ->orderByDesc('cnt')
+            ->get();
+
+        $usuarios = Usuario::orderBy('nombre')->pluck('nombre', 'id');
+
+        return view('revisiones.tablero', compact(
+            'total', 'ejecutadas', 'pendientes', 'porcentaje',
+            'porUsuario', 'porMotivo', 'porAcometida', 'usuarios'
+        ));
+    }
+
+    // ========================================
     // LISTADO DE ORDENES DE REVISION
     // ========================================
 

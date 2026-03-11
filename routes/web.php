@@ -142,6 +142,10 @@ Route::group(['middleware' => 'auth'], function () {
 
 Route::group(['middleware' => 'auth'], function () {
 
+    // Tablero de control de revisiones
+    Route::get('revisiones/tablero', 'RevisionController@tablero')
+        ->name('revisiones.tablero');
+
     // Vista de criticas (supervisor ve lecturas con Estado=4)
     Route::get('revisiones/criticas', 'RevisionController@criticas')
         ->name('revisiones.criticas');

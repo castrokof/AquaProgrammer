@@ -202,6 +202,33 @@ body { font-family: 'DejaVu Sans', 'Arial', sans-serif; font-size: 7pt; color: #
             </tr>
         </table>
         </div>
+        {{-- Caja de pago destacada --}}
+        <div style="margin:4px 6px 5px 6px;border:2px solid #2e50e4;border-radius:3px;overflow:hidden;">
+            <div style="background:#2e50e4;color:white;font-weight:700;font-size:7pt;padding:3px 7px;text-transform:uppercase;letter-spacing:.4px;">
+                Información de Pago
+            </div>
+            <table style="width:100%;border-collapse:collapse;">
+                <tr>
+                    <td style="padding:4px 7px;vertical-align:middle;width:55%;border-right:1px solid #d1d5db;">
+                        <div style="font-size:6pt;color:#6b7280;text-transform:uppercase;letter-spacing:.3px;">Total a Pagar</div>
+                        <div style="font-size:14pt;font-weight:bold;color:#2e50e4;line-height:1.1;">{{ $nf($factura->total_a_pagar) }}</div>
+                        @if($factura->saldo_anterior > 0)
+                        <div style="font-size:6pt;color:#dc2626;">Incluye saldo ant. {{ $nf($factura->saldo_anterior) }}</div>
+                        @endif
+                    </td>
+                    <td style="padding:4px 7px;vertical-align:middle;font-size:6.5pt;">
+                        <div style="margin-bottom:3px;">
+                            <span style="font-weight:700;color:#374151;display:block;font-size:6pt;text-transform:uppercase;">Pague antes de</span>
+                            <span style="font-size:8pt;font-weight:700;color:#166534;">{{ $fmtF($factura->fecha_vencimiento) }}</span>
+                        </div>
+                        <div style="border-top:1px solid #e5e7eb;padding-top:3px;">
+                            <span style="font-weight:700;color:#374151;display:block;font-size:6pt;text-transform:uppercase;">Fecha de corte</span>
+                            <span style="font-size:8pt;font-weight:700;color:#b45309;">{{ $fmtF($factura->fecha_corte) }}</span>
+                        </div>
+                    </td>
+                </tr>
+            </table>
+        </div>
     </td>
 </tr>
 </table>
@@ -459,37 +486,44 @@ body { font-family: 'DejaVu Sans', 'Arial', sans-serif; font-size: 7pt; color: #
         </tfoot>
     </table>
 
-    {{-- Últimos 6 consumos (barras SVG) --}}
+    {{-- Últimos 6 consumos (barras HTML — DomPDF compatible) --}}
     <div style="margin-top:4px;border:1px solid #bbb;padding:3px 5px;border-radius:0;">
         <div class="barras-title">Últimos 6 consumos + actual (m³)</div>
         @php
             $labels = ['M-6','M-5','M-4','M-3','M-2','M-1','Actual'];
-            $barW   = 18;
-            $barGap = 5;
             $chartH = 38;
-            $svgW   = count($consumos) * ($barW + $barGap) + $barGap;
         @endphp
-        <svg width="{{ $svgW }}" height="{{ $chartH + 16 }}" xmlns="http://www.w3.org/2000/svg">
-        @foreach($consumos as $i => $val)
-            @php
-                $v        = (int)($val ?? 0);
-                $barH     = $v > 0 ? max(3, round($v / $maxConsumo * $chartH)) : 2;
-                $x        = $barGap + $i * ($barW + $barGap);
-                $y        = $chartH - $barH;
-                $isActual = ($i === count($consumos) - 1);
-                $color    = $isActual ? '#2e50e4' : '#93c5fd';
-            @endphp
-            <rect x="{{ $x }}" y="{{ $y }}" width="{{ $barW }}" height="{{ $barH }}"
-                  fill="{{ $color }}" rx="2"/>
-            <text x="{{ $x + $barW/2 }}" y="{{ max($y - 1, 6) }}" text-anchor="middle"
-                  font-size="5" fill="#374151">{{ $v > 0 ? $v : '' }}</text>
-            <text x="{{ $x + $barW/2 }}" y="{{ $chartH + 11 }}" text-anchor="middle"
-                  font-size="5" fill="{{ $isActual ? '#2e50e4' : '#6b7280' }}"
-                  font-weight="{{ $isActual ? 'bold' : 'normal' }}">{{ $labels[$i] }}</text>
-        @endforeach
-        <line x1="0" y1="{{ $chartH }}" x2="{{ $svgW }}" y2="{{ $chartH }}"
-              stroke="#ccc" stroke-width="1"/>
-        </svg>
+        <table style="width:100%;border-collapse:collapse;table-layout:fixed;">
+            {{-- Fila: valores --}}
+            <tr>
+                @foreach($consumos as $i => $val)
+                @php $v = (int)($val ?? 0); @endphp
+                <td style="text-align:center;font-size:5pt;vertical-align:bottom;padding:0 1px;height:10px;border:none;">{{ $v > 0 ? $v : '' }}</td>
+                @endforeach
+            </tr>
+            {{-- Fila: barras --}}
+            <tr>
+                @foreach($consumos as $i => $val)
+                @php
+                    $v        = (int)($val ?? 0);
+                    $barH     = $v > 0 ? max(3, (int)round($v / $maxConsumo * $chartH)) : 2;
+                    $spH      = $chartH - $barH;
+                    $isActual = ($i === count($consumos) - 1);
+                    $color    = $isActual ? '#2e50e4' : '#93c5fd';
+                @endphp
+                <td style="vertical-align:bottom;padding:0 1px;height:{{ $chartH }}px;border:none;border-bottom:1px solid #ccc;">
+                    <div style="height:{{ $barH }}px;background:{{ $color }};border-radius:2px 2px 0 0;"></div>
+                </td>
+                @endforeach
+            </tr>
+            {{-- Fila: etiquetas --}}
+            <tr>
+                @foreach($labels as $i => $lbl)
+                @php $isActual = ($i === count($labels) - 1); @endphp
+                <td style="text-align:center;font-size:5pt;padding:1px 0 0;border:none;color:{{ $isActual ? '#2e50e4' : '#6b7280' }};font-weight:{{ $isActual ? 'bold' : 'normal' }};">{{ $lbl }}</td>
+                @endforeach
+            </tr>
+        </table>
     </div>
 
 </td>

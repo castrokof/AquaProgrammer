@@ -51,7 +51,7 @@ class RevisionController extends Controller
                 DB::raw('COUNT(*) as total'),
                 DB::raw("SUM(CASE WHEN estado_orden='EJECUTADO' THEN 1 ELSE 0 END) as ejecutadas"),
                 DB::raw("SUM(CASE WHEN estado_orden='PENDIENTE' THEN 1 ELSE 0 END) as pendientes"),
-                DB::raw('SUM((SELECT COUNT(*) FROM revision_fotos rf WHERE rf.orden_revision_id = ordenes_revision.id)) as total_fotos')
+                DB::raw('SUM((SELECT COUNT(*) FROM revision_fotos rf WHERE rf.revision_id = ordenes_revision.id)) as total_fotos')
             )
             ->with('usuario')
             ->groupBy('usuario_id')

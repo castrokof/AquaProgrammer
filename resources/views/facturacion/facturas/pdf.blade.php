@@ -202,6 +202,33 @@ body { font-family: 'DejaVu Sans', 'Arial', sans-serif; font-size: 7pt; color: #
             </tr>
         </table>
         </div>
+        {{-- Caja de pago destacada --}}
+        <div style="margin:4px 6px 5px 6px;border:2px solid #2e50e4;border-radius:3px;overflow:hidden;">
+            <div style="background:#2e50e4;color:white;font-weight:700;font-size:7pt;padding:3px 7px;text-transform:uppercase;letter-spacing:.4px;">
+                Información de Pago
+            </div>
+            <table style="width:100%;border-collapse:collapse;">
+                <tr>
+                    <td style="padding:4px 7px;vertical-align:middle;width:55%;border-right:1px solid #d1d5db;">
+                        <div style="font-size:6pt;color:#6b7280;text-transform:uppercase;letter-spacing:.3px;">Total a Pagar</div>
+                        <div style="font-size:14pt;font-weight:bold;color:#2e50e4;line-height:1.1;">{{ $nf($factura->total_a_pagar) }}</div>
+                        @if($factura->saldo_anterior > 0)
+                        <div style="font-size:6pt;color:#dc2626;">Incluye saldo ant. {{ $nf($factura->saldo_anterior) }}</div>
+                        @endif
+                    </td>
+                    <td style="padding:4px 7px;vertical-align:middle;font-size:6.5pt;">
+                        <div style="margin-bottom:3px;">
+                            <span style="font-weight:700;color:#374151;display:block;font-size:6pt;text-transform:uppercase;">Pague antes de</span>
+                            <span style="font-size:8pt;font-weight:700;color:#166534;">{{ $fmtF($factura->fecha_vencimiento) }}</span>
+                        </div>
+                        <div style="border-top:1px solid #e5e7eb;padding-top:3px;">
+                            <span style="font-weight:700;color:#374151;display:block;font-size:6pt;text-transform:uppercase;">Fecha de corte</span>
+                            <span style="font-size:8pt;font-weight:700;color:#b45309;">{{ $fmtF($factura->fecha_corte) }}</span>
+                        </div>
+                    </td>
+                </tr>
+            </table>
+        </div>
     </td>
 </tr>
 </table>

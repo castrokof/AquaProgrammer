@@ -146,6 +146,10 @@ Route::group(['middleware' => 'auth'], function () {
     Route::get('revisiones/tablero', 'RevisionController@tablero')
         ->name('revisiones.tablero');
 
+    // Posicionamiento GPS de revisiones
+    Route::get('revisiones/posicionamiento', 'RevisionController@posicionamiento')
+        ->name('revisiones.posicionamiento');
+
     // Vista de criticas (supervisor ve lecturas con Estado=4)
     Route::get('revisiones/criticas', 'RevisionController@criticas')
         ->name('revisiones.criticas');

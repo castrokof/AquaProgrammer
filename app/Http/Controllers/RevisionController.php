@@ -106,6 +106,64 @@ class RevisionController extends Controller
     }
 
     // ========================================
+    // POSICIONAMIENTO GPS DE REVISIONES
+    // ========================================
+
+    /**
+     * GET /revisiones/posicionamiento
+     * Sin parámetros  → vista
+     * Con ?ajax=1     → JSON con coordenadas
+     */
+    public function posicionamiento(Request $request)
+    {
+        if ($request->ajax()) {
+            $query = OrdenRevision::with(['usuario', 'fotos'])
+                ->where('estado_orden', 'EJECUTADO')
+                ->whereNotNull('gps_latitud_predio')
+                ->whereNotNull('gps_longitud_predio')
+                ->where('gps_latitud_predio', '!=', 0)
+                ->where('gps_longitud_predio', '!=', 0);
+
+            if ($request->filled('periodo_id')) {
+                $query->whereHas('lectura', fn($q) =>
+                    $q->where('periodo_lectura_id', $request->periodo_id)
+                );
+            }
+
+            if ($request->filled('usuario_id')) {
+                $query->where('usuario_id', $request->usuario_id);
+            }
+
+            $revisiones = $query->orderBy('fecha_ejecucion')->get()->map(function ($r) {
+                return [
+                    'id'                  => $r->id,
+                    'codigo_predio'       => $r->codigo_predio,
+                    'nombre_suscriptor'   => $r->nombre_suscriptor,
+                    'direccion'           => $r->direccion,
+                    'ref_medidor'         => $r->ref_medidor,
+                    'motivo_revision'     => $r->motivo_revision,
+                    'estado_acometida'    => $r->estado_acometida,
+                    'lectura_actual'      => $r->lectura_actual,
+                    'lectura_anterior'    => $r->lectura_anterior,
+                    'consumo_actual'      => $r->consumo_actual,
+                    'fecha_ejecucion'     => $r->fecha_ejecucion,
+                    'gps_latitud_predio'  => $r->gps_latitud_predio,
+                    'gps_longitud_predio' => $r->gps_longitud_predio,
+                    'revisor'             => $r->usuario ? $r->usuario->nombre : null,
+                    'foto'                => $r->fotos->first() ? $r->fotos->first()->ruta_foto : null,
+                ];
+            });
+
+            return response()->json($revisiones);
+        }
+
+        $periodos = PeriodoLectura::orderBy('id', 'desc')->get(['id', 'nombre', 'fecha_inicio_lectura']);
+        $usuarios = Usuario::orderBy('nombre')->pluck('nombre', 'id');
+
+        return view('revisiones.posicionamiento', compact('periodos', 'usuarios'));
+    }
+
+    // ========================================
     // LISTADO DE ORDENES DE REVISION
     // ========================================
 

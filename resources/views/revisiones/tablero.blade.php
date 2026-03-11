@@ -110,10 +110,42 @@
         </div>
         <div class="card-body" style="padding:20px 28px;">
 
+            {{-- ── Periodo activo ── --}}
+            @if($periodoActivo)
+            <div style="margin-bottom:12px;padding:8px 16px;background:linear-gradient(135deg,rgba(102,126,234,0.1),rgba(118,75,162,0.1));border-radius:12px;border-left:4px solid #667eea;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                <i class="fa fa-calendar-check" style="color:#667eea;"></i>
+                <span style="font-weight:700;color:#2d3748;font-size:.88rem;">Periodo:</span>
+                <span style="color:#667eea;font-weight:600;font-size:.88rem;">{{ $periodoActivo->nombre }}</span>
+                @if($periodoActivo->fecha_inicio_lectura && $periodoActivo->fecha_fin_lectura)
+                    <span style="color:#718096;font-size:.8rem;">
+                        ({{ \Carbon\Carbon::parse($periodoActivo->fecha_inicio_lectura)->format('d/m/Y') }}
+                        — {{ \Carbon\Carbon::parse($periodoActivo->fecha_fin_lectura)->format('d/m/Y') }})
+                    </span>
+                @endif
+            </div>
+            @endif
+
             {{-- ── Filtros ── --}}
             <div class="filtros-container">
-                <form method="GET" action="{{ route('revisiones.tablero') }}">
+                <form method="GET" action="{{ route('revisiones.tablero') }}" id="frmFiltros">
                     <div class="row">
+                        {{-- Periodo --}}
+                        <div class="col-md-3 col-sm-6" style="margin-bottom:10px;">
+                            <label style="font-weight:600;font-size:.78rem;color:#4a5568;text-transform:uppercase;">Periodo</label>
+                            <select name="periodo_id" id="selPeriodo" class="form-control">
+                                <option value="">— Rango manual —</option>
+                                @foreach($periodos as $p)
+                                    <option value="{{ $p->id }}"
+                                        {{ request('periodo_id') == $p->id || (!request()->hasAny(['periodo_id','fecha_desde','fecha_hasta']) && $periodoActivo && $periodoActivo->id == $p->id) ? 'selected' : '' }}>
+                                        {{ $p->nombre }}
+                                        @if($p->fecha_inicio_lectura)
+                                            ({{ \Carbon\Carbon::parse($p->fecha_inicio_lectura)->format('M Y') }})
+                                        @endif
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        {{-- Motivo --}}
                         <div class="col-md-2 col-sm-6" style="margin-bottom:10px;">
                             <label style="font-weight:600;font-size:.78rem;color:#4a5568;text-transform:uppercase;">Motivo</label>
                             <select name="motivo" class="form-control">
@@ -123,6 +155,7 @@
                                 <option value="OTRO"             {{ request('motivo')=='OTRO'             ? 'selected':'' }}>Otro</option>
                             </select>
                         </div>
+                        {{-- Revisor --}}
                         <div class="col-md-2 col-sm-6" style="margin-bottom:10px;">
                             <label style="font-weight:600;font-size:.78rem;color:#4a5568;text-transform:uppercase;">Revisor</label>
                             <select name="usuario_id" class="form-control">
@@ -132,13 +165,16 @@
                                 @endforeach
                             </select>
                         </div>
-                        <div class="col-md-2 col-sm-6" style="margin-bottom:10px;">
-                            <label style="font-weight:600;font-size:.78rem;color:#4a5568;text-transform:uppercase;">Desde</label>
-                            <input type="date" name="fecha_desde" class="form-control" value="{{ request('fecha_desde') }}">
-                        </div>
-                        <div class="col-md-2 col-sm-6" style="margin-bottom:10px;">
-                            <label style="font-weight:600;font-size:.78rem;color:#4a5568;text-transform:uppercase;">Hasta</label>
-                            <input type="date" name="fecha_hasta" class="form-control" value="{{ request('fecha_hasta') }}">
+                        {{-- Fechas (solo cuando no se usa periodo) --}}
+                        <div id="divFechas" class="col-md-3 col-sm-6" style="margin-bottom:10px;display:flex;gap:8px;">
+                            <div style="flex:1;">
+                                <label style="font-weight:600;font-size:.78rem;color:#4a5568;text-transform:uppercase;">Desde</label>
+                                <input type="date" name="fecha_desde" id="inpDesde" class="form-control" value="{{ request('fecha_desde') }}">
+                            </div>
+                            <div style="flex:1;">
+                                <label style="font-weight:600;font-size:.78rem;color:#4a5568;text-transform:uppercase;">Hasta</label>
+                                <input type="date" name="fecha_hasta" id="inpHasta" class="form-control" value="{{ request('fecha_hasta') }}">
+                            </div>
                         </div>
                         <div class="col-md-2 col-sm-6" style="margin-bottom:10px;display:flex;align-items:flex-end;gap:6px;">
                             <button type="submit" class="btn btn-sm" style="background:linear-gradient(135deg,#667eea,#764ba2);color:white;border:none;border-radius:10px;padding:10px 18px;font-weight:600;">
@@ -333,6 +369,21 @@
 <script src="{{ asset("assets/$theme/plugins/datatables-bs4/js/dataTables.bootstrap4.js") }}" type="text/javascript"></script>
 <script>
 var idioma = {"sProcessing":"Procesando...","sLengthMenu":"Mostrar _MENU_ registros","sZeroRecords":"Sin resultados","sEmptyTable":"Sin datos","sInfo":"_START_-_END_ de _TOTAL_","sInfoEmpty":"0 registros","sInfoFiltered":"(de _MAX_)","sSearch":"Buscar:","sLoadingRecords":"Cargando...","oPaginate":{"sFirst":"Primero","sLast":"Último","sNext":"Sig.","sPrevious":"Ant."}};
+
+// ── Periodo vs Fechas ──────────────────────────────────────
+function toggleFechas() {
+    var usaPeriodo = $('#selPeriodo').val() !== '';
+    if (usaPeriodo) {
+        $('#inpDesde, #inpHasta').val('').prop('disabled', true);
+        $('#divFechas').css('opacity', '0.4');
+    } else {
+        $('#inpDesde, #inpHasta').prop('disabled', false);
+        $('#divFechas').css('opacity', '1');
+    }
+}
+$('#selPeriodo').on('change', toggleFechas);
+// Al inicio
+toggleFechas();
 
 $(document).ready(function() {
     $('#tblRevisores').DataTable({

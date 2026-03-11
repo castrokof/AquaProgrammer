@@ -64,6 +64,13 @@ class RevisionesMenuSeeder extends Seeder
                 'orden'  => 3,
                 'roles'  => ['administrador', 'supervisor'],
             ],
+            [
+                'nombre' => 'Posicionamiento GPS',
+                'url'    => 'revisiones/posicionamiento',
+                'icono'  => 'fas fa-map-marked-alt',
+                'orden'  => 4,
+                'roles'  => ['administrador', 'supervisor'],
+            ],
         ];
 
         $idsPorNombre = [];

@@ -8,6 +8,8 @@ use App\Models\TarifaPeriodo;
 use App\Models\ClienteHistoricoConsumo;
 use App\Models\ClienteOtrosCobro;
 use App\Models\Factura;
+use App\Models\OrdenRevision;
+use App\Models\Admin\Ordenesmtl;
 use Carbon\Carbon;
 
 class FacturacionService
@@ -68,10 +70,66 @@ class FacturacionService
 
         // ── Historial de consumo (6 meses) ───────────────────────────────────
         $historial = ClienteHistoricoConsumo::promedioYDetalle($cliente->id, 6);
+        $promedio  = $historial['promedio'];
         $meses     = array_column($historial['meses'], 'consumo_m3');
+
+        // Fallback: si no hay historial en cliente_historico_consumos, usar
+        // consumos reales de periodos anteriores en ordenescu.
+        if (empty($meses) && $cliente->tiene_medidor) {
+            $prevConsumos = Ordenesmtl::where('Suscriptor', $cliente->suscriptor)
+                ->where('Estado', 4)
+                ->whereNotNull('Cons_Act')
+                ->where('Cons_Act', '>', 0)
+                ->whereRaw('CAST(Periodo AS UNSIGNED) < ?', [(int) $periodo->codigo])
+                ->orderByRaw('CAST(Periodo AS UNSIGNED) DESC')
+                ->limit(6)
+                ->pluck('Cons_Act')
+                ->toArray();
+
+            if (!empty($prevConsumos)) {
+                $promedio = round(array_sum($prevConsumos) / count($prevConsumos), 2);
+                $meses    = $prevConsumos;
+                \Illuminate\Support\Facades\Log::info('Historial obtenido desde ordenescu (fallback)', [
+                    'suscriptor' => $cliente->suscriptor,
+                    'meses'      => $meses,
+                    'promedio'   => $promedio,
+                ]);
+            }
+        }
+
+        // Override: si existe una orden de revisión EJECUTADA con nueva_lectura
+        // para este período y esa lectura es menor a la original, se usa para
+        // facturar (siempre que el consumo resultante sea razonable).
+        if ($cliente->tiene_medidor && !is_null($lecturaActual) && !is_null($lecturaAnterior)) {
+            $revision = OrdenRevision::where('codigo_predio', $cliente->suscriptor)
+                ->where('estado_orden', 'EJECUTADO')
+                ->whereNotNull('nueva_lectura')
+                ->whereHas('lectura', fn($q) => $q->where('periodo_lectura_id', $periodo->id))
+                ->latest('id')
+                ->first();
+
+            if ($revision && $revision->nueva_lectura < $lecturaActual) {
+                $consumoRevision = max(0, $revision->nueva_lectura - $lecturaAnterior);
+                // Aceptar si el consumo es no negativo y está dentro del doble del promedio
+                // (si no hay promedio, se acepta sin límite superior)
+                $limiteAceptable = $promedio > 0 ? $promedio * 2 : PHP_INT_MAX;
+                if ($consumoRevision <= $limiteAceptable) {
+                    \Illuminate\Support\Facades\Log::info('Lectura de revisión aplicada', [
+                        'suscriptor'       => $cliente->suscriptor,
+                        'lectura_original' => $lecturaActual,
+                        'nueva_lectura'    => $revision->nueva_lectura,
+                        'consumo_original' => $consumoM3,
+                        'consumo_revision' => $consumoRevision,
+                        'promedio'         => $promedio,
+                    ]);
+                    $lecturaActual = $revision->nueva_lectura;
+                    $consumoM3     = $consumoRevision;
+                }
+            }
+        }
+
         while (count($meses) < 6) $meses[] = null;
         [$m1,$m2,$m3,$m4,$m5,$m6] = $meses;
-        $promedio  = $historial['promedio'];
 
         // ── Acueducto ─────────────────────────────────────────────────────────
         $acueducto = $this->calcularServicio(

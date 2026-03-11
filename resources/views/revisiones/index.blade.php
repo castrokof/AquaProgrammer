@@ -64,6 +64,9 @@
     <div class="modern-card">
         <div class="card-header">
             <h3><i class="fa fa-clipboard"></i> Ordenes de Revision</h3>
+            <a href="{{ route('revisiones.tablero') }}" class="btn" style="background:rgba(255,255,255,0.2); color:white; border:2px solid rgba(255,255,255,0.4); border-radius:10px; padding:8px 18px; font-weight:600;">
+                <i class="fa fa-tachometer-alt"></i> Tablero
+            </a>
             <a href="{{ route('revisiones.criticas') }}" class="btn" style="background:rgba(255,255,255,0.2); color:white; border:2px solid rgba(255,255,255,0.4); border-radius:10px; padding:8px 18px; font-weight:600;">
                 <i class="fa fa-exclamation-triangle"></i> Ver Criticas / Generar Nuevas
             </a>

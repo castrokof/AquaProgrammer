@@ -31,12 +31,29 @@ class RevisionController extends Controller
      */
     public function tablero(Request $request)
     {
+        $periodos      = PeriodoLectura::orderBy('id', 'desc')->get(['id', 'nombre', 'codigo', 'fecha_inicio_lectura', 'fecha_fin_lectura']);
+        $ultimoPeriodo = $periodos->first();
+        $periodoActivo = null;
+
         $query = OrdenRevision::query();
 
-        if ($request->filled('motivo'))      $query->where('motivo_revision', $request->motivo);
-        if ($request->filled('usuario_id'))  $query->where('usuario_id', $request->usuario_id);
-        if ($request->filled('fecha_desde')) $query->whereDate('created_at', '>=', $request->fecha_desde);
-        if ($request->filled('fecha_hasta')) $query->whereDate('created_at', '<=', $request->fecha_hasta);
+        if ($request->filled('motivo'))     $query->where('motivo_revision', $request->motivo);
+        if ($request->filled('usuario_id')) $query->where('usuario_id', $request->usuario_id);
+
+        // Prioridad de filtro temporal: 1) rango manual  2) periodo  3) último periodo por defecto
+        if ($request->filled('fecha_desde') || $request->filled('fecha_hasta')) {
+            if ($request->filled('fecha_desde')) $query->whereDate('created_at', '>=', $request->fecha_desde);
+            if ($request->filled('fecha_hasta')) $query->whereDate('created_at', '<=', $request->fecha_hasta);
+        } elseif ($request->filled('periodo_id')) {
+            $periodoActivo = $periodos->firstWhere('id', $request->periodo_id);
+            $query->whereHas('lectura', fn($q) => $q->where('periodo_lectura_id', $request->periodo_id));
+        } else {
+            // Por defecto: último periodo
+            $periodoActivo = $ultimoPeriodo;
+            if ($ultimoPeriodo) {
+                $query->whereHas('lectura', fn($q) => $q->where('periodo_lectura_id', $ultimoPeriodo->id));
+            }
+        }
 
         // ── KPIs globales ──────────────────────────────────────────────────────
         $total      = (clone $query)->count();
@@ -71,11 +88,8 @@ class RevisionController extends Controller
             ->get();
 
         // ── Resumen por estado_acometida (campo de ejecución) ─────────────────
-        $porAcometida = OrdenRevision::where('estado_orden', 'EJECUTADO')
-            ->when($request->filled('motivo'),      fn($q) => $q->where('motivo_revision', $request->motivo))
-            ->when($request->filled('usuario_id'),  fn($q) => $q->where('usuario_id', $request->usuario_id))
-            ->when($request->filled('fecha_desde'), fn($q) => $q->whereDate('created_at', '>=', $request->fecha_desde))
-            ->when($request->filled('fecha_hasta'), fn($q) => $q->whereDate('created_at', '<=', $request->fecha_hasta))
+        $porAcometida = (clone $query)
+            ->where('estado_orden', 'EJECUTADO')
             ->select('estado_acometida', DB::raw('COUNT(*) as cnt'))
             ->whereNotNull('estado_acometida')
             ->groupBy('estado_acometida')
@@ -86,7 +100,8 @@ class RevisionController extends Controller
 
         return view('revisiones.tablero', compact(
             'total', 'ejecutadas', 'pendientes', 'porcentaje',
-            'porUsuario', 'porMotivo', 'porAcometida', 'usuarios'
+            'porUsuario', 'porMotivo', 'porAcometida', 'usuarios',
+            'periodos', 'periodoActivo'
         ));
     }
 

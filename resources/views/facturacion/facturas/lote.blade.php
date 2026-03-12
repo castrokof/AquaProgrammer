@@ -141,16 +141,29 @@ label.lbl { font-weight:600; color:#4a5568; font-size:.8rem; text-transform:uppe
 
         <div style="background:white;border-radius:14px;padding:16px 20px;box-shadow:0 4px 15px rgba(0,0,0,.06);">
 
-            {{-- Toolbar: buscador + filtro observación + botones selección --}}
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:10px;">
-                <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
-                    <input type="text" id="buscarTabla" class="form-control form-control-gen" style="width:240px;"
-                           placeholder="Buscar suscriptor, nombre, sector...">
-                    <select id="filtroObs" class="form-control form-control-gen">
+            {{-- Toolbar: filtros + checkbox + botones selección --}}
+            <div style="margin-bottom:12px;">
+                <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px;">
+                    <input type="text" id="buscarTabla" class="form-control form-control-gen" style="width:190px;"
+                           placeholder="Buscar suscriptor, nombre...">
+                    <select id="filtroRuta" class="form-control form-control-gen" style="min-width:120px;">
+                        <option value="">— Ruta —</option>
+                    </select>
+                    <select id="filtroCiclo" class="form-control form-control-gen" style="min-width:100px;">
+                        <option value="">— Ciclo —</option>
+                    </select>
+                    <select id="filtroCritica" class="form-control form-control-gen" style="min-width:130px;">
+                        <option value="">— Crítica —</option>
+                    </select>
+                    <select id="filtroObs" class="form-control form-control-gen" style="min-width:190px;">
                         <option value="">— Todas las observaciones —</option>
                     </select>
                 </div>
-                <div style="display:flex;gap:8px;">
+                <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+                    <label style="display:flex;align-items:center;gap:7px;cursor:pointer;background:#fef9c3;border:2px solid #fde047;border-radius:10px;padding:6px 14px;font-size:.82rem;font-weight:700;color:#713f12;margin:0;">
+                        <input type="checkbox" id="chkUsarPromedio" style="width:15px;height:15px;cursor:pointer;accent-color:#b45309;">
+                        <i class="fa fa-calculator"></i> Usar promedio para causados
+                    </label>
                     <button class="btn btn-sm btn-outline-secondary" onclick="selTodos(true)" style="border-radius:8px;font-size:.8rem;">
                         <i class="fa fa-check-square"></i> Seleccionar visibles
                     </button>
@@ -165,6 +178,8 @@ label.lbl { font-weight:600; color:#4a5568; font-size:.8rem; text-transform:uppe
                     <thead>
                         <tr>
                             <th style="width:36px;"><input type="checkbox" id="chkAll"></th>
+                            <th>Ruta</th>
+                            <th>Cons.</th>
                             <th>Suscriptor</th>
                             <th>Nombre</th>
                             <th>Sector</th>
@@ -179,10 +194,13 @@ label.lbl { font-weight:600; color:#4a5568; font-size:.8rem; text-transform:uppe
                             <th style="width:40px;">Foto</th>
                             <th>_tipo</th>
                             <th>_obs</th>
+                            <th>_ruta</th>
+                            <th>_ciclo</th>
+                            <th>_critica</th>
                         </tr>
                     </thead>
                     <tbody id="tbodyLote">
-                        <tr><td colspan="15" class="spinner-wrap"><i class="fa fa-spinner fa-spin fa-2x"></i><br>Cargando...</td></tr>
+                        <tr><td colspan="20" class="spinner-wrap"><i class="fa fa-spinner fa-spin fa-2x"></i><br>Cargando...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -364,9 +382,10 @@ function construirTabla() {
             + ' oninput="this.classList.toggle(\'filled\', this.value.length>0)">';
 
         html += '<tr data-id="' + c.id + '" data-tipo="' + c.tipo
-            + '" data-obs="' + (c.observacion_id || '') + '"'
-            + ' data-q="' + (c.suscriptor + ' ' + c.nombre + ' ' + c.sector + ' ' + c.observacion_des).toLowerCase() + '">';
+            + '" data-promedio="' + (c.promedio_consumo || 0) + '">';
         html += '<td style="text-align:center;"><input type="checkbox" class="chk-fila" data-id="' + c.id + '"></td>';
+        html += '<td style="text-align:center;font-weight:700;color:#2e50e4;">' + (c.id_ruta || '—') + '</td>';
+        html += '<td style="text-align:center;color:#718096;">' + (c.consecutivo || '—') + '</td>';
         html += '<td style="font-weight:700;color:#2d3748;">' + c.suscriptor + '</td>';
         html += '<td>' + c.nombre + '</td>';
         html += '<td style="color:#718096;">' + (c.sector || '—') + '</td>';
@@ -381,17 +400,23 @@ function construirTabla() {
         html += '<td style="text-align:center;">' + fotoBtn + '</td>';
         html += '<td>' + c.tipo + '</td>';
         html += '<td>' + (c.observacion_id || '') + '</td>';
+        html += '<td>' + (c.id_ruta   || '') + '</td>';
+        html += '<td>' + (c.ciclo     || '') + '</td>';
+        html += '<td>' + (c.critica   || '') + '</td>';
         html += '</tr>';
     });
 
     $('#tbodyLote').html(html);
 
+    // Columnas: 0=chk, 1=ruta, 2=cons, 3=suscriptor, 4=nombre, 5=sector, 6=estrato,
+    //           7=promedio, 8=tipo, 9=obs_campo, 10=lect_ant, 11=lect_act, 12=consumo,
+    //           13=obs_analista, 14=foto, 15=_tipo, 16=_obs, 17=_ruta, 18=_ciclo, 19=_critica
     dt = $('#tablaLote').DataTable({
-        paging:   true,
+        paging:    true,
         pageLength: 50,
-        ordering: true,
-        searching: true,    // necesario para dt.column().search() — UI oculto vía CSS
-        order:    [[1, 'asc']],
+        ordering:  true,
+        searching: true,
+        order:     [[17, 'asc'], [2, 'asc']],   // por ruta, luego consecutivo
         lengthMenu: [[25, 50, 100, 200, -1], ['25', '50', '100', '200', 'Mostrar Todo']],
         language: {
             lengthMenu:    'Mostrar _MENU_ registros',
@@ -402,8 +427,8 @@ function construirTabla() {
             zeroRecords:   'No hay suscriptores para los filtros seleccionados.'
         },
         columnDefs: [
-            { orderable: false, targets: [0, 8, 9, 10, 11, 12] },
-            { visible: false, targets: [13, 14] }
+            { orderable: false, targets: [0, 10, 11, 12, 13, 14] },
+            { visible: false, targets: [15, 16, 17, 18, 19] }
         ],
         drawCallback: function() {
             actualizarBarraAcciones();
@@ -413,20 +438,46 @@ function construirTabla() {
     actualizarBarraAcciones();
 }
 
-// ── Poblar select de observaciones ───────────────────────────────────────
-function poblarFiltroObs() {
-    var obsMap = {};
+// ── Poblar selects de filtros ─────────────────────────────────────────────
+function poblarFiltros() {
+    var obsMap = {}, rutaSet = new Set(), cicloSet = new Set(), criticaSet = new Set();
     todosClientes.forEach(function(c) {
-        if (c.observacion_id && c.observacion_des) {
-            obsMap[c.observacion_id] = c.observacion_des;
-        }
+        if (c.observacion_id && c.observacion_des) obsMap[c.observacion_id] = c.observacion_des;
+        if (c.id_ruta)  rutaSet.add(c.id_ruta);
+        if (c.ciclo)    cicloSet.add(String(c.ciclo));
+        if (c.critica)  criticaSet.add(c.critica);
     });
-    var $sel = $('#filtroObs');
-    $sel.find('option:not(:first)').remove();
+
+    // Rutas
+    var $ruta = $('#filtroRuta');
+    $ruta.find('option:not(:first)').remove();
+    Array.from(rutaSet).sort().forEach(function(r) {
+        $ruta.append('<option value="' + r + '">Ruta ' + r + '</option>');
+    });
+
+    // Ciclos
+    var $ciclo = $('#filtroCiclo');
+    $ciclo.find('option:not(:first)').remove();
+    Array.from(cicloSet).sort().forEach(function(c) {
+        $ciclo.append('<option value="' + c + '">Ciclo ' + c + '</option>');
+    });
+
+    // Críticas
+    var $critica = $('#filtroCritica');
+    $critica.find('option:not(:first)').remove();
+    Array.from(criticaSet).sort().forEach(function(cr) {
+        $critica.append('<option value="' + cr + '">' + cr + '</option>');
+    });
+
+    // Observaciones
+    var $obs = $('#filtroObs');
+    $obs.find('option:not(:first)').remove();
     Object.keys(obsMap).sort(function(a,b){ return a-b; }).forEach(function(id) {
-        $sel.append('<option value="' + id + '">' + id + ' – ' + obsMap[id] + '</option>');
+        $obs.append('<option value="' + id + '">' + id + ' – ' + obsMap[id] + '</option>');
     });
 }
+// alias para llamada existente
+function poblarFiltroObs() { poblarFiltros(); }
 
 // ── Auto-calcular consumo al ingresar lecturas ────────────────────────────
 function calcularConsumo(el) {
@@ -439,21 +490,51 @@ function calcularConsumo(el) {
     }
 }
 
-// ── Filtrar por tipo — columna oculta 13 ─────────────────────────────────
+// ── Filtrar por tipo — columna oculta 15 ─────────────────────────────────
 function filtrarTipo(tipo, el) {
     tipoActivo = tipo;
     document.querySelectorAll('.tipo-tab').forEach(function(t){ t.classList.remove('active'); });
     if (el) el.classList.add('active');
     if (!dt) return;
-    // Búsqueda exacta con regex: ^ y $ para evitar coincidencias parciales
-    dt.column(13).search(tipo === 'todos' ? '' : '^' + tipo + '$', true, false).draw();
+    dt.column(15).search(tipo === 'todos' ? '' : '^' + tipo + '$', true, false).draw();
 }
 
-// ── Filtro por observación — columna oculta 14 ───────────────────────────
+// ── Filtros por observación, ruta, ciclo, crítica ─────────────────────────
 $('#filtroObs').on('change', function () {
-    obsActiva = $(this).val();
     if (!dt) return;
-    dt.column(14).search(obsActiva ? '^' + obsActiva + '$' : '', true, false).draw();
+    dt.column(16).search($(this).val() ? '^' + $(this).val() + '$' : '', true, false).draw();
+});
+$('#filtroRuta').on('change', function () {
+    if (!dt) return;
+    dt.column(17).search($(this).val() ? '^' + escapeRegex($(this).val()) + '$' : '', true, false).draw();
+});
+$('#filtroCiclo').on('change', function () {
+    if (!dt) return;
+    dt.column(18).search($(this).val() ? '^' + escapeRegex($(this).val()) + '$' : '', true, false).draw();
+});
+$('#filtroCritica').on('change', function () {
+    if (!dt) return;
+    dt.column(19).search($(this).val() ? escapeRegex($(this).val()) : '', true, false).draw();
+});
+function escapeRegex(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+
+// ── Checkbox: usar promedio para causados ─────────────────────────────────
+$('#chkUsarPromedio').on('change', function () {
+    var usar = $(this).is(':checked');
+    if (!dt) return;
+    dt.rows().every(function () {
+        var $row = $(this.node());
+        if ($row.data('tipo') === 'causado') {
+            var promedio = $row.data('promedio') || 0;
+            var id = $row.find('.chk-fila').data('id');
+            var $inp = $('input[data-id="' + id + '"][name="consumo"]');
+            if (usar) {
+                $inp.data('original-consumo', $inp.val()).val(promedio);
+            } else {
+                $inp.val($inp.data('original-consumo') !== undefined ? $inp.data('original-consumo') : $inp.val());
+            }
+        }
+    });
 });
 
 // ── Buscador de texto — búsqueda global de DataTables ────────────────────

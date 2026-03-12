@@ -360,14 +360,18 @@ function construirTabla() {
         }
 
         var esNegativo = c.tipo === 'negativo';
+        var esCausado  = c.tipo === 'causado';
         var tituloInp  = esNegativo
             ? 'Lectura negativa (' + c.consumo_sugerido + ') — promedio sugerido: ' + (c.promedio_consumo || 0)
-            : 'Editable — valor sugerido: ' + c.consumo_sugerido;
+            : (esCausado
+                ? 'Lectura causada (' + c.consumo_sugerido + ') — promedio de referencia: ' + (c.promedio_consumo || 0)
+                : 'Editable — valor sugerido: ' + c.consumo_sugerido);
+        var colorInp   = esNegativo ? 'color:#b91c1c;font-weight:700;'
+                       : (esCausado  ? 'color:#92400e;font-weight:700;' : '');
         var inpConsumo = '<input class="inp-consumo" type="number"'
             + (esNegativo ? '' : ' min="0"')
             + ' value="' + c.consumo_sugerido
-            + '" data-id="' + c.id + '" name="consumo" style="background:' + bgConsumo + ';'
-            + (esNegativo ? 'color:#b91c1c;font-weight:700;' : '')
+            + '" data-id="' + c.id + '" name="consumo" style="background:' + bgConsumo + ';' + colorInp
             + '" title="' + tituloInp + '">';
 
         // Lecturas: editables para todos los que tienen medidor

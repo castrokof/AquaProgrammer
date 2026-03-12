@@ -41,8 +41,8 @@ class Pago extends Model
     {
         // Al crear un pago, recalcular automáticamente el total y el estado de la factura
         static::created(function (self $pago) {
-            $pago->factura->fresh();
-            $factura = $pago->factura;
+            // fresh(['pagos']) recarga la relación para que saldoPendiente() incluya el nuevo pago
+            $factura = $pago->factura->fresh(['pagos']);
 
             if ($factura->saldoPendiente() <= 0) {
                 $factura->update(['estado' => 'PAGADA']);

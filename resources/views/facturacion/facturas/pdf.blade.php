@@ -268,11 +268,8 @@ body { font-family: 'DejaVu Sans', 'Arial', sans-serif; font-size: 7pt; color: #
             <tr>
                 <th style="text-align:left;">Concepto</th>
                 <th>m³</th>
-                <th>Referencia</th>
                 <th>Tarifa</th>
-                <th>Costo Real</th>
-                <th>Subsidio</th>
-                <th>Neto</th>
+                <th>Sub Total</th>
             </tr>
         </thead>
         <tbody>
@@ -282,9 +279,6 @@ body { font-family: 'DejaVu Sans', 'Arial', sans-serif; font-size: 7pt; color: #
                 <td class="c">—</td>
                 <td class="r">{{ number_format($factura->cargo_fijo_acueducto,2,',','.') }}</td>
                 <td class="r">{{ number_format($factura->cargo_fijo_acueducto,2,',','.') }}</td>
-                <td class="r">{{ number_format($factura->cargo_fijo_acueducto,2,',','.') }}</td>
-                <td class="c">0,00</td>
-                <td class="r">{{ number_format($factura->cargo_fijo_acueducto,2,',','.') }}</td>
             </tr>
             {{-- Básico --}}
             @if($factura->consumo_basico_acueducto_m3 > 0 || true)
@@ -293,17 +287,6 @@ body { font-family: 'DejaVu Sans', 'Arial', sans-serif; font-size: 7pt; color: #
                 <td class="c">{{ $factura->consumo_basico_acueducto_m3 }}</td>
                 <td class="r">{{ number_format($refBasAc,2,',','.') }}</td>
                 <td class="r">{{ number_format($factura->consumo_basico_acueducto_valor,2,',','.') }}</td>
-                <td class="r">{{ number_format($factura->consumo_basico_acueducto_valor,2,',','.') }}</td>
-                @if($esSubsidio)
-                <td class="r subsidio-pos">-{{ number_format(abs($subsidioAc),2,',','.') }}</td>
-                <td class="r subsidio-pos">{{ number_format($factura->consumo_basico_acueducto_valor - abs($subsidioAc),2,',','.') }}</td>
-                @elseif($subsidioAc < 0)
-                <td class="r subsidio-neg">+{{ number_format(abs($subsidioAc),2,',','.') }}</td>
-                <td class="r subsidio-neg">{{ number_format($factura->consumo_basico_acueducto_valor + abs($subsidioAc),2,',','.') }}</td>
-                @else
-                <td class="c">0,00</td>
-                <td class="r">{{ number_format($factura->consumo_basico_acueducto_valor,2,',','.') }}</td>
-                @endif
             </tr>
             @endif
             {{-- Complementario --}}
@@ -312,9 +295,6 @@ body { font-family: 'DejaVu Sans', 'Arial', sans-serif; font-size: 7pt; color: #
                 <td>Consumo comp.</td>
                 <td class="c">{{ $factura->consumo_complementario_acueducto_m3 }}</td>
                 <td class="r">{{ number_format($refCompAc,2,',','.') }}</td>
-                <td class="r">{{ number_format($factura->consumo_complementario_acueducto_valor,2,',','.') }}</td>
-                <td class="r">{{ number_format($factura->consumo_complementario_acueducto_valor,2,',','.') }}</td>
-                <td class="c">0,00</td>
                 <td class="r">{{ number_format($factura->consumo_complementario_acueducto_valor,2,',','.') }}</td>
             </tr>
             @endif
@@ -325,9 +305,17 @@ body { font-family: 'DejaVu Sans', 'Arial', sans-serif; font-size: 7pt; color: #
                 <td class="c">{{ $factura->consumo_suntuario_acueducto_m3 }}</td>
                 <td class="r">{{ number_format($refSuntAc,2,',','.') }}</td>
                 <td class="r">{{ number_format($factura->consumo_suntuario_acueducto_valor,2,',','.') }}</td>
-                <td class="r">{{ number_format($factura->consumo_suntuario_acueducto_valor,2,',','.') }}</td>
-                <td class="c">0,00</td>
-                <td class="r">{{ number_format($factura->consumo_suntuario_acueducto_valor,2,',','.') }}</td>
+            </tr>
+            @endif
+            {{-- Subsidio como fila --}}
+            @if($subsidioAc != 0)
+            <tr>
+                <td colspan="3" class="{{ $esSubsidio ? 'subsidio-pos' : 'subsidio-neg' }}" style="font-style:italic;">
+                    {{ $esSubsidio ? 'Subsidio acueducto' : 'Contribución acueducto' }}
+                </td>
+                <td class="r {{ $esSubsidio ? 'subsidio-pos' : 'subsidio-neg' }}">
+                    {{ $esSubsidio ? '-' : '+' }}{{ number_format(abs($subsidioAc),2,',','.') }}
+                </td>
             </tr>
             @endif
         </tbody>
@@ -336,11 +324,6 @@ body { font-family: 'DejaVu Sans', 'Arial', sans-serif; font-size: 7pt; color: #
                 <td>Total</td>
                 <td class="c">{{ $factura->consumo_m3 }}</td>
                 <td></td>
-                <td class="r">{{ number_format($factura->subtotal_facturacion_acueducto,2,',','.') }}</td>
-                <td class="r">{{ number_format($factura->subtotal_facturacion_acueducto,2,',','.') }}</td>
-                <td class="r {{ $esSubsidio ? 'subsidio-pos' : ($subsidioAc < 0 ? 'subsidio-neg':'') }}">
-                    {{ $subsidioAc != 0 ? ($esSubsidio?'-':'+').number_format(abs($subsidioAc),2,',','.') : '0,00' }}
-                </td>
                 <td class="r">{{ number_format($netoAcueducto,2,',','.') }}</td>
             </tr>
         </tfoot>
@@ -356,11 +339,8 @@ body { font-family: 'DejaVu Sans', 'Arial', sans-serif; font-size: 7pt; color: #
             <tr>
                 <th style="text-align:left;">Concepto</th>
                 <th>m³</th>
-                <th>Referencia</th>
                 <th>Tarifa</th>
-                <th>Costo Real</th>
-                <th>Subsidio</th>
-                <th>Neto</th>
+                <th>Sub Total</th>
             </tr>
         </thead>
         <tbody>
@@ -369,9 +349,6 @@ body { font-family: 'DejaVu Sans', 'Arial', sans-serif; font-size: 7pt; color: #
                 <td class="c">—</td>
                 <td class="r">{{ number_format($factura->cargo_fijo_alcantarillado,2,',','.') }}</td>
                 <td class="r">{{ number_format($factura->cargo_fijo_alcantarillado,2,',','.') }}</td>
-                <td class="r">{{ number_format($factura->cargo_fijo_alcantarillado,2,',','.') }}</td>
-                <td class="c">0,00</td>
-                <td class="r">{{ number_format($factura->cargo_fijo_alcantarillado,2,',','.') }}</td>
             </tr>
             @if($factura->consumo_basico_alcantarillado_m3 > 0 || true)
             <tr>
@@ -379,17 +356,6 @@ body { font-family: 'DejaVu Sans', 'Arial', sans-serif; font-size: 7pt; color: #
                 <td class="c">{{ $factura->consumo_basico_alcantarillado_m3 }}</td>
                 <td class="r">{{ number_format($refBasAl,2,',','.') }}</td>
                 <td class="r">{{ number_format($factura->consumo_basico_alcantarillado_valor,2,',','.') }}</td>
-                <td class="r">{{ number_format($factura->consumo_basico_alcantarillado_valor,2,',','.') }}</td>
-                @if($esSubsidioAl)
-                <td class="r subsidio-pos">-{{ number_format(abs($subsidioAl),2,',','.') }}</td>
-                <td class="r subsidio-pos">{{ number_format($factura->consumo_basico_alcantarillado_valor - abs($subsidioAl),2,',','.') }}</td>
-                @elseif($subsidioAl < 0)
-                <td class="r subsidio-neg">+{{ number_format(abs($subsidioAl),2,',','.') }}</td>
-                <td class="r subsidio-neg">{{ number_format($factura->consumo_basico_alcantarillado_valor + abs($subsidioAl),2,',','.') }}</td>
-                @else
-                <td class="c">0,00</td>
-                <td class="r">{{ number_format($factura->consumo_basico_alcantarillado_valor,2,',','.') }}</td>
-                @endif
             </tr>
             @endif
             @if($factura->consumo_complementario_alcantarillado_m3 > 0)
@@ -397,9 +363,6 @@ body { font-family: 'DejaVu Sans', 'Arial', sans-serif; font-size: 7pt; color: #
                 <td>Consumo comp.</td>
                 <td class="c">{{ $factura->consumo_complementario_alcantarillado_m3 }}</td>
                 <td class="r">{{ number_format($refCompAl,2,',','.') }}</td>
-                <td class="r">{{ number_format($factura->consumo_complementario_alcantarillado_valor,2,',','.') }}</td>
-                <td class="r">{{ number_format($factura->consumo_complementario_alcantarillado_valor,2,',','.') }}</td>
-                <td class="c">0,00</td>
                 <td class="r">{{ number_format($factura->consumo_complementario_alcantarillado_valor,2,',','.') }}</td>
             </tr>
             @endif
@@ -409,9 +372,17 @@ body { font-family: 'DejaVu Sans', 'Arial', sans-serif; font-size: 7pt; color: #
                 <td class="c">{{ $factura->consumo_suntuario_alcantarillado_m3 }}</td>
                 <td class="r">{{ number_format($refSuntAl,2,',','.') }}</td>
                 <td class="r">{{ number_format($factura->consumo_suntuario_alcantarillado_valor,2,',','.') }}</td>
-                <td class="r">{{ number_format($factura->consumo_suntuario_alcantarillado_valor,2,',','.') }}</td>
-                <td class="c">0,00</td>
-                <td class="r">{{ number_format($factura->consumo_suntuario_alcantarillado_valor,2,',','.') }}</td>
+            </tr>
+            @endif
+            {{-- Subsidio como fila --}}
+            @if($subsidioAl != 0)
+            <tr>
+                <td colspan="3" class="{{ $esSubsidioAl ? 'subsidio-pos' : 'subsidio-neg' }}" style="font-style:italic;">
+                    {{ $esSubsidioAl ? 'Subsidio alcantarillado' : 'Contribución alcantarillado' }}
+                </td>
+                <td class="r {{ $esSubsidioAl ? 'subsidio-pos' : 'subsidio-neg' }}">
+                    {{ $esSubsidioAl ? '-' : '+' }}{{ number_format(abs($subsidioAl),2,',','.') }}
+                </td>
             </tr>
             @endif
         </tbody>
@@ -420,12 +391,6 @@ body { font-family: 'DejaVu Sans', 'Arial', sans-serif; font-size: 7pt; color: #
                 <td>Total</td>
                 <td class="c">{{ $factura->consumo_m3 }}</td>
                 <td></td>
-                @php $brutoAl = (float)($factura->subtotal_facturacion_alcantarillado ?? $netoAlcantarillado); @endphp
-                <td class="r">{{ number_format($brutoAl,2,',','.') }}</td>
-                <td class="r">{{ number_format($brutoAl,2,',','.') }}</td>
-                <td class="r {{ $esSubsidioAl ? 'subsidio-pos' : ($subsidioAl < 0 ? 'subsidio-neg':'') }}">
-                    {{ $subsidioAl != 0 ? ($esSubsidioAl?'-':'+').number_format(abs($subsidioAl),2,',','.') : '0,00' }}
-                </td>
                 <td class="r">{{ number_format($netoAlcantarillado,2,',','.') }}</td>
             </tr>
         </tfoot>
@@ -453,7 +418,10 @@ body { font-family: 'DejaVu Sans', 'Arial', sans-serif; font-size: 7pt; color: #
                 <th style="text-align:left;">Descripción</th>
                 <th>Val. cuota</th>
                 <th>Saldo</th>
-                <th>Tot</th><th>Fac</th><th>Pend</th>
+                <th>Val. prestado</th>
+                <th>Cuotas tot.</th>
+                <th>Pagas</th>
+                <th>Pend.</th>
             </tr>
         </thead>
         <tbody>
@@ -462,7 +430,17 @@ body { font-family: 'DejaVu Sans', 'Arial', sans-serif; font-size: 7pt; color: #
                 <td>Otros cobros acueducto</td>
                 <td class="r">{{ number_format($factura->cuota_otros_cobros_acueducto,0,',','.') }}</td>
                 <td class="r">{{ number_format($factura->saldo_otros_cobros_acueducto,0,',','.') }}</td>
-                <td class="c">—</td><td class="c">—</td><td class="c">—</td>
+                <td class="r">{{ number_format($factura->otros_cobros_acueducto ?? 0,0,',','.') }}</td>
+                @php
+                    $cuotasTotAc  = ($factura->cuota_otros_cobros_acueducto > 0 && $factura->otros_cobros_acueducto > 0)
+                        ? ceil($factura->otros_cobros_acueducto / $factura->cuota_otros_cobros_acueducto) : 0;
+                    $cuotasPagAc  = ($factura->cuota_otros_cobros_acueducto > 0 && $factura->saldo_otros_cobros_acueducto >= 0)
+                        ? max(0, $cuotasTotAc - ceil($factura->saldo_otros_cobros_acueducto / $factura->cuota_otros_cobros_acueducto)) : 0;
+                    $cuotasPendAc = max(0, $cuotasTotAc - $cuotasPagAc);
+                @endphp
+                <td class="c">{{ $cuotasTotAc ?: '—' }}</td>
+                <td class="c">{{ $cuotasPagAc ?: '—' }}</td>
+                <td class="c">{{ $cuotasPendAc ?: '—' }}</td>
             </tr>
             @endif
             @if($factura->cuota_otros_cobros_alcantarillado > 0)
@@ -470,18 +448,28 @@ body { font-family: 'DejaVu Sans', 'Arial', sans-serif; font-size: 7pt; color: #
                 <td>Otros cobros alcantarillado</td>
                 <td class="r">{{ number_format($factura->cuota_otros_cobros_alcantarillado,0,',','.') }}</td>
                 <td class="r">{{ number_format($factura->saldo_otros_cobros_alcantarillado,0,',','.') }}</td>
-                <td class="c">—</td><td class="c">—</td><td class="c">—</td>
+                <td class="r">{{ number_format($factura->otros_cobros_alcantarillado ?? 0,0,',','.') }}</td>
+                @php
+                    $cuotasTotAl  = ($factura->cuota_otros_cobros_alcantarillado > 0 && $factura->otros_cobros_alcantarillado > 0)
+                        ? ceil($factura->otros_cobros_alcantarillado / $factura->cuota_otros_cobros_alcantarillado) : 0;
+                    $cuotasPagAl  = ($factura->cuota_otros_cobros_alcantarillado > 0 && $factura->saldo_otros_cobros_alcantarillado >= 0)
+                        ? max(0, $cuotasTotAl - ceil($factura->saldo_otros_cobros_alcantarillado / $factura->cuota_otros_cobros_alcantarillado)) : 0;
+                    $cuotasPendAl = max(0, $cuotasTotAl - $cuotasPagAl);
+                @endphp
+                <td class="c">{{ $cuotasTotAl ?: '—' }}</td>
+                <td class="c">{{ $cuotasPagAl ?: '—' }}</td>
+                <td class="c">{{ $cuotasPendAl ?: '—' }}</td>
             </tr>
             @endif
             @if($factura->cuota_otros_cobros_acueducto == 0 && $factura->cuota_otros_cobros_alcantarillado == 0)
-            <tr><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+            <tr><td colspan="7" class="c" style="color:#aaa;">Sin créditos otorgados</td></tr>
             @endif
         </tbody>
         <tfoot>
             <tr>
-                <td colspan="2">Total créditos</td>
+                <td colspan="2">Total cuota</td>
                 <td class="r">{{ number_format(($factura->cuota_otros_cobros_acueducto ?? 0) + ($factura->cuota_otros_cobros_alcantarillado ?? 0), 0, ',', '.') }}</td>
-                <td colspan="3"></td>
+                <td colspan="4"></td>
             </tr>
         </tfoot>
     </table>
@@ -532,44 +520,36 @@ body { font-family: 'DejaVu Sans', 'Arial', sans-serif; font-size: 7pt; color: #
 <td style="width:54%;padding-left:3px;vertical-align:top;">
     <div class="resumen-title">Resumen del Cobro</div>
     <table class="tbl resumen-tbl" style="border-top:none;">
-        <tbody>
-            @if($factura->saldo_anterior > 0)
-            <tr><td>Saldo anterior</td><td class="r" style="color:#dc2626;font-weight:700;">{{ $nf($factura->saldo_anterior) }}</td></tr>
-            @endif
-            @if($hasAcueducto)
-            <tr><td>Cargo fijo acueducto</td><td class="r">{{ $nf($factura->cargo_fijo_acueducto) }}</td></tr>
-            <tr><td>Consumo acueducto</td><td class="r">{{ $nf($factura->subtotal_facturacion_acueducto - $factura->cargo_fijo_acueducto) }}</td></tr>
-            @if($subsidioAc != 0)
+        <thead>
             <tr>
-                <td class="{{ $esSubsidio ? 'subsidio-pos' : 'subsidio-neg' }}">
-                    {{ $esSubsidio ? 'Subsidio acueducto' : 'Contribución acueducto' }}
-                </td>
-                <td class="r {{ $esSubsidio ? 'subsidio-pos' : 'subsidio-neg' }}">
-                    {{ $esSubsidio ? '-' : '+' }}{{ $nf(abs($subsidioAc)) }}
-                </td>
+                <th style="text-align:left;background:#e8eeff;color:#1e3a8a;font-size:6.5pt;">Concepto</th>
+                <th style="background:#e8eeff;color:#1e3a8a;font-size:6.5pt;">Valor</th>
             </tr>
-            @endif
-            @if($factura->cuota_otros_cobros_acueducto > 0)
-            <tr><td>Otros cobros acueducto</td><td class="r">{{ $nf($factura->cuota_otros_cobros_acueducto) }}</td></tr>
-            @endif
+        </thead>
+        <tbody>
+            @if($hasAcueducto)
+            <tr><td>Valor Acueducto</td><td class="r">{{ $nf($netoAcueducto) }}</td></tr>
             @endif
             @if($hasAlcantarillado)
-            <tr><td>Cargo fijo alcantarillado</td><td class="r">{{ $nf($factura->cargo_fijo_alcantarillado) }}</td></tr>
-            <tr><td>Vertimiento alcantarillado</td><td class="r">{{ $nf($netoAlcantarillado - $factura->cargo_fijo_alcantarillado) }}</td></tr>
-             @if($subsidioAl != 0)
+            <tr><td>Valor Alcantarillado</td><td class="r">{{ $nf($netoAlcantarillado) }}</td></tr>
+            @endif
+            @php $otrosCobros = ($factura->cuota_otros_cobros_acueducto ?? 0) + ($factura->cuota_otros_cobros_alcantarillado ?? 0); @endphp
+            @if($otrosCobros > 0)
+            <tr><td>Otros Cobros</td><td class="r">{{ $nf($otrosCobros) }}</td></tr>
+            @endif
+            @if($factura->saldo_anterior > 0)
             <tr>
-                <td class="{{ $esSubsidioAl ? 'subsidio-pos' : 'subsidio-neg' }}">
-                    {{ $esSubsidioAl ? 'Subsidio alcantarillado' : 'Contribución alcantarillado' }}
-                </td>
-                <td class="r {{ $esSubsidioAl ? 'subsidio-pos' : 'subsidio-neg' }}">
-                    {{ $esSubsidioAl ? '-' : '+' }}{{ $nf(abs($subsidioAl)) }}
-                </td>
+                <td style="color:#dc2626;">+ Saldo Anterior</td>
+                <td class="r" style="color:#dc2626;font-weight:700;">{{ $nf($factura->saldo_anterior) }}</td>
             </tr>
             @endif
-
-            @if($factura->cuota_otros_cobros_alcantarillado > 0)
-            <tr><td>Otros cobros alcantarillado</td><td class="r">{{ $nf($factura->cuota_otros_cobros_alcantarillado) }}</td></tr>
-            @endif
+            @if($ultimoPago)
+            <tr>
+                <td style="color:#166534;">Último Pago
+                    <span style="font-size:5.5pt;color:#555;">({{ $ultimoPago->fecha_pago ? \Carbon\Carbon::parse($ultimoPago->fecha_pago)->format('d/m/Y') : '—' }})</span>
+                </td>
+                <td class="r" style="color:#166534;font-weight:700;">{{ $nf($ultimoPago->total_pago_realizado) }}</td>
+            </tr>
             @endif
         </tbody>
         <tfoot>

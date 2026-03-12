@@ -206,37 +206,40 @@ body { background:#f0f4f8; }
 
         {{-- ACUEDUCTO --}}
         @if(in_array($factura->servicios_snapshot, ['AG','AG-AL']))
+        @php
+            $refBasAcShow  = ($factura->consumo_basico_acueducto_m3 > 0)
+                ? round($factura->consumo_basico_acueducto_valor / $factura->consumo_basico_acueducto_m3, 2) : 0;
+            $refCompAcShow = ($factura->consumo_complementario_acueducto_m3 > 0)
+                ? round($factura->consumo_complementario_acueducto_valor / $factura->consumo_complementario_acueducto_m3, 2) : 0;
+            $refSuntAcShow = ($factura->consumo_suntuario_acueducto_m3 > 0)
+                ? round($factura->consumo_suntuario_acueducto_valor / $factura->consumo_suntuario_acueducto_m3, 2) : 0;
+            $esSubsidio    = ($factura->subsidio_emergencia ?? 0) > 0;
+        @endphp
         <div class="fact-section">
             <h6><i class="fa fa-tint" style="color:#3d57ce;"></i> Acueducto</h6>
             <table class="tabla-fact">
-                <thead><tr><th>Concepto</th><th>m³</th><th>Valor</th></tr></thead>
+                <thead><tr><th>Concepto</th><th>m³</th><th>Tarifa</th><th>Sub Total</th></tr></thead>
                 <tbody>
-                    <tr><td>Cargo Fijo</td><td>—</td><td>$ {{ $nf($factura->cargo_fijo_acueducto) }}</td></tr>
-                    <tr><td>Consumo Básico</td><td>{{ $factura->consumo_basico_acueducto_m3 }}</td><td>$ {{ $nf($factura->consumo_basico_acueducto_valor) }}</td></tr>
+                    <tr><td>Cargo Fijo</td><td style="text-align:center;">—</td><td>$ {{ $nf($factura->cargo_fijo_acueducto) }}</td><td>$ {{ $nf($factura->cargo_fijo_acueducto) }}</td></tr>
+                    <tr><td>Consumo Básico</td><td style="text-align:center;">{{ $factura->consumo_basico_acueducto_m3 }}</td><td>$ {{ $nf($refBasAcShow) }}</td><td>$ {{ $nf($factura->consumo_basico_acueducto_valor) }}</td></tr>
                     @if($factura->consumo_complementario_acueducto_m3 > 0)
-                    <tr><td>Consumo Complementario</td><td>{{ $factura->consumo_complementario_acueducto_m3 }}</td><td>$ {{ $nf($factura->consumo_complementario_acueducto_valor) }}</td></tr>
+                    <tr><td>Consumo Complementario</td><td style="text-align:center;">{{ $factura->consumo_complementario_acueducto_m3 }}</td><td>$ {{ $nf($refCompAcShow) }}</td><td>$ {{ $nf($factura->consumo_complementario_acueducto_valor) }}</td></tr>
                     @endif
                     @if($factura->consumo_suntuario_acueducto_m3 > 0)
-                    <tr><td>Consumo Suntuario</td><td>{{ $factura->consumo_suntuario_acueducto_m3 }}</td><td>$ {{ $nf($factura->consumo_suntuario_acueducto_valor) }}</td></tr>
+                    <tr><td>Consumo Suntuario</td><td style="text-align:center;">{{ $factura->consumo_suntuario_acueducto_m3 }}</td><td>$ {{ $nf($refSuntAcShow) }}</td><td>$ {{ $nf($factura->consumo_suntuario_acueducto_valor) }}</td></tr>
                     @endif
-                    @if($factura->subsidio_emergencia != 0)
-                    @php $esSubsidio = $factura->subsidio_emergencia > 0; @endphp
-                    <tr>
-                        <td style="color:{{ $esSubsidio ? '#166534' : '#991b1b' }};">
-                            {{ $esSubsidio ? 'Subsidio Estrato' : 'Contribución Estrato' }}
-                        </td>
-                        <td>—</td>
-                        <td style="color:{{ $esSubsidio ? '#166534' : '#991b1b' }};">
-                            {{ $esSubsidio ? '- ' : '+ ' }}$ {{ $nf(abs($factura->subsidio_emergencia)) }}
-                        </td>
+                    @if(($factura->subsidio_emergencia ?? 0) != 0)
+                    <tr style="color:{{ $esSubsidio ? '#166534' : '#991b1b' }}; font-style:italic;">
+                        <td colspan="3">{{ $esSubsidio ? 'Subsidio Estrato' : 'Contribución Estrato' }}</td>
+                        <td>{{ $esSubsidio ? '- ' : '+ ' }}$ {{ $nf(abs($factura->subsidio_emergencia)) }}</td>
                     </tr>
                     @endif
                     @if($factura->otros_cobros_acueducto > 0)
-                    <tr><td>Otros Cobros — Cuota {{ $factura->otros_cobros_acueducto>0?'':'0' }}</td><td>—</td><td>$ {{ $nf($factura->cuota_otros_cobros_acueducto) }}</td></tr>
+                    <tr><td colspan="3">Otros Cobros — Cuota</td><td>$ {{ $nf($factura->cuota_otros_cobros_acueducto) }}</td></tr>
                     @endif
                 </tbody>
                 <tfoot>
-                    <tr><td colspan="2"><strong>Total Acueducto</strong></td><td><strong>$ {{ $nf($factura->subtotal_conexion_otros_acueducto) }}</strong></td></tr>
+                    <tr><td colspan="3"><strong>Total Acueducto</strong></td><td><strong>$ {{ $nf($factura->subtotal_conexion_otros_acueducto) }}</strong></td></tr>
                 </tfoot>
             </table>
         </div>
@@ -244,33 +247,40 @@ body { background:#f0f4f8; }
 
         {{-- ALCANTARILLADO --}}
         @if(in_array($factura->servicios_snapshot, ['AL','AG-AL']))
+        @php
+            $refBasAlShow  = ($factura->consumo_basico_alcantarillado_m3 > 0)
+                ? round($factura->consumo_basico_alcantarillado_valor / $factura->consumo_basico_alcantarillado_m3, 2) : 0;
+            $refCompAlShow = ($factura->consumo_complementario_alcantarillado_m3 > 0)
+                ? round($factura->consumo_complementario_alcantarillado_valor / $factura->consumo_complementario_alcantarillado_m3, 2) : 0;
+            $refSuntAlShow = ($factura->consumo_suntuario_alcantarillado_m3 > 0)
+                ? round($factura->consumo_suntuario_alcantarillado_valor / $factura->consumo_suntuario_alcantarillado_m3, 2) : 0;
+            $esSubAl = ($factura->subsidio_alcantarillado ?? 0) > 0;
+        @endphp
         <div class="fact-section">
             <h6><i class="fa fa-water" style="color:#3d57ce;"></i> Alcantarillado</h6>
             <table class="tabla-fact">
-                <thead><tr><th>Concepto</th><th>m³</th><th>Valor</th></tr></thead>
+                <thead><tr><th>Concepto</th><th>m³</th><th>Tarifa</th><th>Sub Total</th></tr></thead>
                 <tbody>
-                    <tr><td>Cargo Fijo</td><td>—</td><td>$ {{ $nf($factura->cargo_fijo_alcantarillado) }}</td></tr>
-                    <tr><td>Consumo Básico</td><td>{{ $factura->consumo_basico_alcantarillado_m3 }}</td><td>$ {{ $nf($factura->consumo_basico_alcantarillado_valor) }}</td></tr>
+                    <tr><td>Cargo Fijo</td><td style="text-align:center;">—</td><td>$ {{ $nf($factura->cargo_fijo_alcantarillado) }}</td><td>$ {{ $nf($factura->cargo_fijo_alcantarillado) }}</td></tr>
+                    <tr><td>Consumo Básico</td><td style="text-align:center;">{{ $factura->consumo_basico_alcantarillado_m3 }}</td><td>$ {{ $nf($refBasAlShow) }}</td><td>$ {{ $nf($factura->consumo_basico_alcantarillado_valor) }}</td></tr>
                     @if($factura->consumo_complementario_alcantarillado_m3 > 0)
-                    <tr><td>Consumo Complementario</td><td>{{ $factura->consumo_complementario_alcantarillado_m3 }}</td><td>$ {{ $nf($factura->consumo_complementario_alcantarillado_valor) }}</td></tr>
+                    <tr><td>Consumo Complementario</td><td style="text-align:center;">{{ $factura->consumo_complementario_alcantarillado_m3 }}</td><td>$ {{ $nf($refCompAlShow) }}</td><td>$ {{ $nf($factura->consumo_complementario_alcantarillado_valor) }}</td></tr>
                     @endif
                     @if($factura->consumo_suntuario_alcantarillado_m3 > 0)
-                    <tr><td>Consumo Suntuario</td><td>{{ $factura->consumo_suntuario_alcantarillado_m3 }}</td><td>$ {{ $nf($factura->consumo_suntuario_alcantarillado_valor) }}</td></tr>
+                    <tr><td>Consumo Suntuario</td><td style="text-align:center;">{{ $factura->consumo_suntuario_alcantarillado_m3 }}</td><td>$ {{ $nf($refSuntAlShow) }}</td><td>$ {{ $nf($factura->consumo_suntuario_alcantarillado_valor) }}</td></tr>
                     @endif
                     @if(($factura->subsidio_alcantarillado ?? 0) != 0)
-                    @php $esSubAl = ($factura->subsidio_alcantarillado ?? 0) > 0; @endphp
-                    <tr style="color:{{ $esSubAl ? '#059669' : '#dc2626' }};">
-                        <td>{{ $esSubAl ? 'Subsidio' : 'Sobretasa' }} Alcantarillado</td>
-                        <td>—</td>
+                    <tr style="color:{{ $esSubAl ? '#059669' : '#dc2626' }}; font-style:italic;">
+                        <td colspan="3">{{ $esSubAl ? 'Subsidio Alcantarillado' : 'Sobretasa Alcantarillado' }}</td>
                         <td>{{ $esSubAl ? '- ' : '+ ' }}$ {{ $nf(abs($factura->subsidio_alcantarillado)) }}</td>
                     </tr>
                     @endif
                     @if($factura->otros_cobros_alcantarillado > 0)
-                    <tr><td>Otros Cobros — Cuota</td><td>—</td><td>$ {{ $nf($factura->cuota_otros_cobros_alcantarillado) }}</td></tr>
+                    <tr><td colspan="3">Otros Cobros — Cuota</td><td>$ {{ $nf($factura->cuota_otros_cobros_alcantarillado) }}</td></tr>
                     @endif
                 </tbody>
                 <tfoot>
-                    <tr><td colspan="2"><strong>Total Alcantarillado</strong></td><td><strong>$ {{ $nf($factura->subtotal_conexion_otros_alcantarillado) }}</strong></td></tr>
+                    <tr><td colspan="3"><strong>Total Alcantarillado</strong></td><td><strong>$ {{ $nf($factura->subtotal_conexion_otros_alcantarillado) }}</strong></td></tr>
                 </tfoot>
             </table>
         </div>

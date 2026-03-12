@@ -555,6 +555,7 @@ public function exportarSeleccionadas(Request $request)
             ->get([
                 'Suscriptor', 'Critica', 'Lect_Actual', 'LA', 'Cons_Act', 'Estado',
                 'Observacion_id', 'Observacion_des', 'foto1', 'foto2', 'Promedio',
+                'idDivision', 'Ciclo', 'consecutivoRuta',
             ])
             ->keyBy('Suscriptor');
 
@@ -631,6 +632,9 @@ public function exportarSeleccionadas(Request $request)
                 'lect_anterior'    => $orden ? $orden->LA          : null,
                 'lect_actual'      => $orden ? $orden->Lect_Actual : null,
                 'consumo_sugerido' => $consumoSugerido,
+                'id_ruta'          => $orden ? ($orden->idDivision     ?? null) : null,
+                'ciclo'            => $orden ? ($orden->Ciclo           ?? null) : null,
+                'consecutivo'      => $orden ? ($orden->consecutivoRuta ?? null) : null,
             ];
         })->filter()->values();
 

@@ -187,6 +187,7 @@ label.lbl { font-weight:600; color:#4a5568; font-size:.8rem; text-transform:uppe
                             <th>Cons.</th>
                             <th>Suscriptor</th>
                             <th>Nombre</th>
+                            <th>Medidor</th>
                             <th>Sector</th>
                             <th>Estrato</th>
                             <th>Promedio m³</th>
@@ -402,6 +403,7 @@ function construirTabla() {
         html += '<td style="text-align:center;color:#718096;">' + (c.consecutivo || '—') + '</td>';
         html += '<td style="font-weight:700;color:#2d3748;">' + c.suscriptor + '</td>';
         html += '<td>' + c.nombre + '</td>';
+        html += '<td style="color:#7c3aed;font-size:.78rem;">' + (c.serie_medidor || '<span style="color:#cbd5e0;">—</span>') + '</td>';
         html += '<td style="color:#718096;">' + (c.sector || '—') + '</td>';
         html += '<td>' + c.estrato + '</td>';
         html += '<td style="text-align:right;font-weight:600;">' + (c.promedio_consumo || 0) + '</td>';
@@ -424,16 +426,16 @@ function construirTabla() {
 
     $('#tbodyLote').html(html);
 
-    // Columnas: 0=chk, 1=ruta, 2=cons, 3=suscriptor, 4=nombre, 5=sector, 6=estrato,
-    //           7=promedio, 8=tipo, 9=obs_campo, 10=causa, 11=lect_ant, 12=lect_act,
-    //           13=consumo, 14=obs_analista, 15=foto, 16=_tipo, 17=_obs, 18=_ruta,
-    //           19=_ciclo, 20=_critica, 21=_causa
+    // Columnas: 0=chk, 1=ruta, 2=cons, 3=suscriptor, 4=nombre, 5=medidor, 6=sector, 7=estrato,
+    //           8=promedio, 9=tipo, 10=obs_campo, 11=causa, 12=lect_ant, 13=lect_act,
+    //           14=consumo, 15=obs_analista, 16=foto, 17=_tipo, 18=_obs, 19=_ruta,
+    //           20=_ciclo, 21=_critica, 22=_causa
     dt = $('#tablaLote').DataTable({
         paging:    true,
         pageLength: 50,
         ordering:  true,
         searching: true,
-        order:     [[18, 'asc'], [2, 'asc']],   // por ruta, luego consecutivo
+        order:     [[19, 'asc'], [2, 'asc']],   // por ruta, luego consecutivo
         lengthMenu: [[25, 50, 100, 200, -1], ['25', '50', '100', '200', 'Mostrar Todo']],
         language: {
             lengthMenu:    'Mostrar _MENU_ registros',
@@ -444,8 +446,8 @@ function construirTabla() {
             zeroRecords:   'No hay suscriptores para los filtros seleccionados.'
         },
         columnDefs: [
-            { orderable: false, targets: [0, 11, 12, 13, 14, 15] },
-            { visible: false, targets: [16, 17, 18, 19, 20, 21] }
+            { orderable: false, targets: [0, 12, 13, 14, 15, 16] },
+            { visible: false, targets: [17, 18, 19, 20, 21, 22] }
         ],
         drawCallback: function() {
             actualizarBarraAcciones();
@@ -513,25 +515,25 @@ function filtrarTipo(tipo, el) {
     document.querySelectorAll('.tipo-tab').forEach(function(t){ t.classList.remove('active'); });
     if (el) el.classList.add('active');
     if (!dt) return;
-    dt.column(16).search(tipo === 'todos' ? '' : '^' + tipo + '$', true, false).draw();
+    dt.column(17).search(tipo === 'todos' ? '' : '^' + tipo + '$', true, false).draw();
 }
 
 // ── Filtros por observación, ruta, ciclo, crítica ─────────────────────────
 $('#filtroObs').on('change', function () {
     if (!dt) return;
-    dt.column(17).search($(this).val() ? '^' + $(this).val() + '$' : '', true, false).draw();
+    dt.column(18).search($(this).val() ? '^' + $(this).val() + '$' : '', true, false).draw();
 });
 $('#filtroRuta').on('change', function () {
     if (!dt) return;
-    dt.column(18).search($(this).val() ? '^' + escapeRegex($(this).val()) + '$' : '', true, false).draw();
+    dt.column(19).search($(this).val() ? '^' + escapeRegex($(this).val()) + '$' : '', true, false).draw();
 });
 $('#filtroCiclo').on('change', function () {
     if (!dt) return;
-    dt.column(19).search($(this).val() ? '^' + escapeRegex($(this).val()) + '$' : '', true, false).draw();
+    dt.column(20).search($(this).val() ? '^' + escapeRegex($(this).val()) + '$' : '', true, false).draw();
 });
 $('#filtroCritica').on('change', function () {
     if (!dt) return;
-    dt.column(20).search($(this).val() ? escapeRegex($(this).val()) : '', true, false).draw();
+    dt.column(21).search($(this).val() ? escapeRegex($(this).val()) : '', true, false).draw();
 });
 function escapeRegex(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
 

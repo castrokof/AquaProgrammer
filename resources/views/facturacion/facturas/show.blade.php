@@ -186,18 +186,32 @@ body { background:#f0f4f8; }
                     <div class="val" style="font-size:1.1rem;">{{ $factura->promedio_consumo_snapshot }} m³</div>
                 </div>
             </div>
-            {{-- Barras de promedio --}}
+            {{-- Barras historial de consumo (últimos 6 períodos) --}}
             @php
-                $meses = array_filter([$factura->prom_m1,$factura->prom_m2,$factura->prom_m3,$factura->prom_m4,$factura->prom_m5,$factura->prom_m6], fn($v) => !is_null($v));
-                $maxM  = max(array_merge($meses, [1]));
+                // Prioridad: histConsumos (desde facturas anteriores), sino prom_m1-m6
+                if (!empty($histConsumos)) {
+                    $chartData = $histConsumos;
+                } else {
+                    $rawMeses = array_values(array_filter(
+                        [$factura->prom_m6,$factura->prom_m5,$factura->prom_m4,$factura->prom_m3,$factura->prom_m2,$factura->prom_m1],
+                        fn($v) => !is_null($v)
+                    ));
+                    $chartData = array_map(fn($v, $i) => [
+                        'label'      => 'M-' . (count($rawMeses) - $i),
+                        'consumo_m3' => (float) $v,
+                        'isCurrent'  => $i === count($rawMeses) - 1,
+                    ], $rawMeses, array_keys($rawMeses));
+                }
+                $maxM = max(array_merge(array_column($chartData, 'consumo_m3'), [1]));
             @endphp
-            @if(count($meses) > 0)
+            @if(count($chartData) > 0)
             <div class="prom-grid" style="margin-top:14px;">
-                @foreach($meses as $i => $m)
+                @foreach($chartData as $bar)
+                @php $isCurrent = $bar['isCurrent'] ?? false; @endphp
                 <div class="prom-bar">
-                    <div class="barra" style="height:{{ max(4, round(($m/$maxM)*50)) }}px;"></div>
-                    <div class="num">{{ $m }}</div>
-                    <div class="mes">M-{{ count($meses)-$i }}</div>
+                    <div class="barra" style="height:{{ max(4, round(($bar['consumo_m3']/$maxM)*50)) }}px;{{ $isCurrent ? 'background:#2e50e4;' : '' }}"></div>
+                    <div class="num" style="{{ $isCurrent ? 'color:#2e50e4;font-weight:700;' : '' }}">{{ $bar['consumo_m3'] }}</div>
+                    <div class="mes" style="{{ $isCurrent ? 'font-weight:700;' : '' }}">{{ $bar['label'] }}</div>
                 </div>
                 @endforeach
             </div>
@@ -234,9 +248,7 @@ body { background:#f0f4f8; }
                         <td>{{ $esSubsidio ? '- ' : '+ ' }}$ {{ $nf(abs($factura->subsidio_emergencia)) }}</td>
                     </tr>
                     @endif
-                    @if($factura->otros_cobros_acueducto > 0)
                     <tr><td colspan="3">Otros Cobros — Cuota</td><td>$ {{ $nf($factura->cuota_otros_cobros_acueducto) }}</td></tr>
-                    @endif
                 </tbody>
                 <tfoot>
                     <tr><td colspan="3"><strong>Total Acueducto</strong></td><td><strong>$ {{ $nf($factura->subtotal_conexion_otros_acueducto) }}</strong></td></tr>
@@ -275,9 +287,7 @@ body { background:#f0f4f8; }
                         <td>{{ $esSubAl ? '- ' : '+ ' }}$ {{ $nf(abs($factura->subsidio_alcantarillado)) }}</td>
                     </tr>
                     @endif
-                    @if($factura->otros_cobros_alcantarillado > 0)
                     <tr><td colspan="3">Otros Cobros — Cuota</td><td>$ {{ $nf($factura->cuota_otros_cobros_alcantarillado) }}</td></tr>
-                    @endif
                 </tbody>
                 <tfoot>
                     <tr><td colspan="3"><strong>Total Alcantarillado</strong></td><td><strong>$ {{ $nf($factura->subtotal_conexion_otros_alcantarillado) }}</strong></td></tr>
@@ -286,18 +296,44 @@ body { background:#f0f4f8; }
         </div>
         @endif
 
-        {{-- SALDO ANTERIOR Y MORA --}}
-        @if($factura->saldo_anterior > 0)
-        <div class="fact-section" style="background:#fff5f5;">
+        {{-- SALDO ANTERIOR Y MORA (siempre visible) --}}
+        <div class="fact-section" style="background:{{ $factura->saldo_anterior > 0 ? '#fff5f5' : '#f7fafc' }};">
             <div style="display:flex;justify-content:space-between;align-items:center;">
                 <div>
-                    <span style="font-weight:700;color:#e53e3e;font-size:.88rem;"><i class="fa fa-exclamation-triangle"></i> Saldo Anterior en Mora</span>
+                    <span style="font-weight:700;color:{{ $factura->saldo_anterior > 0 ? '#e53e3e' : '#718096' }};font-size:.88rem;">
+                        <i class="fa fa-{{ $factura->saldo_anterior > 0 ? 'exclamation-triangle' : 'check-circle' }}"></i>
+                        Saldo Anterior en Mora
+                    </span>
+                    @if($factura->saldo_anterior > 0)
                     <div style="font-size:.78rem;color:#718096;margin-top:4px;">{{ $factura->facturas_en_mora }} factura(s) pendientes de períodos anteriores.</div>
+                    @endif
                 </div>
-                <span style="font-size:1.2rem;font-weight:800;color:#e53e3e;">$ {{ $nf($factura->saldo_anterior) }}</span>
+                <span style="font-size:1.2rem;font-weight:800;color:{{ $factura->saldo_anterior > 0 ? '#e53e3e' : '#22543d' }};">
+                    $ {{ $nf($factura->saldo_anterior) }}
+                </span>
             </div>
         </div>
-        @endif
+
+        {{-- PAGOS REALIZADOS EN ESTA FACTURA --}}
+        @php $totalPagadoFact = $factura->pagos->sum('total_pago_realizado'); @endphp
+        <div class="fact-section" style="background:{{ $totalPagadoFact > 0 ? '#f0fdf4' : '#f7fafc' }};">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+                <div>
+                    <span style="font-weight:700;color:{{ $totalPagadoFact > 0 ? '#166534' : '#718096' }};font-size:.88rem;">
+                        <i class="fa fa-{{ $totalPagadoFact > 0 ? 'check-circle' : 'coins' }}"></i>
+                        Pagos Realizados
+                    </span>
+                    @if($totalPagadoFact > 0)
+                    <div style="font-size:.78rem;color:#718096;margin-top:4px;">{{ $factura->pagos->count() }} pago(s) aplicado(s) a esta factura.</div>
+                    @else
+                    <div style="font-size:.78rem;color:#a0aec0;margin-top:4px;">Sin pagos registrados para esta factura.</div>
+                    @endif
+                </div>
+                <span style="font-size:1.2rem;font-weight:800;color:{{ $totalPagadoFact > 0 ? '#22543d' : '#a0aec0' }};">
+                    $ {{ $nf($totalPagadoFact) }}
+                </span>
+            </div>
+        </div>
 
         {{-- TOTAL FINAL --}}
         <div style="padding:20px 32px;">

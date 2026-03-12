@@ -170,14 +170,18 @@ class FacturacionService
         $alcantarillado['total'] = round($alcantarillado['total'] - $subsidioAlcantarillado, 2);
 
         // ── Otros cobros activos ──────────────────────────────────────────────
-        $otrosAcueducto      = ClienteOtrosCobro::where('cliente_id', $cliente->id)
+        $otrosAcueducto           = ClienteOtrosCobro::where('cliente_id', $cliente->id)
             ->where('tipo_servicio', 'ACUEDUCTO')->activo()->sum('cuota_mensual');
-        $saldoOtrosAcueducto = ClienteOtrosCobro::where('cliente_id', $cliente->id)
+        $montoTotalOtrosAcueducto = ClienteOtrosCobro::where('cliente_id', $cliente->id)
+            ->where('tipo_servicio', 'ACUEDUCTO')->activo()->sum('monto_total');
+        $saldoOtrosAcueducto      = ClienteOtrosCobro::where('cliente_id', $cliente->id)
             ->where('tipo_servicio', 'ACUEDUCTO')->activo()->sum('saldo');
 
-        $otrosAlcantarillado      = ClienteOtrosCobro::where('cliente_id', $cliente->id)
+        $otrosAlcantarillado           = ClienteOtrosCobro::where('cliente_id', $cliente->id)
             ->where('tipo_servicio', 'ALCANTARILLADO')->activo()->sum('cuota_mensual');
-        $saldoOtrosAlcantarillado = ClienteOtrosCobro::where('cliente_id', $cliente->id)
+        $montoTotalOtrosAlcantarillado = ClienteOtrosCobro::where('cliente_id', $cliente->id)
+            ->where('tipo_servicio', 'ALCANTARILLADO')->activo()->sum('monto_total');
+        $saldoOtrosAlcantarillado      = ClienteOtrosCobro::where('cliente_id', $cliente->id)
             ->where('tipo_servicio', 'ALCANTARILLADO')->activo()->sum('saldo');
 
         // ── Saldo anterior (facturas pendientes o vencidas anteriores) ────────
@@ -235,7 +239,7 @@ class FacturacionService
             'subtotal_facturacion_acueducto'             => $acueducto['subtotal'],
             'subsidio_emergencia'                        => $subsidioAcueducto,
             'total_facturacion_acueducto'                => $acueducto['total'],
-            'otros_cobros_acueducto'                     => $otrosAcueducto,
+            'otros_cobros_acueducto'                     => $montoTotalOtrosAcueducto,
             'cuota_otros_cobros_acueducto'               => $otrosAcueducto,
             'saldo_otros_cobros_acueducto'               => max(0, $saldoOtrosAcueducto - $otrosAcueducto),
             'subtotal_conexion_otros_acueducto'          => $subtotalConexionOtrosAcueducto,
@@ -250,7 +254,7 @@ class FacturacionService
             'subtotal_alcantarillado'                        => $alcantarillado['subtotal'],
             'subsidio_alcantarillado'                        => $subsidioAlcantarillado,
             'total_facturacion_alcantarillado'               => $alcantarillado['total'],
-            'otros_cobros_alcantarillado'                    => $otrosAlcantarillado,
+            'otros_cobros_alcantarillado'                    => $montoTotalOtrosAlcantarillado,
             'cuota_otros_cobros_alcantarillado'              => $otrosAlcantarillado,
             'saldo_otros_cobros_alcantarillado'              => max(0, $saldoOtrosAlcantarillado - $otrosAlcantarillado),
             'subtotal_conexion_otros_alcantarillado'         => $subtotalConexionOtrosAlcantarillado,

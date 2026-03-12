@@ -186,18 +186,32 @@ body { background:#f0f4f8; }
                     <div class="val" style="font-size:1.1rem;">{{ $factura->promedio_consumo_snapshot }} m³</div>
                 </div>
             </div>
-            {{-- Barras de promedio --}}
+            {{-- Barras historial de consumo (últimos 6 períodos) --}}
             @php
-                $meses = array_filter([$factura->prom_m1,$factura->prom_m2,$factura->prom_m3,$factura->prom_m4,$factura->prom_m5,$factura->prom_m6], fn($v) => !is_null($v));
-                $maxM  = max(array_merge($meses, [1]));
+                // Prioridad: histConsumos (desde facturas anteriores), sino prom_m1-m6
+                if (!empty($histConsumos)) {
+                    $chartData = $histConsumos;
+                } else {
+                    $rawMeses = array_values(array_filter(
+                        [$factura->prom_m6,$factura->prom_m5,$factura->prom_m4,$factura->prom_m3,$factura->prom_m2,$factura->prom_m1],
+                        fn($v) => !is_null($v)
+                    ));
+                    $chartData = array_map(fn($v, $i) => [
+                        'label'      => 'M-' . (count($rawMeses) - $i),
+                        'consumo_m3' => (float) $v,
+                        'isCurrent'  => $i === count($rawMeses) - 1,
+                    ], $rawMeses, array_keys($rawMeses));
+                }
+                $maxM = max(array_merge(array_column($chartData, 'consumo_m3'), [1]));
             @endphp
-            @if(count($meses) > 0)
+            @if(count($chartData) > 0)
             <div class="prom-grid" style="margin-top:14px;">
-                @foreach($meses as $i => $m)
+                @foreach($chartData as $bar)
+                @php $isCurrent = $bar['isCurrent'] ?? false; @endphp
                 <div class="prom-bar">
-                    <div class="barra" style="height:{{ max(4, round(($m/$maxM)*50)) }}px;"></div>
-                    <div class="num">{{ $m }}</div>
-                    <div class="mes">M-{{ count($meses)-$i }}</div>
+                    <div class="barra" style="height:{{ max(4, round(($bar['consumo_m3']/$maxM)*50)) }}px;{{ $isCurrent ? 'background:#2e50e4;' : '' }}"></div>
+                    <div class="num" style="{{ $isCurrent ? 'color:#2e50e4;font-weight:700;' : '' }}">{{ $bar['consumo_m3'] }}</div>
+                    <div class="mes" style="{{ $isCurrent ? 'font-weight:700;' : '' }}">{{ $bar['label'] }}</div>
                 </div>
                 @endforeach
             </div>

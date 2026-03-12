@@ -471,6 +471,25 @@ body { background:#f0f4f8; }
                             <input type="number" class="inp-pago" id="pOtrosAlc" min="0" step="1" placeholder="0" value="0">
                         </div>
                     </div>
+                    {{-- Saldo anterior e información de pagos previos --}}
+                    <div style="margin-top:12px;padding-top:10px;border-top:1px dashed #e2e8f0;">
+                        <div style="display:flex;justify-content:space-between;font-size:.8rem;margin-bottom:6px;">
+                            <span style="color:{{ ($factura->saldo_anterior ?? 0) > 0 ? '#dc2626' : '#718096' }};font-weight:600;">
+                                <i class="fa fa-history" style="font-size:.7rem;"></i> Saldo anterior en mora
+                            </span>
+                            <span style="font-weight:700;color:{{ ($factura->saldo_anterior ?? 0) > 0 ? '#dc2626' : '#718096' }};">
+                                $ {{ $nf($factura->saldo_anterior ?? 0) }}
+                            </span>
+                        </div>
+                        <div style="display:flex;justify-content:space-between;font-size:.8rem;">
+                            <span style="color:{{ $totalPagadoFact > 0 ? '#166534' : '#718096' }};font-weight:600;">
+                                <i class="fa fa-check-circle" style="font-size:.7rem;"></i> Pagos ya realizados
+                            </span>
+                            <span style="font-weight:700;color:{{ $totalPagadoFact > 0 ? '#166534' : '#718096' }};">
+                                - $ {{ $nf($totalPagadoFact) }}
+                            </span>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="saldo-restante">

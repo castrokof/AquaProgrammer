@@ -534,15 +534,11 @@ body { font-family: 'DejaVu Sans', 'Arial', sans-serif; font-size: 7pt; color: #
             <tr><td>Valor Alcantarillado</td><td class="r">{{ $nf($netoAlcantarillado) }}</td></tr>
             @endif
             @php $otrosCobros = ($factura->cuota_otros_cobros_acueducto ?? 0) + ($factura->cuota_otros_cobros_alcantarillado ?? 0); @endphp
-            @if($otrosCobros > 0)
-            <tr><td>Otros Cobros</td><td class="r">{{ $nf($otrosCobros) }}</td></tr>
-            @endif
-            @if($factura->saldo_anterior > 0)
-            <tr>
-                <td style="color:#dc2626;">+ Saldo Anterior</td>
-                <td class="r" style="color:#dc2626;font-weight:700;">{{ $nf($factura->saldo_anterior) }}</td>
+            <tr style="{{ $otrosCobros > 0 ? '' : 'color:#aaa;' }}"><td>Otros Cobros</td><td class="r">{{ $nf($otrosCobros) }}</td></tr>
+            <tr style="{{ ($factura->saldo_anterior ?? 0) > 0 ? 'color:#dc2626;' : 'color:#aaa;' }}">
+                <td>+ Saldo Anterior</td>
+                <td class="r" style="font-weight:{{ ($factura->saldo_anterior ?? 0) > 0 ? '700' : '400' }};">{{ $nf($factura->saldo_anterior ?? 0) }}</td>
             </tr>
-            @endif
             @if($ultimoPago)
             <tr>
                 <td style="color:#166534;">Último Pago

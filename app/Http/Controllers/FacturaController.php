@@ -643,7 +643,7 @@ public function exportarSeleccionadas(Request $request)
             // Consumo negativo registrado en campo → separar para revisión del analista
             if ($orden && (int) $orden->Cons_Act < 0) {
                 $tipo            = 'negativo';
-                $consumoSugerido = $promedioReal; // sugerir el promedio como valor de reemplazo
+                $consumoSugerido = (int) $orden->Cons_Act; // mostrar el valor real (negativo) — analista decide el reemplazo
             }
 
             return [

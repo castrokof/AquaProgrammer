@@ -359,9 +359,16 @@ function construirTabla() {
             bgConsumo = '#fef9c3'; // amarillo pálido — causado sin clasificar
         }
 
-        var inpConsumo = '<input class="inp-consumo" type="number" min="0" value="' + c.consumo_sugerido
-            + '" data-id="' + c.id + '" name="consumo" style="background:' + bgConsumo + ';"'
-            + ' title="Editable — valor sugerido: ' + c.consumo_sugerido + '">';
+        var esNegativo = c.tipo === 'negativo';
+        var tituloInp  = esNegativo
+            ? 'Lectura negativa (' + c.consumo_sugerido + ') — promedio sugerido: ' + (c.promedio_consumo || 0)
+            : 'Editable — valor sugerido: ' + c.consumo_sugerido;
+        var inpConsumo = '<input class="inp-consumo" type="number"'
+            + (esNegativo ? '' : ' min="0"')
+            + ' value="' + c.consumo_sugerido
+            + '" data-id="' + c.id + '" name="consumo" style="background:' + bgConsumo + ';'
+            + (esNegativo ? 'color:#b91c1c;font-weight:700;' : '')
+            + '" title="' + tituloInp + '">';
 
         // Lecturas: editables para todos los que tienen medidor
         var inpLectAnt = sinMedidor ? '<span style="color:#cbd5e0;">—</span>' :

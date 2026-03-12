@@ -139,8 +139,13 @@
                 </select>
             </div>
             <div class="col-md-2">
-                <label style="font-weight:600;font-size:.8rem;color:#4a5568;text-transform:uppercase;">ID Ruta</label>
-                <input type="number" id="fRuta" class="form-control" placeholder="Ej: 101">
+                <label style="font-weight:600;font-size:.8rem;color:#4a5568;text-transform:uppercase;">Ruta</label>
+                <select id="fRuta" class="form-control">
+                    <option value="">— Todas —</option>
+                    @foreach($rutas as $r)
+                    <option value="{{ $r }}">Ruta {{ $r }}</option>
+                    @endforeach
+                </select>
             </div>
             <div class="col-md-2">
                 <label style="font-weight:600;font-size:.8rem;color:#4a5568;text-transform:uppercase;">Crítica</label>
@@ -188,6 +193,7 @@
                     <th style="width:36px;"><input type="checkbox" id="checkAll" title="Seleccionar todos"></th>
                     <th>N° Factura</th>
                     <th>Suscriptor</th>
+                    <th>Ruta</th>
                     <th>Período</th>
                     <th>Expedición</th>
                     <th>Vencimiento</th>
@@ -436,6 +442,12 @@ $(function () {
                     return html;
                 }
             },
+            {
+                data: 'id_ruta',
+                render: function (v) {
+                    return v ? '<span style="font-weight:700;color:#2e50e4;">' + v + '</span>' : '<span style="color:#cbd5e0;">—</span>';
+                }
+            },
             { data: 'periodo' },
             { data: 'expedicion' },
             { data: 'vencimiento' },
@@ -497,10 +509,12 @@ $(function () {
         if (tablaReporte) tablaReporte.ajax.reload();
     });
 
-    // Filtrar también al presionar Enter en los inputs
-    $('#fRuta, #fCritica, #fSuscriptor').on('keypress', function (e) {
+    // Filtrar también al presionar Enter en los inputs de texto
+    $('#fCritica, #fSuscriptor').on('keypress', function (e) {
         if (e.which === 13) { tabla.ajax.reload(); cargarKpis(); }
     });
+    // Ruta es select — filtrar al cambiar
+    $('#fRuta').on('change', function () { tabla.ajax.reload(); cargarKpis(); });
 
     // ── Selección masiva ───────────────────────────────────────────────────────
     function actualizarBulkBar() {

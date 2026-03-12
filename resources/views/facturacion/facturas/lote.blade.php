@@ -23,6 +23,7 @@ label.lbl { font-weight:600; color:#4a5568; font-size:.8rem; text-transform:uppe
 .tipo-tab.consumo_cero   { background:#f1f5f9; color:#334155; border-color:#94a3b8; }
 .tipo-tab.promedio_medidor { background:#fdf4ff; color:#7e22ce; border-color:#c084fc; }
 .tipo-tab.todos          { background:#e2e8f0; color:#2d3748; border-color:#cbd5e0; }
+.tipo-tab.negativo       { background:#fee2e2; color:#7f1d1d; border-color:#fca5a5; }
 .tipo-tab.active         { box-shadow:0 4px 12px rgba(0,0,0,.15); transform:translateY(-1px); }
 .tipo-tab .cnt           { background:rgba(0,0,0,.15); border-radius:10px; padding:0 7px; margin-left:5px; font-size:.75rem; }
 
@@ -46,6 +47,7 @@ label.lbl { font-weight:600; color:#4a5568; font-size:.8rem; text-transform:uppe
 .badge-tipo.normal         { background:#d1fae5; color:#065f46; }
 .badge-tipo.consumo_cero   { background:#fff7ed; color:#9a3412; }
 .badge-tipo.promedio_medidor { background:#fff7ed; color:#9a3412; }
+.badge-tipo.negativo       { background:#fee2e2; color:#7f1d1d; }
 
 /* Barra de acciones flotante */
 #barraAcciones { position:fixed; bottom:0; left:0; right:0; background:white; border-top:3px solid #667eea; padding:14px 30px; display:none; z-index:999; box-shadow:0 -4px 20px rgba(0,0,0,.12); }
@@ -125,6 +127,9 @@ label.lbl { font-weight:600; color:#4a5568; font-size:.8rem; text-transform:uppe
             <span class="tipo-tab bajo" data-tipo="bajo" onclick="filtrarTipo('bajo',this)" style="display:none;">
                 Bajos <span class="cnt" id="cnt-bajo">0</span>
             </span>
+            <span class="tipo-tab negativo" data-tipo="negativo" onclick="filtrarTipo('negativo',this)" style="display:none;">
+                <i class="fa fa-exclamation-triangle"></i> Negativos <span class="cnt" id="cnt-negativo">0</span>
+            </span>
             <span class="tipo-tab causado" data-tipo="causado" onclick="filtrarTipo('causado',this)" style="display:none;">
                 Causados <span class="cnt" id="cnt-causado">0</span>
             </span>
@@ -187,6 +192,7 @@ label.lbl { font-weight:600; color:#4a5568; font-size:.8rem; text-transform:uppe
                             <th>Promedio m³</th>
                             <th>Tipo</th>
                             <th>Obs. Campo</th>
+                            <th>Causa</th>
                             <th>Lect. Ant.</th>
                             <th>Lect. Act.</th>
                             <th>Consumo m³</th>
@@ -197,6 +203,7 @@ label.lbl { font-weight:600; color:#4a5568; font-size:.8rem; text-transform:uppe
                             <th>_ruta</th>
                             <th>_ciclo</th>
                             <th>_critica</th>
+                            <th>_causa</th>
                         </tr>
                     </thead>
                     <tbody id="tbodyLote">
@@ -327,7 +334,8 @@ function construirTabla() {
 
     var labelMap = {
         sin_medidor:'Sin Medidor', alto:'Alto', bajo:'Bajo', causado:'Causado',
-        normal:'Normal', consumo_cero:'Desocupado', promedio_medidor:'Medidor Parado'
+        normal:'Normal', consumo_cero:'Desocupado', promedio_medidor:'Medidor Parado',
+        negativo:'Negativo'
     };
 
     var html = '';
@@ -368,6 +376,12 @@ function construirTabla() {
             ? ('<small style="color:#475569;" title="Cód. ' + c.observacion_id + '">' + obsTexto + '</small>')
             : '<small style="color:#cbd5e0;">—</small>';
 
+        // Causa registrada por el operario de campo
+        var causaTexto = c.causa_des || '';
+        var causaLabel = causaTexto
+            ? ('<small style="color:#7c3aed;" title="Cód. ' + (c.causa_id || '') + '">' + causaTexto + '</small>')
+            : '<small style="color:#cbd5e0;">—</small>';
+
         // Foto
         var fotoBtn = '';
         if (c.foto1 || c.foto2) {
@@ -393,6 +407,7 @@ function construirTabla() {
         html += '<td style="text-align:right;font-weight:600;">' + (c.promedio_consumo || 0) + '</td>';
         html += '<td>' + badge + '</td>';
         html += '<td data-order="' + obsTexto + '">' + obsLabel + '</td>';
+        html += '<td data-order="' + causaTexto + '">' + causaLabel + '</td>';
         html += '<td>' + inpLectAnt + '</td>';
         html += '<td>' + inpLectAct + '</td>';
         html += '<td>' + inpConsumo + '</td>';
@@ -403,20 +418,22 @@ function construirTabla() {
         html += '<td>' + (c.id_ruta   || '') + '</td>';
         html += '<td>' + (c.ciclo     || '') + '</td>';
         html += '<td>' + (c.critica   || '') + '</td>';
+        html += '<td>' + (c.causa_des || '') + '</td>';
         html += '</tr>';
     });
 
     $('#tbodyLote').html(html);
 
     // Columnas: 0=chk, 1=ruta, 2=cons, 3=suscriptor, 4=nombre, 5=sector, 6=estrato,
-    //           7=promedio, 8=tipo, 9=obs_campo, 10=lect_ant, 11=lect_act, 12=consumo,
-    //           13=obs_analista, 14=foto, 15=_tipo, 16=_obs, 17=_ruta, 18=_ciclo, 19=_critica
+    //           7=promedio, 8=tipo, 9=obs_campo, 10=causa, 11=lect_ant, 12=lect_act,
+    //           13=consumo, 14=obs_analista, 15=foto, 16=_tipo, 17=_obs, 18=_ruta,
+    //           19=_ciclo, 20=_critica, 21=_causa
     dt = $('#tablaLote').DataTable({
         paging:    true,
         pageLength: 50,
         ordering:  true,
         searching: true,
-        order:     [[17, 'asc'], [2, 'asc']],   // por ruta, luego consecutivo
+        order:     [[18, 'asc'], [2, 'asc']],   // por ruta, luego consecutivo
         lengthMenu: [[25, 50, 100, 200, -1], ['25', '50', '100', '200', 'Mostrar Todo']],
         language: {
             lengthMenu:    'Mostrar _MENU_ registros',
@@ -427,8 +444,8 @@ function construirTabla() {
             zeroRecords:   'No hay suscriptores para los filtros seleccionados.'
         },
         columnDefs: [
-            { orderable: false, targets: [0, 10, 11, 12, 13, 14] },
-            { visible: false, targets: [15, 16, 17, 18, 19] }
+            { orderable: false, targets: [0, 11, 12, 13, 14, 15] },
+            { visible: false, targets: [16, 17, 18, 19, 20, 21] }
         ],
         drawCallback: function() {
             actualizarBarraAcciones();
@@ -490,31 +507,31 @@ function calcularConsumo(el) {
     }
 }
 
-// ── Filtrar por tipo — columna oculta 15 ─────────────────────────────────
+// ── Filtrar por tipo — columna oculta 16 ─────────────────────────────────
 function filtrarTipo(tipo, el) {
     tipoActivo = tipo;
     document.querySelectorAll('.tipo-tab').forEach(function(t){ t.classList.remove('active'); });
     if (el) el.classList.add('active');
     if (!dt) return;
-    dt.column(15).search(tipo === 'todos' ? '' : '^' + tipo + '$', true, false).draw();
+    dt.column(16).search(tipo === 'todos' ? '' : '^' + tipo + '$', true, false).draw();
 }
 
 // ── Filtros por observación, ruta, ciclo, crítica ─────────────────────────
 $('#filtroObs').on('change', function () {
     if (!dt) return;
-    dt.column(16).search($(this).val() ? '^' + $(this).val() + '$' : '', true, false).draw();
+    dt.column(17).search($(this).val() ? '^' + $(this).val() + '$' : '', true, false).draw();
 });
 $('#filtroRuta').on('change', function () {
     if (!dt) return;
-    dt.column(17).search($(this).val() ? '^' + escapeRegex($(this).val()) + '$' : '', true, false).draw();
+    dt.column(18).search($(this).val() ? '^' + escapeRegex($(this).val()) + '$' : '', true, false).draw();
 });
 $('#filtroCiclo').on('change', function () {
     if (!dt) return;
-    dt.column(18).search($(this).val() ? '^' + escapeRegex($(this).val()) + '$' : '', true, false).draw();
+    dt.column(19).search($(this).val() ? '^' + escapeRegex($(this).val()) + '$' : '', true, false).draw();
 });
 $('#filtroCritica').on('change', function () {
     if (!dt) return;
-    dt.column(19).search($(this).val() ? escapeRegex($(this).val()) : '', true, false).draw();
+    dt.column(20).search($(this).val() ? escapeRegex($(this).val()) : '', true, false).draw();
 });
 function escapeRegex(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
 
@@ -586,7 +603,7 @@ function actualizarBarraAcciones() {
 
 // ── Actualizar contadores de tabs ─────────────────────────────────────────
 function actualizarContadores() {
-    var tiposConocidos = ['sin_medidor','alto','bajo','causado','consumo_cero','promedio_medidor','normal'];
+    var tiposConocidos = ['sin_medidor','alto','bajo','negativo','causado','consumo_cero','promedio_medidor','normal'];
     var counts = { todos: todosClientes.length };
     tiposConocidos.forEach(function(t){ counts[t] = 0; });
     todosClientes.forEach(function(c){ if (counts[c.tipo] !== undefined) counts[c.tipo]++; });

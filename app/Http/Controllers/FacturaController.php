@@ -30,7 +30,8 @@ class FacturaController extends Controller
     public function index()
     {
         $periodos = PeriodoLectura::orderBy('codigo', 'desc')->get(['codigo', 'nombre']);
-        return view('facturacion.facturas.index', compact('periodos'));
+        $rutas    = Cliente::whereNotNull('id_ruta')->distinct()->orderBy('id_ruta')->pluck('id_ruta');
+        return view('facturacion.facturas.index', compact('periodos', 'rutas'));
     }
 
     /** AJAX: DataTables server-side para el listado de facturas */
@@ -84,6 +85,7 @@ class FacturaController extends Controller
                 'total'       => number_format($f->total_a_pagar, 0, ',', '.'),
                 'estado'      => $f->estado,
                 'tipo'        => $f->es_automatica ? 'AUTO' : 'MANUAL',
+                'id_ruta'     => $f->cliente ? $f->cliente->id_ruta : null,
                 'url_ver'     => route('facturas.show', $f->id),
                 'url_pdf'     => route('facturas.pdf', $f->id),
                 'anulada'     => $f->estado === 'ANULADA',
@@ -555,7 +557,7 @@ public function exportarSeleccionadas(Request $request)
             ->get([
                 'Suscriptor', 'Critica', 'Lect_Actual', 'LA', 'Cons_Act', 'Estado',
                 'Observacion_id', 'Observacion_des', 'foto1', 'foto2', 'Promedio',
-                'idDivision', 'Ciclo', 'consecutivoRuta',
+                'idDivision', 'Ciclo', 'consecutivoRuta', 'Causa_id', 'Causa_des',
             ])
             ->keyBy('Suscriptor');
 
@@ -612,6 +614,12 @@ public function exportarSeleccionadas(Request $request)
                 $consumoSugerido = (int) $orden->Cons_Act;
             }
 
+            // Consumo negativo registrado en campo → separar para revisión del analista
+            if ($orden && (int) $orden->Cons_Act < 0) {
+                $tipo            = 'negativo';
+                $consumoSugerido = $promedioReal; // sugerir el promedio como valor de reemplazo
+            }
+
             return [
                 'id'               => $c->id,
                 'suscriptor'       => $c->suscriptor,
@@ -635,6 +643,8 @@ public function exportarSeleccionadas(Request $request)
                 'id_ruta'          => $orden ? ($orden->idDivision     ?? null) : null,
                 'ciclo'            => $orden ? ($orden->Ciclo           ?? null) : null,
                 'consecutivo'      => $orden ? ($orden->consecutivoRuta ?? null) : null,
+                'causa_id'         => $orden ? ($orden->Causa_id        ?? null) : null,
+                'causa_des'        => $orden ? ($orden->Causa_des       ?? null) : null,
             ];
         })->filter()->values();
 

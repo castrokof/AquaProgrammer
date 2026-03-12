@@ -112,9 +112,10 @@ class TarifaPeriodo extends Model
                 break;
             }
 
-            // Límites del rango
-            $desde = $rango->rango_desde;
-            $hasta = is_null($rango->rango_hasta) ? PHP_INT_MAX : $rango->rango_hasta;
+            // Límites del rango (rango_desde es 1-indexado e inclusivo, p.ej. básico=1..16,
+            // complementario=17..32; se convierte a posición acumulada restando 1)
+            $desde = max(0, (int) $rango->rango_desde - 1);
+            $hasta = is_null($rango->rango_hasta) ? PHP_INT_MAX : (int) $rango->rango_hasta;
             
             // El consumo total que debe haber llegado a este punto para entrar en este rango
             // es igual al 'desde' del rango. Si ya asignamos menos que eso, necesitamos

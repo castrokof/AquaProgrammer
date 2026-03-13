@@ -54,11 +54,15 @@
 .kpi-row-4 { grid-template-columns:repeat(4,1fr); }
 .kpi-row-5 { grid-template-columns:repeat(5,1fr); }
 .kpi-row-6 { grid-template-columns:repeat(6,1fr); }
-.kpi-card { border-radius:16px; padding:16px 18px; color:white; position:relative; overflow:hidden; }
+.kpi-card { border-radius:16px; padding:16px 18px; color:white; position:relative; overflow:hidden; cursor:pointer; }
 .kpi-card .kpi-lbl { font-size:.68rem; font-weight:700; text-transform:uppercase; opacity:.85; letter-spacing:.5px; }
 .kpi-card .kpi-cnt { font-size:1.6rem; font-weight:900; line-height:1.1; margin:4px 0 2px; }
 .kpi-card .kpi-val { font-size:.78rem; font-weight:600; opacity:.85; }
 .kpi-card .kpi-icon { position:absolute; right:14px; top:50%; transform:translateY(-50%); font-size:2.2rem; opacity:.18; }
+.kpi-row-6 .kpi-card { padding:9px 11px; }
+.kpi-row-6 .kpi-card .kpi-cnt { font-size:1.1rem; margin:2px 0 1px; }
+.kpi-row-6 .kpi-card .kpi-icon { font-size:1.6rem; right:10px; }
+.kpi-card.activo { outline:3px solid rgba(255,255,255,.7); box-shadow:0 0 0 4px rgba(0,0,0,.15); }
 .kpi-pendiente { background:linear-gradient(135deg,#f6ad55,#ed8936); }
 .kpi-pagada    { background:linear-gradient(135deg,#48bb78,#38a169); }
 .kpi-vencida   { background:linear-gradient(135deg,#fc8181,#e53e3e); }
@@ -111,25 +115,25 @@
 
     {{-- KPI Cards — Estado --}}
     <div class="kpi-row kpi-row-4">
-        <div class="kpi-card kpi-pendiente">
+        <div class="kpi-card kpi-pendiente" data-filtro="estado" data-val="PENDIENTE">
             <div class="kpi-lbl">Pendiente</div>
             <div class="kpi-cnt" id="kpiPendienteCnt">—</div>
             <div class="kpi-val" id="kpiPendienteVal">—</div>
             <i class="fa fa-clock kpi-icon"></i>
         </div>
-        <div class="kpi-card kpi-pagada">
+        <div class="kpi-card kpi-pagada" data-filtro="estado" data-val="PAGADA">
             <div class="kpi-lbl">Pagada</div>
             <div class="kpi-cnt" id="kpiPagadaCnt">—</div>
             <div class="kpi-val" id="kpiPagadaVal">—</div>
             <i class="fa fa-check-circle kpi-icon"></i>
         </div>
-        <div class="kpi-card kpi-vencida">
+        <div class="kpi-card kpi-vencida" data-filtro="estado" data-val="VENCIDA">
             <div class="kpi-lbl">Vencida</div>
             <div class="kpi-cnt" id="kpiVencidaCnt">—</div>
             <div class="kpi-val" id="kpiVencidaVal">—</div>
             <i class="fa fa-exclamation-circle kpi-icon"></i>
         </div>
-        <div class="kpi-card kpi-anulada">
+        <div class="kpi-card kpi-anulada" data-filtro="estado" data-val="ANULADA">
             <div class="kpi-lbl">Anulada</div>
             <div class="kpi-cnt" id="kpiAnuladaCnt">—</div>
             <div class="kpi-val" id="kpiAnuladaVal">—</div>
@@ -139,37 +143,37 @@
 
     {{-- KPI Cards — Tipo de Consumo --}}
     <div class="kpi-row kpi-row-6" style="margin-bottom:20px;">
-        <div class="kpi-card kpi-normal">
+        <div class="kpi-card kpi-normal" data-filtro="critica" data-val="NORMAL">
             <div class="kpi-lbl">Normal</div>
             <div class="kpi-cnt" id="kpiNormalCnt">—</div>
             <div class="kpi-val" id="kpiNormalVal">—</div>
             <i class="fa fa-check kpi-icon"></i>
         </div>
-        <div class="kpi-card kpi-alta">
+        <div class="kpi-card kpi-alta" data-filtro="critica" data-val="ALTO">
             <div class="kpi-lbl">Alta</div>
             <div class="kpi-cnt" id="kpiAltaCnt">—</div>
             <div class="kpi-val" id="kpiAltaVal">—</div>
             <i class="fa fa-arrow-up kpi-icon"></i>
         </div>
-        <div class="kpi-card kpi-baja">
+        <div class="kpi-card kpi-baja" data-filtro="critica" data-val="BAJO">
             <div class="kpi-lbl">Baja Causada</div>
             <div class="kpi-cnt" id="kpiBajaCnt">—</div>
             <div class="kpi-val" id="kpiBajaVal">—</div>
             <i class="fa fa-arrow-down kpi-icon"></i>
         </div>
-        <div class="kpi-card kpi-negativa">
+        <div class="kpi-card kpi-negativa" data-filtro="critica" data-val="NEGATIVA">
             <div class="kpi-lbl">Negativa</div>
             <div class="kpi-cnt" id="kpiNegativaCnt">—</div>
             <div class="kpi-val" id="kpiNegativaVal">—</div>
             <i class="fa fa-minus-circle kpi-icon"></i>
         </div>
-        <div class="kpi-card kpi-causado">
+        <div class="kpi-card kpi-causado" data-filtro="critica" data-val="CAUSADO">
             <div class="kpi-lbl">Causado</div>
             <div class="kpi-cnt" id="kpiCausadoCnt">—</div>
             <div class="kpi-val" id="kpiCausadoVal">—</div>
             <i class="fa fa-bolt kpi-icon"></i>
         </div>
-        <div class="kpi-card kpi-promedio">
+        <div class="kpi-card kpi-promedio" data-filtro="critica" data-val="SIN CRITICA">
             <div class="kpi-lbl">Por Promedio</div>
             <div class="kpi-cnt" id="kpiPromedioCnt">—</div>
             <div class="kpi-val" id="kpiPromedioVal">—</div>
@@ -202,12 +206,14 @@
                 <label style="font-weight:600;font-size:.8rem;color:#4a5568;text-transform:uppercase;">Crítica</label>
                 <select id="fCritica" class="form-control">
                     <option value="">— Todas —</option>
+                    <option value="NORMAL">NORMAL</option>
+                    <option value="IGUAL">IGUAL</option>
                     <option value="ALTO">ALTO</option>
                     <option value="ELEVADO">ELEVADO</option>
                     <option value="BAJO">BAJO</option>
                     <option value="CAUSADO">CAUSADO</option>
                     <option value="NEGATIVA">NEGATIVA</option>
-                    <option value="IGUAL">IGUAL</option>
+                    <option value="SIN CRITICA">SIN CRITICA</option>
                     <option value="NORMAL">NORMAL</option>
                 </select>
             </div>
@@ -583,11 +589,42 @@ $(function () {
         }
     });
 
+    // ── Click en tarjetas KPI ──────────────────────────────────────────────────
+    $(document).on('click', '.kpi-card[data-filtro]', function () {
+        var filtro = $(this).data('filtro');
+        var val    = $(this).data('val');
+        var activo = $(this).hasClass('activo');
+
+        // Quitar activo del mismo grupo
+        $('.kpi-card[data-filtro="' + filtro + '"]').removeClass('activo');
+
+        if (activo) {
+            // Segundo click: limpiar filtro
+            if (filtro === 'estado')  $('#fEstado').val('');
+            if (filtro === 'critica') $('#fCritica').val('');
+        } else {
+            $(this).addClass('activo');
+            if (filtro === 'estado')  $('#fEstado').val(val);
+            if (filtro === 'critica') $('#fCritica').val(val);
+        }
+
+        tabla.ajax.reload();
+        cargarKpis();
+        if (tablaReporte) tablaReporte.ajax.reload();
+    });
+
     // Cargar KPIs al iniciar
     cargarKpis();
 
     // ── Filtrar ────────────────────────────────────────────────────────────────
     $('#btnFiltrar').on('click', function () {
+        // Sincronizar estado activo de tarjetas con los selects actuales
+        var eVal = $('#fEstado').val();
+        var cVal = $('#fCritica').val();
+        $('.kpi-card[data-filtro="estado"]').removeClass('activo')
+            .filter('[data-val="' + eVal + '"]').addClass('activo');
+        $('.kpi-card[data-filtro="critica"]').removeClass('activo')
+            .filter('[data-val="' + cVal + '"]').addClass('activo');
         tabla.ajax.reload();
         cargarKpis();
         if (tablaReporte) tablaReporte.ajax.reload();

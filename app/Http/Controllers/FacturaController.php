@@ -41,9 +41,9 @@ class FacturaController extends Controller
             ->select('facturas.*', 'clientes.id_ruta as cl_ruta', 'clientes.consecutivo as cl_consecutivo',
                      'clientes.nombre as cl_nombre', 'clientes.apellido as cl_apellido');
 
-        if ($request->filled('periodo'))    $query->where('periodo', $request->periodo);
+        if ($request->filled('periodo'))    $query->where('facturas.periodo', $request->periodo);
         if ($request->filled('suscriptor')) $query->where('facturas.suscriptor', 'like', '%'.$request->suscriptor.'%');
-        if ($request->filled('estado'))     $query->where('estado', $request->estado);
+        if ($request->filled('estado'))     $query->where('facturas.estado', $request->estado);
 
         if ($request->filled('id_ruta')) {
             $query->where('clientes.id_ruta', $request->id_ruta);
@@ -146,27 +146,27 @@ class FacturaController extends Controller
             'total'    => (float) ($rows[$estado]->total ?? 0),
         ];
 
-        // KPIs por Critica — unir facturas con ordenescu por suscriptor+periodo
-        $critExpr = "UPPER(TRIM(COALESCE(o.Critica, 'SIN CRITICA')))";
-        $critRows = \DB::table('facturas as f')
-            ->leftJoin(
-                \DB::raw('(SELECT TRIM(Suscriptor) as Suscriptor, TRIM(Periodo) as Periodo, MAX(UPPER(TRIM(Critica))) as Critica FROM ordenescu GROUP BY TRIM(Suscriptor), TRIM(Periodo)) as o'),
-                fn($j) => $j->on(\DB::raw('TRIM(o.Suscriptor)'), '=', \DB::raw('TRIM(f.suscriptor)'))
-                             ->on(\DB::raw('TRIM(o.Periodo)'),    '=', \DB::raw('TRIM(f.periodo)'))
-            )
-            ->when($request->filled('periodo'),    fn($q) => $q->where('f.periodo',    $request->periodo))
-            ->when($request->filled('suscriptor'), fn($q) => $q->where('f.suscriptor', 'like', '%'.$request->suscriptor.'%'))
-            ->when($request->filled('estado'),     fn($q) => $q->where('f.estado',     $request->estado))
-            ->when($request->filled('id_ruta') && \Schema::hasColumn('facturas', 'id_ruta'),
-                   fn($q) => $q->where('f.id_ruta', $request->id_ruta))
-            ->selectRaw("{$critExpr} as critica, COUNT(*) as cnt, SUM(f.total_a_pagar) as total")
-            ->groupBy(\DB::raw($critExpr))
-            ->get()
-            ->keyBy('critica');
+        // KPIs por Critica — mapa suscriptor→critica desde ordenescu + suma en facturas
+        $orQuery = \App\Models\Admin\Ordenesmtl::query()
+            ->selectRaw('TRIM(Suscriptor) as sus, UPPER(TRIM(MAX(Critica))) as critica');
+        if ($request->filled('periodo')) {
+            $orQuery->where('Periodo', $request->periodo);
+        }
+        $mapaC = $orQuery->groupBy(\DB::raw('TRIM(Suscriptor)'))->pluck('critica', 'sus');
+
+        $factRows = (clone $base)->get(['suscriptor', 'total_a_pagar']);
+
+        $critRows = [];
+        foreach ($factRows as $f) {
+            $c = $mapaC[trim((string)$f->suscriptor)] ?? 'SIN CRITICA';
+            if ($c === '') $c = 'SIN CRITICA';
+            $critRows[$c]['cantidad'] = ($critRows[$c]['cantidad'] ?? 0) + 1;
+            $critRows[$c]['total']    = ($critRows[$c]['total']    ?? 0.0) + (float)$f->total_a_pagar;
+        }
 
         $getCrit = fn($key) => [
-            'cantidad' => (int)   ($critRows[$key]->cnt   ?? 0),
-            'total'    => (float) ($critRows[$key]->total ?? 0),
+            'cantidad' => (int)   ($critRows[$key]['cantidad'] ?? 0),
+            'total'    => (float) ($critRows[$key]['total']    ?? 0),
         ];
 
         // Agrupar: Normal=NORMAL+IGUAL, Alta=ALTO+ELEVADO, Baja=BAJO

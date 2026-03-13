@@ -37,58 +37,69 @@ class FacturaController extends Controller
     /** AJAX: DataTables server-side para el listado de facturas */
     public function data(Request $request)
     {
-        $query = Factura::with('cliente')->select('facturas.*');
+        $query = Factura::leftJoin('clientes', 'clientes.suscriptor', '=', 'facturas.suscriptor')
+            ->select('facturas.*', 'clientes.id_ruta as cl_ruta', 'clientes.consecutivo as cl_consecutivo',
+                     'clientes.nombre as cl_nombre', 'clientes.apellido as cl_apellido');
 
         if ($request->filled('periodo'))    $query->where('periodo', $request->periodo);
-        if ($request->filled('suscriptor')) $query->where('suscriptor', 'like', '%'.$request->suscriptor.'%');
+        if ($request->filled('suscriptor')) $query->where('facturas.suscriptor', 'like', '%'.$request->suscriptor.'%');
         if ($request->filled('estado'))     $query->where('estado', $request->estado);
 
         if ($request->filled('id_ruta')) {
-            if (\Schema::hasColumn('facturas', 'id_ruta')) {
-                $query->where('id_ruta', $request->id_ruta);
-            } else {
-                $subs = \App\Models\Admin\Ordenesmtl::where('id_Ruta', $request->id_ruta)->pluck('Suscriptor');
-                $query->whereIn('suscriptor', $subs);
-            }
+            $query->where('clientes.id_ruta', $request->id_ruta);
         }
 
         if ($request->filled('critica')) {
             $subs = \App\Models\Admin\Ordenesmtl::where('Critica', 'like', '%'.$request->critica.'%')->pluck('Suscriptor');
-            $query->whereIn('suscriptor', $subs);
+            $query->whereIn('facturas.suscriptor', $subs);
         }
 
         $total    = Factura::count();
         $filtered = $query->count();
 
-        $facturas = $query->orderBy('fecha_expedicion', 'desc')
+        // Columnas ordenables por índice DataTables
+        $colMap = [
+            1  => 'facturas.numero_factura',
+            2  => 'facturas.suscriptor',
+            3  => 'clientes.id_ruta',
+            4  => 'clientes.consecutivo',
+            5  => 'facturas.periodo',
+            6  => 'facturas.fecha_expedicion',
+            7  => 'facturas.fecha_vencimiento',
+            8  => 'facturas.total_a_pagar',
+            10 => 'facturas.estado',
+        ];
+        $colIdx = (int) $request->input('order.0.column', 6);
+        $colDir = $request->input('order.0.dir', 'desc') === 'asc' ? 'asc' : 'desc';
+        $orderCol = $colMap[$colIdx] ?? 'facturas.fecha_expedicion';
+
+        $facturas = $query->orderBy($orderCol, $colDir)
             ->skip((int) $request->input('start', 0))
             ->take((int) $request->input('length', 25))
             ->get();
 
         $data = $facturas->map(function ($f) {
-            $nombre = '';
-            if ($f->cliente) {
-                $nombre = trim($f->cliente->nombre . ' ' . $f->cliente->apellido);
-                if (mb_strlen($nombre) > 22) {
-                    $nombre = mb_substr($nombre, 0, 22) . '…';
-                }
+            $nombre = trim(($f->cl_nombre ?? '') . ' ' . ($f->cl_apellido ?? ''));
+            if (mb_strlen($nombre) > 22) {
+                $nombre = mb_substr($nombre, 0, 22) . '…';
             }
 
             return [
-                'id'          => $f->id,
-                'numero'      => $f->numero_factura,
-                'suscriptor'  => $f->suscriptor,
-                'nombre'      => $nombre,
-                'periodo'     => $f->periodo,
-                'expedicion'  => $f->fecha_expedicion  ? \Carbon\Carbon::parse($f->fecha_expedicion)->format('d/m/Y')  : '—',
-                'vencimiento' => $f->fecha_vencimiento ? \Carbon\Carbon::parse($f->fecha_vencimiento)->format('d/m/Y') : '—',
-                'total'       => number_format($f->total_a_pagar, 0, ',', '.'),
-                'estado'      => $f->estado,
-                'tipo'        => $f->es_automatica ? 'AUTO' : 'MANUAL',
-                'id_ruta'     => $f->cliente ? $f->cliente->id_ruta : null,
-                'url_ver'     => route('facturas.show', $f->id),
-                'url_pdf'     => route('facturas.pdf', $f->id),
-                'anulada'     => $f->estado === 'ANULADA',
+                'id'           => $f->id,
+                'numero'       => $f->numero_factura,
+                'suscriptor'   => $f->suscriptor,
+                'nombre'       => $nombre,
+                'periodo'      => $f->periodo,
+                'expedicion'   => $f->fecha_expedicion  ? \Carbon\Carbon::parse($f->fecha_expedicion)->format('d/m/Y')  : '—',
+                'vencimiento'  => $f->fecha_vencimiento ? \Carbon\Carbon::parse($f->fecha_vencimiento)->format('d/m/Y') : '—',
+                'total'        => number_format($f->total_a_pagar, 0, ',', '.'),
+                'estado'       => $f->estado,
+                'tipo'         => $f->es_automatica ? 'AUTO' : 'MANUAL',
+                'id_ruta'      => $f->cl_ruta,
+                'consecutivo'  => $f->cl_consecutivo,
+                'url_ver'      => route('facturas.show', $f->id),
+                'url_pdf'      => route('facturas.pdf', $f->id),
+                'anulada'      => $f->estado === 'ANULADA',
             ];
         });
 
@@ -537,6 +548,15 @@ public function exportarSeleccionadas(Request $request)
         }
 
         $factura->update(['estado' => 'ANULADA', 'observaciones' => ($factura->observaciones ?? '') . ' | ANULADA: ' . $request->motivo]);
+
+        // Revertir cuotas de otros cobros que se descontaron al crear esta factura
+        if ($factura->cliente_id) {
+            ClienteOtrosCobro::where('cliente_id', $factura->cliente_id)
+                ->whereIn('estado', ['ACTIVO', 'PAGADO'])
+                ->where('cuotas_pagadas', '>', 0)
+                ->get()
+                ->each->revertirCuota();
+        }
 
         return response()->json(['ok' => true, 'mensaje' => 'Factura anulada.']);
     }

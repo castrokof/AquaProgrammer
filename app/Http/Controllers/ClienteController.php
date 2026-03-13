@@ -32,11 +32,23 @@ class ClienteController extends Controller
         if ($request->filled('buscar')) {
             $query->buscar($request->buscar);
         }
+        if ($request->filled('id_ruta')) {
+            $query->where('id_ruta', $request->id_ruta);
+        }
+        if ($request->filled('tiene_medidor')) {
+            $query->where('tiene_medidor', $request->tiene_medidor === '1');
+        }
+        if ($request->filled('ciclo')) {
+            $suscriptores = Ordenesmtl::where('Ciclo', $request->ciclo)->distinct()->pluck('Suscriptor');
+            $query->whereIn('suscriptor', $suscriptores);
+        }
 
         $clientes = $query->orderBy('updated_at', 'desc')->get();
         $estratos = Estrato::where('activo', true)->orderBy('numero')->get();
+        $rutas    = Cliente::whereNotNull('id_ruta')->distinct()->orderBy('id_ruta')->pluck('id_ruta');
+        $ciclos   = Ordenesmtl::whereNotNull('Ciclo')->where('Ciclo', '!=', '')->distinct()->orderBy('Ciclo')->pluck('Ciclo');
 
-        return view('clientes.index', compact('clientes', 'estratos'));
+        return view('clientes.index', compact('clientes', 'estratos', 'rutas', 'ciclos'));
     }
 
     // ────────────────────────────────────────────────

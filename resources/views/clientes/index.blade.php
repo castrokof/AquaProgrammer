@@ -69,20 +69,46 @@ label.requerido::after { content: " *"; color: #f5576c; font-weight: 700; }
     <div class="filtros-container">
         <form method="GET" action="{{ route('clientes.index') }}">
             <div class="row align-items-end">
-                <div class="col-md-8">
+                <div class="col-md-4">
                     <label style="font-weight:600;color:#4a5568;font-size:0.85rem;text-transform:uppercase;letter-spacing:0.5px;">
                         <i class="fa fa-search" style="color:#667eea;"></i>
-                        Buscar por NUIP, Suscriptor, Serie o Nombre
+                        Buscar (NUIP / Suscriptor / Serie / Nombre)
                     </label>
                     <input type="text" name="buscar" class="form-control"
                            value="{{ request('buscar') }}"
-                           placeholder="Ej: 10234567  /  S-0001  /  MXXXX  /  Juan Pérez">
+                           placeholder="Ej: 10234567 / S-0001 / Juan Pérez">
                 </div>
-                <div class="col-md-4" style="margin-top:10px;">
-                    <button type="submit" class="btn btn-primary" style="border-radius:12px;font-weight:700;margin-right:8px;">
-                        <i class="fa fa-search"></i> Buscar
+                <div class="col-md-2">
+                    <label style="font-weight:600;color:#4a5568;font-size:0.85rem;text-transform:uppercase;letter-spacing:0.5px;">Ruta</label>
+                    <select name="id_ruta" class="form-control">
+                        <option value="">— Todas —</option>
+                        @foreach($rutas as $r)
+                            <option value="{{ $r }}" {{ request('id_ruta') == $r ? 'selected' : '' }}>Ruta {{ $r }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label style="font-weight:600;color:#4a5568;font-size:0.85rem;text-transform:uppercase;letter-spacing:0.5px;">Ciclo</label>
+                    <select name="ciclo" class="form-control">
+                        <option value="">— Todos —</option>
+                        @foreach($ciclos as $ciclo)
+                            <option value="{{ $ciclo }}" {{ request('ciclo') == $ciclo ? 'selected' : '' }}>{{ $ciclo }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label style="font-weight:600;color:#4a5568;font-size:0.85rem;text-transform:uppercase;letter-spacing:0.5px;">Medidor</label>
+                    <select name="tiene_medidor" class="form-control">
+                        <option value="">— Todos —</option>
+                        <option value="1" {{ request('tiene_medidor') === '1' ? 'selected' : '' }}>Con medidor</option>
+                        <option value="0" {{ request('tiene_medidor') === '0' ? 'selected' : '' }}>Sin medidor</option>
+                    </select>
+                </div>
+                <div class="col-md-2" style="margin-top:10px;">
+                    <button type="submit" class="btn btn-primary w-100" style="border-radius:12px;font-weight:700;">
+                        <i class="fa fa-search"></i> Filtrar
                     </button>
-                    <a href="{{ route('clientes.index') }}" class="btn btn-secondary" style="border-radius:12px;">
+                    <a href="{{ route('clientes.index') }}" class="btn btn-secondary w-100 mt-1" style="border-radius:12px;">
                         <i class="fa fa-times"></i> Limpiar
                     </a>
                 </div>
@@ -389,28 +415,34 @@ label.requerido::after { content: " *"; color: #f5576c; font-weight: 700; }
 @endsection
 
 @section('scriptsPlugins')
-<link href="{{asset("assets/$theme/plugins/datatables-bs4/css/dataTables.bootstrap4.css")}}" rel="stylesheet" type="text/css"/>   
+<link href="{{asset("assets/$theme/plugins/datatables-bs4/css/dataTables.bootstrap4.css")}}" rel="stylesheet" type="text/css"/>
 <script src="{{asset("assets/$theme/plugins/datatables/jquery.dataTables.js")}}" type="text/javascript"></script>
 <script src="{{asset("assets/$theme/plugins/datatables-bs4/js/dataTables.bootstrap4.js")}}" type="text/javascript"></script>
 <script src="{{asset("assets/$theme/plugins/select2/js/select2.full.min.js")}}" type="text/javascript"></script>
-<!-- <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap4.min.css">
-<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap4.min.js"></script> -->
+<script src="https://cdn.datatables.net/buttons/1.6.1/js/dataTables.buttons.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
+<script src="https://cdn.datatables.net/buttons/1.6.1/js/buttons.html5.min.js"></script>
 @endsection
 
 @section('scripts')
 <script>
 $(function () {
     $('#tblClientes').DataTable({
-       
-        
         lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "Mostrar Todo"]],
         order:    [[10, 'desc']],
         language: idioma_espanol,
         columnDefs: [
             { orderable: false, targets: [11] }
         ],
-         dom: '<"row"<"col-md-9 form-inline"l><"col-xs-3 form-inline"B>>rt<"row"<"col-md-8 form-inline"i><"col-md-4 form-inline"p>>',
+        dom: '<"row"<"col-md-9 form-inline"l><"col-xs-3 form-inline"B>>rt<"row"<"col-md-8 form-inline"i><"col-md-4 form-inline"p>>',
+        buttons: [
+            { extend: 'excelHtml5', text: '<i class="fa fa-file-excel"></i> Excel', className: 'btn btn-success btn-sm',
+              title: 'Listado de Clientes', exportOptions: { columns: ':not(:last-child)' } },
+            { extend: 'csvHtml5',   text: '<i class="fa fa-file-csv"></i> CSV',   className: 'btn btn-secondary btn-sm',
+              title: 'Listado de Clientes', exportOptions: { columns: ':not(:last-child)' } },
+        ],
     });
 });
 

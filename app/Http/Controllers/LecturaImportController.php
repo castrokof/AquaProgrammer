@@ -3,9 +3,10 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Models\Admin\Ordenesmtl;
+use App\Models\Cliente;
+use App\Models\ClienteHistoricoConsumo;
 use App\Models\Factura;
 use App\Models\PeriodoLectura;
 use App\Imports\LecturaAnteriorImport;
@@ -19,52 +20,76 @@ class LecturaImportController extends Controller
     }
 
     /**
-     * Sincroniza LA, Promedio y Cons_Act en ordenescu
-     * tomando los valores de lectura_actual, promedio_consumo_snapshot y consumo_m3
-     * del período de facturación indicado.
+     * Opción A – Desde Facturas del Sistema.
+     *
+     * Lee lectura_actual, consumo_m3, promedio_consumo_snapshot, lectura_anterior
+     * de las facturas del período facturado y:
+     *   - Escribe LA + Promedio en ordenescu del período destino (lecturas nuevas).
+     *   - Registra consumo_m3 + lecturas en cliente_historico_consumos con el
+     *     período facturado (actualiza también promedio_consumo del cliente).
      */
     public function sincronizarDesdeFacturas(Request $request)
     {
         $request->validate([
-            'periodo_factura' => 'required',
-            'periodo_lectura' => 'required',
+            'periodo_factura' => 'required|string|size:6',
+            'periodo_lectura' => 'required|string|size:6',
         ]);
 
         $pFact = $request->periodo_factura;
         $pLect = $request->periodo_lectura;
 
-        // Tomar los datos del período facturado
         $facturas = Factura::where('periodo', $pFact)
             ->whereNotNull('lectura_actual')
-            ->get(['suscriptor', 'lectura_actual', 'consumo_m3', 'promedio_consumo_snapshot']);
+            ->get(['suscriptor', 'lectura_anterior', 'lectura_actual', 'consumo_m3', 'promedio_consumo_snapshot']);
 
         if ($facturas->isEmpty()) {
             return back()->with('error', "No se encontraron facturas para el período {$pFact}.");
         }
 
-        $actualizados = 0;
+        // Pre-cargar clientes para el historico
+        $suscriptores = $facturas->pluck('suscriptor')->unique();
+        $clientes = Cliente::whereIn('suscriptor', $suscriptores)
+            ->get(['id', 'suscriptor'])
+            ->keyBy('suscriptor');
+
+        $actualizados  = 0;
         $noEncontrados = 0;
+        $historicos    = 0;
 
         foreach ($facturas as $f) {
-            $filas = Ordenesmtl::where('Periodo', $pLect)
+            // ── 1. Actualizar LA + Promedio en ordenescu ──────────────────────
+            $existe = Ordenesmtl::where('Periodo', $pLect)
                 ->where('Suscriptor', $f->suscriptor)
-                ->count();
+                ->exists();
 
-            if ($filas > 0) {
+            if ($existe) {
                 Ordenesmtl::where('Periodo', $pLect)
                     ->where('Suscriptor', $f->suscriptor)
                     ->update([
                         'LA'       => $f->lectura_actual,
-                        'Cons_Act' => $f->consumo_m3,
                         'Promedio' => (int) round($f->promedio_consumo_snapshot),
                     ]);
                 $actualizados++;
             } else {
                 $noEncontrados++;
             }
+
+            // ── 2. Registrar consumo en histórico ─────────────────────────────
+            $cliente = $clientes->get($f->suscriptor);
+            if ($cliente && $f->consumo_m3 !== null) {
+                ClienteHistoricoConsumo::registrarYActualizarPromedio(
+                    $cliente->id,
+                    $f->suscriptor,
+                    $pFact,
+                    (int) $f->consumo_m3,
+                    $f->lectura_anterior,
+                    $f->lectura_actual,
+                );
+                $historicos++;
+            }
         }
 
-        $msg = "Actualizados: {$actualizados} registros en período {$pLect}.";
+        $msg = "Actualizados en ordenescu ({$pLect}): {$actualizados}. Históricos registrados ({$pFact}): {$historicos}.";
         if ($noEncontrados > 0) {
             $msg .= " Sin orden en {$pLect}: {$noEncontrados} suscriptores.";
         }
@@ -73,20 +98,28 @@ class LecturaImportController extends Controller
     }
 
     /**
-     * Importa desde Excel. El archivo debe tener encabezados:
-     * suscriptor | periodo | lec_anterior | consumo | promedio
+     * Opción B – Desde Excel externo.
+     *
+     * Columnas: suscriptor | lec_anterior | promedio | consumo
+     *   - lec_anterior + promedio → ordenescu.LA / Promedio (período destino).
+     *   - consumo → cliente_historico_consumos (período facturado).
      */
     public function importarExcel(Request $request)
     {
         $request->validate([
-            'archivo'        => 'required|file|mimes:xlsx,xls,csv',
-            'periodo_destino' => 'required',
+            'archivo'          => 'required|file|mimes:xlsx,xls,csv',
+            'periodo_destino'  => 'required|string|size:6',
+            'periodo_facturado' => 'nullable|string|size:6',
         ]);
 
-        $import = new LecturaAnteriorImport($request->periodo_destino);
+        $import = new LecturaAnteriorImport(
+            $request->periodo_destino,
+            $request->periodo_facturado ?: null
+        );
+
         Excel::import($import, $request->file('archivo'));
 
-        $msg = "Excel procesado. Actualizados: {$import->actualizados}";
+        $msg = "Excel procesado. Actualizados en ordenescu: {$import->actualizados}";
         if ($import->noEncontrados > 0) {
             $msg .= ", sin orden en el período: {$import->noEncontrados}";
         }
@@ -98,7 +131,7 @@ class LecturaImportController extends Controller
     }
 
     /**
-     * Descarga la plantilla Excel de ejemplo.
+     * Descarga la plantilla CSV de ejemplo.
      */
     public function plantilla()
     {
@@ -107,9 +140,9 @@ class LecturaImportController extends Controller
             'Content-Disposition' => 'attachment; filename="plantilla_lecturas.csv"',
         ];
 
-        $csv = "suscriptor,periodo,lec_anterior,consumo,promedio\n";
-        $csv .= "101,202601,1250,18,17\n";
-        $csv .= "102,202601,870,12,14\n";
+        $csv  = "suscriptor,lec_anterior,promedio,consumo\n";
+        $csv .= "101,1250,17,18\n";
+        $csv .= "102,870,14,12\n";
 
         return response($csv, 200, $headers);
     }

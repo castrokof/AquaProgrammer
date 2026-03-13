@@ -3,17 +3,20 @@
 namespace App\Imports;
 
 use App\Models\Admin\Ordenesmtl;
+use App\Models\Cliente;
+use App\Models\ClienteHistoricoConsumo;
 use Maatwebsite\Excel\Concerns\ToCollection;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Illuminate\Support\Collection;
 
 /**
- * Importa lecturas anteriores desde Excel para actualizar ordenescu.
+ * Importa lecturas anteriores desde Excel.
  *
  * Columnas requeridas (encabezado en fila 1):
- *   suscriptor | lec_anterior | consumo | promedio
+ *   suscriptor | lec_anterior | promedio | consumo
  *
- * El período destino se pasa por constructor.
+ * - lec_anterior + promedio  →  ordenescu.LA / Promedio  (período destino)
+ * - consumo                  →  cliente_historico_consumos (período facturado)
  */
 class LecturaAnteriorImport implements ToCollection, WithHeadingRow
 {
@@ -21,49 +24,78 @@ class LecturaAnteriorImport implements ToCollection, WithHeadingRow
     public int $noEncontrados = 0;
     public int $errores       = 0;
 
+    /** Período de las órdenes a actualizar (YYYYMM). */
     private string $periodoDestino;
 
-    public function __construct(string $periodoDestino)
+    /** Período al que pertenece el consumo histórico (YYYYMM). Null = no registrar. */
+    private ?string $periodoFacturado;
+
+    public function __construct(string $periodoDestino, ?string $periodoFacturado = null)
     {
-        $this->periodoDestino = $periodoDestino;
+        $this->periodoDestino  = $periodoDestino;
+        $this->periodoFacturado = $periodoFacturado;
     }
 
     public function collection(Collection $rows)
     {
+        // Pre-cargar clientes por suscriptor para evitar N+1
+        $suscriptores = $rows
+            ->pluck('suscriptor')
+            ->filter()
+            ->map(fn ($s) => trim((string) $s))
+            ->unique()
+            ->values();
+
+        $clientes = Cliente::whereIn('suscriptor', $suscriptores)
+            ->get(['id', 'suscriptor'])
+            ->keyBy('suscriptor');
+
         foreach ($rows as $row) {
             try {
-                $suscriptor   = trim((string)($row['suscriptor']   ?? ''));
-                $lecAnterior  = $row['lec_anterior'] ?? null;
-                $consumo      = $row['consumo']      ?? null;
-                $promedio     = $row['promedio']      ?? null;
+                $suscriptor  = trim((string) ($row['suscriptor']  ?? ''));
+                $lecAnterior = $row['lec_anterior'] ?? null;
+                $promedio    = $row['promedio']     ?? null;
+                $consumo     = $row['consumo']      ?? null;
 
                 if ($suscriptor === '') continue;
 
-                $count = Ordenesmtl::where('Periodo', $this->periodoDestino)
+                // ── 1. Actualizar LA y Promedio en ordenescu ──────────────────
+                $existe = Ordenesmtl::where('Periodo', $this->periodoDestino)
                     ->where('Suscriptor', $suscriptor)
-                    ->count();
+                    ->exists();
 
-                if ($count === 0) {
+                if (!$existe) {
                     $this->noEncontrados++;
                     continue;
                 }
 
-                $datos = [];
+                $datosOrden = [];
                 if ($lecAnterior !== null && $lecAnterior !== '') {
-                    $datos['LA'] = (int) $lecAnterior;
-                }
-                if ($consumo !== null && $consumo !== '') {
-                    $datos['Cons_Act'] = (int) $consumo;
+                    $datosOrden['LA'] = (int) $lecAnterior;
                 }
                 if ($promedio !== null && $promedio !== '') {
-                    $datos['Promedio'] = (int) round((float) $promedio);
+                    $datosOrden['Promedio'] = (int) round((float) $promedio);
                 }
 
-                if (!empty($datos)) {
+                if (!empty($datosOrden)) {
                     Ordenesmtl::where('Periodo', $this->periodoDestino)
                         ->where('Suscriptor', $suscriptor)
-                        ->update($datos);
+                        ->update($datosOrden);
                     $this->actualizados++;
+                }
+
+                // ── 2. Registrar consumo en histórico ─────────────────────────
+                if ($this->periodoFacturado && $consumo !== null && $consumo !== '') {
+                    $cliente = $clientes->get($suscriptor);
+                    if ($cliente) {
+                        ClienteHistoricoConsumo::registrarYActualizarPromedio(
+                            $cliente->id,
+                            $suscriptor,
+                            $this->periodoFacturado,
+                            (int) $consumo,
+                            ($lecAnterior !== null && $lecAnterior !== '') ? (int) $lecAnterior : null,
+                        );
+                    }
                 }
             } catch (\Throwable $e) {
                 $this->errores++;

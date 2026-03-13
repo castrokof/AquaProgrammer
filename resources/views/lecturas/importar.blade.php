@@ -21,6 +21,11 @@
 .info-box { background:#f0f4ff; border-left:4px solid #2e50e4; border-radius:8px; padding:14px 18px; margin-bottom:20px; font-size:.88rem; color:#374151; }
 .info-box strong { color:#2e50e4; }
 
+.flow-arrow { display:flex; align-items:center; justify-content:center; gap:6px; font-size:.8rem; color:#6b7280; margin:4px 0; }
+.flow-badge { display:inline-block; padding:2px 10px; border-radius:20px; font-size:.75rem; font-weight:700; }
+.badge-orden { background:#dbeafe; color:#1d4ed8; }
+.badge-hist  { background:#d1fae5; color:#065f46; }
+
 .columnas-tabla { width:100%; border-collapse:collapse; font-size:.85rem; margin-top:10px; }
 .columnas-tabla th { background:#2e50e4; color:white; padding:8px 12px; text-align:left; }
 .columnas-tabla td { padding:7px 12px; border-bottom:1px solid #e2e8f0; }
@@ -29,6 +34,8 @@
 
 .form-label { font-weight:600; font-size:.82rem; color:#4a5568; text-transform:uppercase; letter-spacing:.4px; }
 .btn-accion { padding:10px 28px; border-radius:12px; font-weight:700; font-size:.9rem; }
+
+.section-divider { border-top:1px dashed #e2e8f0; margin:20px 0; padding-top:20px; }
 </style>
 @endsection
 
@@ -57,11 +64,10 @@
         <div class="card-body">
 
             <div class="info-box">
-                <strong>¿Para qué sirve?</strong> Antes de iniciar la toma de lecturas de un nuevo período,
-                se necesita cargar en <strong>ordenescu</strong> la lectura anterior (<em>LA</em>), el consumo
-                y el promedio de cada suscriptor para que el lector los vea en la tablet.
-                <br>Puede hacerlo de dos formas: sincronizando desde las facturas ya registradas en el sistema,
-                o subiendo el archivo Excel de facturación.
+                <strong>¿Para qué sirve?</strong> Antes de que los lectores salgan a campo con el nuevo período,
+                se carga en <strong>ordenescu</strong> la lectura anterior (<em>LA</em>) y el promedio de cada
+                suscriptor. El consumo del período facturado se registra en el <strong>histórico</strong> para
+                que el promedio del cliente se mantenga actualizado.
             </div>
 
             {{-- Tabs de opciones --}}
@@ -76,13 +82,25 @@
                 </div>
             </div>
 
-            {{-- OPCIÓN 1: desde facturas --}}
+            {{-- ══════════════════════════════════════════════════════════════ --}}
+            {{-- OPCIÓN 1: desde facturas del sistema                          --}}
+            {{-- ══════════════════════════════════════════════════════════════ --}}
             <div class="panel-opcion visible" id="panel1">
+
                 <div class="info-box">
-                    Toma <strong>lectura_actual</strong>, <strong>consumo_m3</strong> y
-                    <strong>promedio_consumo_snapshot</strong> de las facturas de un período
-                    y los escribe como <strong>LA / Cons_Act / Promedio</strong> en ordenescu
-                    del período destino.
+                    <strong>Qué hace:</strong><br>
+                    <div class="flow-arrow mt-1">
+                        <code>facturas.lectura_actual + promedio</code>
+                        <i class="fa fa-long-arrow-alt-right"></i>
+                        <span class="flow-badge badge-orden">ordenescu.LA / Promedio</span>
+                        <small>(período lecturas)</small>
+                    </div>
+                    <div class="flow-arrow">
+                        <code>facturas.consumo_m3 + lecturas</code>
+                        <i class="fa fa-long-arrow-alt-right"></i>
+                        <span class="flow-badge badge-hist">histórico consumos</span>
+                        <small>(período facturado · actualiza promedio cliente)</small>
+                    </div>
                 </div>
 
                 <form method="POST" action="{{ route('lecturas.sincronizar') }}">
@@ -90,7 +108,7 @@
                     <div class="row">
                         <div class="col-md-5">
                             <div class="form-group">
-                                <label class="form-label">Período de Facturación (fuente)</label>
+                                <label class="form-label">Período Facturado (fuente)</label>
                                 <select name="periodo_factura" class="form-control" required>
                                     <option value="">— Seleccione —</option>
                                     @foreach($periodos as $p)
@@ -105,7 +123,7 @@
                         </div>
                         <div class="col-md-5">
                             <div class="form-group">
-                                <label class="form-label">Período Destino en Ordenescu</label>
+                                <label class="form-label">Período de Lecturas (destino)</label>
                                 <select name="periodo_lectura" class="form-control" required>
                                     <option value="">— Seleccione —</option>
                                     @foreach($periodos as $p)
@@ -122,13 +140,26 @@
                 </form>
             </div>
 
-            {{-- OPCIÓN 2: desde Excel --}}
+            {{-- ══════════════════════════════════════════════════════════════ --}}
+            {{-- OPCIÓN 2: desde Excel externo                                 --}}
+            {{-- ══════════════════════════════════════════════════════════════ --}}
             <div class="panel-opcion" id="panel2">
+
                 <div class="info-box">
-                    Suba el archivo Excel de facturación. El sistema actualizará
-                    <strong>LA</strong>, <strong>Cons_Act</strong> y <strong>Promedio</strong>
-                    en ordenescu para el período destino seleccionado.
-                    <a href="{{ route('lecturas.plantilla') }}" class="font-weight-bold ml-2">
+                    <strong>Qué hace:</strong><br>
+                    <div class="flow-arrow mt-1">
+                        <code>lec_anterior + promedio</code>
+                        <i class="fa fa-long-arrow-alt-right"></i>
+                        <span class="flow-badge badge-orden">ordenescu.LA / Promedio</span>
+                        <small>(período de lecturas)</small>
+                    </div>
+                    <div class="flow-arrow">
+                        <code>consumo</code>
+                        <i class="fa fa-long-arrow-alt-right"></i>
+                        <span class="flow-badge badge-hist">histórico consumos</span>
+                        <small>(período facturado · actualiza promedio cliente)</small>
+                    </div>
+                    <a href="{{ route('lecturas.plantilla') }}" class="font-weight-bold d-inline-block mt-2">
                         <i class="fa fa-download"></i> Descargar plantilla CSV
                     </a>
                 </div>
@@ -138,46 +169,82 @@
                         <tr>
                             <th>Columna en Excel</th>
                             <th>Descripción</th>
+                            <th>Destino</th>
                             <th>Requerido</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <tr><td><code>suscriptor</code></td><td>Número de suscriptor</td><td class="req">Sí</td></tr>
-                        <tr><td><code>lec_anterior</code></td><td>Lectura anterior (entero)</td><td>Opcional</td></tr>
-                        <tr><td><code>consumo</code></td><td>Consumo en m³</td><td>Opcional</td></tr>
-                        <tr><td><code>promedio</code></td><td>Promedio de consumo</td><td>Opcional</td></tr>
+                        <tr>
+                            <td><code>suscriptor</code></td>
+                            <td>Número de suscriptor</td>
+                            <td>—</td>
+                            <td class="req">Sí</td>
+                        </tr>
+                        <tr>
+                            <td><code>lec_anterior</code></td>
+                            <td>Última lectura registrada</td>
+                            <td><span class="flow-badge badge-orden">ordenescu.LA</span></td>
+                            <td>Opcional</td>
+                        </tr>
+                        <tr>
+                            <td><code>promedio</code></td>
+                            <td>Promedio de consumo (m³)</td>
+                            <td><span class="flow-badge badge-orden">ordenescu.Promedio</span></td>
+                            <td>Opcional</td>
+                        </tr>
+                        <tr>
+                            <td><code>consumo</code></td>
+                            <td>Consumo del mes facturado (m³)</td>
+                            <td><span class="flow-badge badge-hist">histórico</span></td>
+                            <td>Opcional</td>
+                        </tr>
                     </tbody>
                 </table>
 
                 <form method="POST" action="{{ route('lecturas.importar-excel') }}" enctype="multipart/form-data">
                     @csrf
                     <div class="row">
-                        <div class="col-md-5">
+                        <div class="col-md-6">
                             <div class="form-group">
-                                <label class="form-label">Período Destino en Ordenescu</label>
+                                <label class="form-label">Período de Lecturas (destino en ordenescu)</label>
                                 <select name="periodo_destino" class="form-control" required>
                                     <option value="">— Seleccione —</option>
                                     @foreach($periodos as $p)
                                     <option value="{{ $p->codigo }}">{{ $p->nombre }} ({{ $p->codigo }})</option>
                                     @endforeach
                                 </select>
+                                <small class="text-muted">Las órdenes de este período se actualizarán</small>
                             </div>
                         </div>
-                        <div class="col-md-7">
+                        <div class="col-md-6">
                             <div class="form-group">
-                                <label class="form-label">Archivo Excel / CSV</label>
-                                <div class="input-group">
-                                    <div class="custom-file">
-                                        <input type="file" class="custom-file-input" name="archivo"
-                                               id="archivoExcel" accept=".xlsx,.xls,.csv" required>
-                                        <label class="custom-file-label" for="archivoExcel">Seleccionar archivo…</label>
-                                    </div>
-                                </div>
-                                <small class="text-muted">Formatos: .xlsx, .xls, .csv</small>
+                                <label class="form-label">Período Facturado <small class="text-muted font-weight-normal">(para histórico de consumos)</small></label>
+                                <select name="periodo_facturado" class="form-control">
+                                    <option value="">— No registrar en histórico —</option>
+                                    @foreach($periodos as $p)
+                                    <option value="{{ $p->codigo }}">{{ $p->nombre }} ({{ $p->codigo }})</option>
+                                    @endforeach
+                                </select>
+                                <small class="text-muted">Si selecciona, el consumo se guarda en el histórico</small>
                             </div>
                         </div>
                     </div>
-                    <button type="submit" class="btn btn-success btn-accion">
+
+                    <div class="section-divider">
+                        <div class="form-group mb-0">
+                            <label class="form-label">Archivo Excel / CSV</label>
+                            <div class="input-group">
+                                <div class="custom-file">
+                                    <input type="file" class="custom-file-input" name="archivo"
+                                           id="archivoExcel" accept=".xlsx,.xls,.csv" required>
+                                    <label class="custom-file-label" for="archivoExcel">Seleccionar archivo…</label>
+                                </div>
+                            </div>
+                            <small class="text-muted">Formatos: .xlsx, .xls, .csv</small>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-success btn-accion mt-2">
                         <i class="fa fa-upload"></i> Importar Excel
                     </button>
                 </form>
@@ -198,7 +265,6 @@ function mostrar(n) {
     document.getElementById('panel' + n).classList.add('visible');
     document.getElementById('tab' + n).classList.add('activo');
 }
-// Mostrar nombre del archivo seleccionado
 document.getElementById('archivoExcel').addEventListener('change', function () {
     var nombre = this.files[0] ? this.files[0].name : 'Seleccionar archivo…';
     this.nextElementSibling.textContent = nombre;

@@ -436,7 +436,7 @@ $(function () {
         columnDefs: [
             { orderable: false, targets: [11] }
         ],
-        dom: '<"row"<"col-md-9 form-inline"l><"col-xs-3 form-inline"B>>rt<"row"<"col-md-8 form-inline"i><"col-md-4 form-inline"p>>',
+        dom: '<"row"<"col-md-6 form-inline"l><"col-md-6 form-inline justify-content-end"B>>rt<"row"<"col-md-8 form-inline"i><"col-md-4 form-inline"p>>',
         buttons: [
             { extend: 'excelHtml5', text: '<i class="fa fa-file-excel"></i> Excel', className: 'btn btn-success btn-sm',
               title: 'Listado de Clientes', exportOptions: { columns: ':not(:last-child)' } },

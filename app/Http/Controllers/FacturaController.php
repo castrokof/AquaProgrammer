@@ -114,42 +114,95 @@ class FacturaController extends Controller
     /** AJAX: KPIs (totales por estado) aplicando los mismos filtros */
     public function kpis(Request $request)
     {
-        $query = Factura::query();
+        $base = Factura::query();
 
-        if ($request->filled('periodo'))    $query->where('periodo', $request->periodo);
-        if ($request->filled('suscriptor')) $query->where('suscriptor', 'like', '%'.$request->suscriptor.'%');
-        if ($request->filled('estado'))     $query->where('estado', $request->estado);
+        if ($request->filled('periodo'))    $base->where('periodo', $request->periodo);
+        if ($request->filled('suscriptor')) $base->where('suscriptor', 'like', '%'.$request->suscriptor.'%');
+        if ($request->filled('estado'))     $base->where('estado', $request->estado);
 
         if ($request->filled('id_ruta')) {
             if (\Schema::hasColumn('facturas', 'id_ruta')) {
-                $query->where('id_ruta', $request->id_ruta);
+                $base->where('id_ruta', $request->id_ruta);
             } else {
                 $subs = \App\Models\Admin\Ordenesmtl::where('id_Ruta', $request->id_ruta)->pluck('Suscriptor');
-                $query->whereIn('suscriptor', $subs);
+                $base->whereIn('suscriptor', $subs);
             }
         }
 
         if ($request->filled('critica')) {
             $subs = \App\Models\Admin\Ordenesmtl::where('Critica', 'like', '%'.$request->critica.'%')->pluck('Suscriptor');
-            $query->whereIn('suscriptor', $subs);
+            $base->whereIn('suscriptor', $subs);
         }
 
-        $rows = $query->selectRaw("estado, COUNT(*) as cnt, SUM(total_a_pagar) as total")
+        // KPIs por estado
+        $rows = (clone $base)
+            ->selectRaw("estado, COUNT(*) as cnt, SUM(total_a_pagar) as total")
             ->groupBy('estado')
             ->get()
             ->keyBy('estado');
 
         $get = fn($estado) => [
-            'cantidad' => (int) ($rows[$estado]->cnt   ?? 0),
+            'cantidad' => (int)   ($rows[$estado]->cnt   ?? 0),
             'total'    => (float) ($rows[$estado]->total ?? 0),
         ];
 
+        // KPIs por tipo de consumo (calculado desde los campos de factura)
+        $cats = (clone $base)->selectRaw("
+            SUM(CASE WHEN tiene_medidor_snapshot = 0
+                THEN 1 ELSE 0 END) as promedio_cnt,
+            SUM(CASE WHEN tiene_medidor_snapshot = 0
+                THEN COALESCE(total_a_pagar,0) ELSE 0 END) as promedio_total,
+
+            SUM(CASE WHEN tiene_medidor_snapshot = 1 AND consumo_m3 < 0
+                THEN 1 ELSE 0 END) as negativa_cnt,
+            SUM(CASE WHEN tiene_medidor_snapshot = 1 AND consumo_m3 < 0
+                THEN COALESCE(total_a_pagar,0) ELSE 0 END) as negativa_total,
+
+            SUM(CASE WHEN tiene_medidor_snapshot = 1 AND consumo_m3 >= 0
+                 AND promedio_consumo_snapshot > 0
+                 AND consumo_m3 > promedio_consumo_snapshot * 2
+                THEN 1 ELSE 0 END) as alta_cnt,
+            SUM(CASE WHEN tiene_medidor_snapshot = 1 AND consumo_m3 >= 0
+                 AND promedio_consumo_snapshot > 0
+                 AND consumo_m3 > promedio_consumo_snapshot * 2
+                THEN COALESCE(total_a_pagar,0) ELSE 0 END) as alta_total,
+
+            SUM(CASE WHEN tiene_medidor_snapshot = 1 AND consumo_m3 >= 0
+                 AND promedio_consumo_snapshot > 0
+                 AND consumo_m3 < promedio_consumo_snapshot * 0.5
+                THEN 1 ELSE 0 END) as baja_cnt,
+            SUM(CASE WHEN tiene_medidor_snapshot = 1 AND consumo_m3 >= 0
+                 AND promedio_consumo_snapshot > 0
+                 AND consumo_m3 < promedio_consumo_snapshot * 0.5
+                THEN COALESCE(total_a_pagar,0) ELSE 0 END) as baja_total,
+
+            SUM(CASE WHEN tiene_medidor_snapshot = 1 AND consumo_m3 >= 0
+                 AND (promedio_consumo_snapshot = 0
+                      OR (consumo_m3 >= promedio_consumo_snapshot * 0.5
+                          AND consumo_m3 <= promedio_consumo_snapshot * 2))
+                THEN 1 ELSE 0 END) as normal_cnt,
+            SUM(CASE WHEN tiene_medidor_snapshot = 1 AND consumo_m3 >= 0
+                 AND (promedio_consumo_snapshot = 0
+                      OR (consumo_m3 >= promedio_consumo_snapshot * 0.5
+                          AND consumo_m3 <= promedio_consumo_snapshot * 2))
+                THEN COALESCE(total_a_pagar,0) ELSE 0 END) as normal_total
+        ")->first();
+
+        $cat = fn($key) => [
+            'cantidad' => (int)   ($cats->{$key.'_cnt'}   ?? 0),
+            'total'    => (float) ($cats->{$key.'_total'} ?? 0),
+        ];
+
         return response()->json([
-            'total'     => $query->count(),
             'pendiente' => $get('PENDIENTE'),
             'pagada'    => $get('PAGADA'),
             'vencida'   => $get('VENCIDA'),
             'anulada'   => $get('ANULADA'),
+            'normal'    => $cat('normal'),
+            'alta'      => $cat('alta'),
+            'baja'      => $cat('baja'),
+            'negativa'  => $cat('negativa'),
+            'promedio'  => $cat('promedio'),
         ]);
     }
 

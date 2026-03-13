@@ -50,17 +50,25 @@
 #checkAll { width:16px; height:16px; cursor:pointer; accent-color:#2e50e4; }
 
 /* KPI cards */
-.kpi-row { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:20px; }
-.kpi-card { border-radius:16px; padding:18px 22px; color:white; position:relative; overflow:hidden; }
-.kpi-card .kpi-lbl { font-size:.72rem; font-weight:700; text-transform:uppercase; opacity:.85; letter-spacing:.5px; }
-.kpi-card .kpi-cnt { font-size:1.8rem; font-weight:900; line-height:1.1; margin:4px 0 2px; }
-.kpi-card .kpi-val { font-size:.82rem; font-weight:600; opacity:.85; }
-.kpi-card .kpi-icon { position:absolute; right:18px; top:50%; transform:translateY(-50%); font-size:2.5rem; opacity:.18; }
+.kpi-row  { display:grid; gap:16px; margin-bottom:14px; }
+.kpi-row-4 { grid-template-columns:repeat(4,1fr); }
+.kpi-row-5 { grid-template-columns:repeat(5,1fr); }
+.kpi-card { border-radius:16px; padding:16px 18px; color:white; position:relative; overflow:hidden; }
+.kpi-card .kpi-lbl { font-size:.68rem; font-weight:700; text-transform:uppercase; opacity:.85; letter-spacing:.5px; }
+.kpi-card .kpi-cnt { font-size:1.6rem; font-weight:900; line-height:1.1; margin:4px 0 2px; }
+.kpi-card .kpi-val { font-size:.78rem; font-weight:600; opacity:.85; }
+.kpi-card .kpi-icon { position:absolute; right:14px; top:50%; transform:translateY(-50%); font-size:2.2rem; opacity:.18; }
 .kpi-pendiente { background:linear-gradient(135deg,#f6ad55,#ed8936); }
 .kpi-pagada    { background:linear-gradient(135deg,#48bb78,#38a169); }
 .kpi-vencida   { background:linear-gradient(135deg,#fc8181,#e53e3e); }
 .kpi-anulada   { background:linear-gradient(135deg,#a0aec0,#718096); }
-@media(max-width:768px){ .kpi-row { grid-template-columns:repeat(2,1fr); } }
+.kpi-normal    { background:linear-gradient(135deg,#4facfe,#00c6ff); }
+.kpi-alta      { background:linear-gradient(135deg,#f77062,#fe5196); }
+.kpi-baja      { background:linear-gradient(135deg,#f093fb,#a855f7); }
+.kpi-negativa  { background:linear-gradient(135deg,#667eea,#764ba2); }
+.kpi-promedio  { background:linear-gradient(135deg,#43e97b,#38f9d7); }
+@media(max-width:992px){ .kpi-row-5 { grid-template-columns:repeat(3,1fr); } }
+@media(max-width:768px){ .kpi-row-4,.kpi-row-5 { grid-template-columns:repeat(2,1fr); } }
 </style>
 @endsection
 
@@ -98,8 +106,8 @@
     {{-- ═══ PANEL LISTADO ═══ --}}
     <div id="panelListado">
 
-    {{-- KPI Cards --}}
-    <div class="kpi-row" id="kpiRow">
+    {{-- KPI Cards — Estado --}}
+    <div class="kpi-row kpi-row-4">
         <div class="kpi-card kpi-pendiente">
             <div class="kpi-lbl">Pendiente</div>
             <div class="kpi-cnt" id="kpiPendienteCnt">—</div>
@@ -123,6 +131,40 @@
             <div class="kpi-cnt" id="kpiAnuladaCnt">—</div>
             <div class="kpi-val" id="kpiAnuladaVal">—</div>
             <i class="fa fa-ban kpi-icon"></i>
+        </div>
+    </div>
+
+    {{-- KPI Cards — Tipo de Consumo --}}
+    <div class="kpi-row kpi-row-5" style="margin-bottom:20px;">
+        <div class="kpi-card kpi-normal">
+            <div class="kpi-lbl">Normal</div>
+            <div class="kpi-cnt" id="kpiNormalCnt">—</div>
+            <div class="kpi-val" id="kpiNormalVal">—</div>
+            <i class="fa fa-check kpi-icon"></i>
+        </div>
+        <div class="kpi-card kpi-alta">
+            <div class="kpi-lbl">Alta</div>
+            <div class="kpi-cnt" id="kpiAltaCnt">—</div>
+            <div class="kpi-val" id="kpiAltaVal">—</div>
+            <i class="fa fa-arrow-up kpi-icon"></i>
+        </div>
+        <div class="kpi-card kpi-baja">
+            <div class="kpi-lbl">Baja Causada</div>
+            <div class="kpi-cnt" id="kpiBajaCnt">—</div>
+            <div class="kpi-val" id="kpiBajaVal">—</div>
+            <i class="fa fa-arrow-down kpi-icon"></i>
+        </div>
+        <div class="kpi-card kpi-negativa">
+            <div class="kpi-lbl">Negativa</div>
+            <div class="kpi-cnt" id="kpiNegativaCnt">—</div>
+            <div class="kpi-val" id="kpiNegativaVal">—</div>
+            <i class="fa fa-minus-circle kpi-icon"></i>
+        </div>
+        <div class="kpi-card kpi-promedio">
+            <div class="kpi-lbl">Por Promedio</div>
+            <div class="kpi-cnt" id="kpiPromedioCnt">—</div>
+            <div class="kpi-val" id="kpiPromedioVal">—</div>
+            <i class="fa fa-tachometer-alt kpi-icon"></i>
         </div>
     </div>
 
@@ -325,6 +367,7 @@ function cargarKpis() {
         estado:     $('#fEstado').val()
     };
     $.get(KPIS_URL, params, function (r) {
+        // Estado
         $('#kpiPendienteCnt').text(r.pendiente.cantidad);
         $('#kpiPendienteVal').text(fmtCOP(r.pendiente.total));
         $('#kpiPagadaCnt').text(r.pagada.cantidad);
@@ -333,6 +376,17 @@ function cargarKpis() {
         $('#kpiVencidaVal').text(fmtCOP(r.vencida.total));
         $('#kpiAnuladaCnt').text(r.anulada.cantidad);
         $('#kpiAnuladaVal').text(fmtCOP(r.anulada.total));
+        // Tipo de consumo
+        $('#kpiNormalCnt').text(r.normal.cantidad);
+        $('#kpiNormalVal').text(fmtCOP(r.normal.total));
+        $('#kpiAltaCnt').text(r.alta.cantidad);
+        $('#kpiAltaVal').text(fmtCOP(r.alta.total));
+        $('#kpiBajaCnt').text(r.baja.cantidad);
+        $('#kpiBajaVal').text(fmtCOP(r.baja.total));
+        $('#kpiNegativaCnt').text(r.negativa.cantidad);
+        $('#kpiNegativaVal').text(fmtCOP(r.negativa.total));
+        $('#kpiPromedioCnt').text(r.promedio.cantidad);
+        $('#kpiPromedioVal').text(fmtCOP(r.promedio.total));
     });
 }
 

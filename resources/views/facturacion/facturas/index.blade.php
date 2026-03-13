@@ -53,6 +53,7 @@
 .kpi-row  { display:grid; gap:16px; margin-bottom:14px; }
 .kpi-row-4 { grid-template-columns:repeat(4,1fr); }
 .kpi-row-5 { grid-template-columns:repeat(5,1fr); }
+.kpi-row-6 { grid-template-columns:repeat(6,1fr); }
 .kpi-card { border-radius:16px; padding:16px 18px; color:white; position:relative; overflow:hidden; }
 .kpi-card .kpi-lbl { font-size:.68rem; font-weight:700; text-transform:uppercase; opacity:.85; letter-spacing:.5px; }
 .kpi-card .kpi-cnt { font-size:1.6rem; font-weight:900; line-height:1.1; margin:4px 0 2px; }
@@ -67,8 +68,10 @@
 .kpi-baja      { background:linear-gradient(135deg,#f093fb,#a855f7); }
 .kpi-negativa  { background:linear-gradient(135deg,#667eea,#764ba2); }
 .kpi-promedio  { background:linear-gradient(135deg,#43e97b,#38f9d7); }
-@media(max-width:992px){ .kpi-row-5 { grid-template-columns:repeat(3,1fr); } }
-@media(max-width:768px){ .kpi-row-4,.kpi-row-5 { grid-template-columns:repeat(2,1fr); } }
+.kpi-causado   { background:linear-gradient(135deg,#f7971e,#ffd200); }
+@media(max-width:1200px){ .kpi-row-6 { grid-template-columns:repeat(3,1fr); } }
+@media(max-width:992px) { .kpi-row-5 { grid-template-columns:repeat(3,1fr); } }
+@media(max-width:768px) { .kpi-row-4,.kpi-row-5,.kpi-row-6 { grid-template-columns:repeat(2,1fr); } }
 </style>
 @endsection
 
@@ -135,7 +138,7 @@
     </div>
 
     {{-- KPI Cards — Tipo de Consumo --}}
-    <div class="kpi-row kpi-row-5" style="margin-bottom:20px;">
+    <div class="kpi-row kpi-row-6" style="margin-bottom:20px;">
         <div class="kpi-card kpi-normal">
             <div class="kpi-lbl">Normal</div>
             <div class="kpi-cnt" id="kpiNormalCnt">—</div>
@@ -159,6 +162,12 @@
             <div class="kpi-cnt" id="kpiNegativaCnt">—</div>
             <div class="kpi-val" id="kpiNegativaVal">—</div>
             <i class="fa fa-minus-circle kpi-icon"></i>
+        </div>
+        <div class="kpi-card kpi-causado">
+            <div class="kpi-lbl">Causado</div>
+            <div class="kpi-cnt" id="kpiCausadoCnt">—</div>
+            <div class="kpi-val" id="kpiCausadoVal">—</div>
+            <i class="fa fa-bolt kpi-icon"></i>
         </div>
         <div class="kpi-card kpi-promedio">
             <div class="kpi-lbl">Por Promedio</div>
@@ -196,6 +205,8 @@
                     <option value="ALTO">ALTO</option>
                     <option value="ELEVADO">ELEVADO</option>
                     <option value="BAJO">BAJO</option>
+                    <option value="CAUSADO">CAUSADO</option>
+                    <option value="NEGATIVA">NEGATIVA</option>
                     <option value="IGUAL">IGUAL</option>
                     <option value="NORMAL">NORMAL</option>
                 </select>
@@ -385,6 +396,8 @@ function cargarKpis() {
         $('#kpiBajaVal').text(fmtCOP(r.baja.total));
         $('#kpiNegativaCnt').text(r.negativa.cantidad);
         $('#kpiNegativaVal').text(fmtCOP(r.negativa.total));
+        $('#kpiCausadoCnt').text(r.causado.cantidad);
+        $('#kpiCausadoVal').text(fmtCOP(r.causado.total));
         $('#kpiPromedioCnt').text(r.promedio.cantidad);
         $('#kpiPromedioVal').text(fmtCOP(r.promedio.total));
     });

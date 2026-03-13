@@ -182,6 +182,7 @@ class FacturaController extends Controller
             'alta'      => $merge('ALTO',   'ELEVADO'),
             'baja'      => $getCrit('BAJO'),
             'negativa'  => $getCrit('NEGATIVA'),
+            'causado'   => $getCrit('CAUSADO'),
             'promedio'  => $getCrit('SIN CRITICA'),
         ]);
     }

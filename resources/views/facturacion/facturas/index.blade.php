@@ -343,6 +343,33 @@
     </div>
 </div>
 
+{{-- Modal Ver Detalle Factura --}}
+<div class="modal fade" id="modalDetalleFactura" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content" style="border-radius:20px;overflow:hidden;">
+            <div class="modal-header" style="background:linear-gradient(135deg,#2e50e4,#2b0c49);border:none;padding:18px 24px;">
+                <h5 class="modal-title" style="color:white;font-weight:700;">
+                    <i class="fa fa-file-invoice"></i> Detalle de Factura
+                </h5>
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <a href="#" id="btnAbrirPaginaFactura" target="_blank"
+                       class="btn btn-sm" style="background:rgba(255,255,255,.2);color:white;border-radius:10px;font-size:.8rem;font-weight:700;">
+                        <i class="fa fa-external-link-alt"></i> Abrir página completa
+                    </a>
+                    <button type="button" class="close" data-dismiss="modal" style="color:white;opacity:.8;font-size:1.5rem;">&times;</button>
+                </div>
+            </div>
+            <div class="modal-body" style="padding:24px;background:#f0f4f8;min-height:200px;" id="modalDetalleFacturaBody">
+                {{-- Spinner inicial --}}
+                <div id="modalDetalleSpinner" style="text-align:center;padding:60px 0;">
+                    <i class="fa fa-circle-notch fa-spin fa-2x" style="color:#2e50e4;"></i>
+                    <div style="margin-top:12px;color:#718096;font-size:.88rem;">Cargando detalle…</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 {{-- Formulario oculto para descarga masiva de PDF --}}
 <form id="formPdfMasivo" action="{{ route('facturas.pdf-masivo') }}" method="POST" target="_blank" style="display:none;">
     @csrf
@@ -562,7 +589,8 @@ $(function () {
             {
                 data: null, orderable: false,
                 render: function (d, t, row) {
-                    var html = '<a href="' + row.url_ver + '" class="btn btn-info btn-sm" title="Ver detalle"><i class="fa fa-eye"></i></a> ';
+                    var modalUrl = row.url_ver.replace(/\/facturas\/(\d+)$/, '/facturas/$1/modal');
+                    var html = '<button class="btn btn-info btn-sm btn-ver-detalle" data-url="' + modalUrl + '" data-ver="' + row.url_ver + '" title="Ver detalle"><i class="fa fa-eye"></i></button> ';
                     html    += '<a href="' + row.url_pdf + '" class="btn btn-secondary btn-sm" title="PDF" target="_blank"><i class="fa fa-file-pdf"></i></a>';
                     if (!row.anulada) {
                         html += ' <button class="btn btn-danger btn-sm btn-anular" data-id="' + row.id + '" title="Anular"><i class="fa fa-ban"></i></button>';
@@ -642,6 +670,39 @@ $(function () {
             $cont.append('<input type="hidden" name="ids[]" value="' + id + '">');
         });
         $('#formPdfMasivo').submit();
+    });
+
+    // ── Ver Detalle en Modal ───────────────────────────────────────────────────
+    $(document).on('click', '.btn-ver-detalle', function () {
+        var url    = $(this).data('url');
+        var verUrl = $(this).data('ver');
+
+        // Mostrar modal con spinner
+        $('#modalDetalleFacturaBody').html(
+            '<div style="text-align:center;padding:60px 0;">' +
+            '<i class="fa fa-circle-notch fa-spin fa-2x" style="color:#2e50e4;"></i>' +
+            '<div style="margin-top:12px;color:#718096;font-size:.88rem;">Cargando detalle…</div></div>'
+        );
+        $('#btnAbrirPaginaFactura').attr('href', verUrl);
+        $('#modalDetalleFactura').modal('show');
+
+        // Cargar contenido via AJAX
+        $.get(url)
+            .done(function (html) {
+                $('#modalDetalleFacturaBody').html(html);
+            })
+            .fail(function () {
+                $('#modalDetalleFacturaBody').html(
+                    '<div style="text-align:center;padding:40px;color:#e53e3e;">' +
+                    '<i class="fa fa-exclamation-circle fa-2x"></i>' +
+                    '<div style="margin-top:10px;">No se pudo cargar el detalle.</div></div>'
+                );
+            });
+    });
+
+    // Limpiar modal al cerrar para liberar memoria
+    $('#modalDetalleFactura').on('hidden.bs.modal', function () {
+        $('#modalDetalleFacturaBody').empty();
     });
 
     // ── Anular ─────────────────────────────────────────────────────────────────

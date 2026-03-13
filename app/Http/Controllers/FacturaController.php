@@ -502,6 +502,43 @@ public function exportarSeleccionadas(Request $request)
         return view('facturacion.facturas.show', compact('factura', 'histConsumos'));
     }
 
+    /**
+     * Retorna el detalle de la factura como fragmento HTML (sin layout).
+     * Usado por el modal en la tabla de facturas.
+     */
+    public function showModal($id)
+    {
+        $factura = Factura::with(['cliente.estrato', 'periodoLectura', 'tarifaPeriodo', 'pagos'])->findOrFail($id);
+
+        $histConsumos = [];
+        if ($factura->cliente_id && $factura->periodo) {
+            $ultimas = Factura::where('cliente_id', $factura->cliente_id)
+                ->where('periodo', '<=', $factura->periodo)
+                ->whereNotIn('estado', ['ANULADA'])
+                ->orderBy('periodo', 'desc')
+                ->limit(6)
+                ->get(['periodo', 'consumo_m3']);
+
+            foreach ($ultimas as $f) {
+                try {
+                    $label = \Carbon\Carbon::createFromFormat('Ym', $f->periodo)->format('M y');
+                } catch (\Exception $e) {
+                    $label = $f->periodo;
+                }
+                $histConsumos[] = [
+                    'label'      => $label,
+                    'consumo_m3' => (float) $f->consumo_m3,
+                    'isCurrent'  => $f->periodo === $factura->periodo,
+                ];
+            }
+            $histConsumos = array_reverse($histConsumos);
+        }
+
+        return response()
+            ->view('facturacion.facturas._detalle_modal', compact('factura', 'histConsumos'))
+            ->header('X-Frame-Options', 'SAMEORIGIN');
+    }
+
     // ── PDF ────────────────────────────────────────────────────────────────────
 
     public function descargarPdf($id)

@@ -72,6 +72,23 @@ class ClienteController extends Controller
         return view('clientes.show', compact('cliente', 'ordenes', 'estratos'));
     }
 
+    /**
+     * Panel lateral rápido: retorna fragmento HTML sin layout.
+     * Usado por el drawer de derecha en el listado de clientes.
+     */
+    public function showPanel($id)
+    {
+        $cliente = Cliente::with('fotos', 'estrato')->findOrFail($id);
+
+        $ordenes = Ordenesmtl::where('Suscriptor', $cliente->suscriptor)
+            ->orderByRaw("CASE WHEN fecha_de_ejecucion IS NULL OR fecha_de_ejecucion = '0000-00-00 00:00:00' THEN '1900-01-01' ELSE fecha_de_ejecucion END DESC")
+            ->orderBy('Periodo', 'desc')
+            ->limit(6)
+            ->get();
+
+        return view('clientes._detalle_panel', compact('cliente', 'ordenes'));
+    }
+
     // ────────────────────────────────────────────────
     // CREAR / ACTUALIZAR PERFIL (formulario web)
     // ────────────────────────────────────────────────

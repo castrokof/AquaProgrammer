@@ -202,6 +202,10 @@ Route::group(['middleware' => 'auth'], function () {
     Route::get('clientes/{id}', 'ClienteController@show')
         ->name('clientes.show');
 
+    // Panel lateral rápido (fragmento HTML sin layout)
+    Route::get('clientes/{id}/panel', 'ClienteController@showPanel')
+        ->name('clientes.panel');
+
     // Crear / actualizar perfil (formulario web)
     Route::post('clientes', 'ClienteController@store')
         ->name('clientes.store');
@@ -273,6 +277,8 @@ Route::group(['middleware' => 'auth', 'prefix' => 'facturacion'], function () {
         ->name('facturas.store');
     Route::get('facturas/{id}', 'FacturaController@show')
         ->name('facturas.show');
+    Route::get('facturas/{id}/modal', 'FacturaController@showModal')
+        ->name('facturas.modal');
     Route::get('facturas/{id}/pdf', 'FacturaController@pdf')
         ->name('facturas.pdf');
     Route::post('facturas/{id}/pago', 'FacturaController@registrarPago')

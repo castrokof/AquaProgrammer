@@ -146,19 +146,21 @@ class FacturaController extends Controller
             'total'    => (float) ($rows[$estado]->total ?? 0),
         ];
 
-        // KPIs por Critica (desde ordenescu, 1 fila por suscriptor+periodo)
+        // KPIs por Critica — unir facturas con ordenescu por suscriptor+periodo
+        $critExpr = "UPPER(TRIM(COALESCE(o.Critica, 'SIN CRITICA')))";
         $critRows = \DB::table('facturas as f')
             ->leftJoin(
-                \DB::raw('(SELECT Suscriptor, Periodo, MAX(Critica) as Critica FROM ordenescu GROUP BY Suscriptor, Periodo) as o'),
-                fn($j) => $j->on('o.Suscriptor', '=', 'f.suscriptor')->on('o.Periodo', '=', 'f.periodo')
+                \DB::raw('(SELECT TRIM(Suscriptor) as Suscriptor, TRIM(Periodo) as Periodo, MAX(UPPER(TRIM(Critica))) as Critica FROM ordenescu GROUP BY TRIM(Suscriptor), TRIM(Periodo)) as o'),
+                fn($j) => $j->on(\DB::raw('TRIM(o.Suscriptor)'), '=', \DB::raw('TRIM(f.suscriptor)'))
+                             ->on(\DB::raw('TRIM(o.Periodo)'),    '=', \DB::raw('TRIM(f.periodo)'))
             )
             ->when($request->filled('periodo'),    fn($q) => $q->where('f.periodo',    $request->periodo))
             ->when($request->filled('suscriptor'), fn($q) => $q->where('f.suscriptor', 'like', '%'.$request->suscriptor.'%'))
             ->when($request->filled('estado'),     fn($q) => $q->where('f.estado',     $request->estado))
             ->when($request->filled('id_ruta') && \Schema::hasColumn('facturas', 'id_ruta'),
                    fn($q) => $q->where('f.id_ruta', $request->id_ruta))
-            ->selectRaw("UPPER(TRIM(COALESCE(o.Critica, 'SIN CRITICA'))) as critica, COUNT(*) as cnt, SUM(f.total_a_pagar) as total")
-            ->groupBy('critica')
+            ->selectRaw("{$critExpr} as critica, COUNT(*) as cnt, SUM(f.total_a_pagar) as total")
+            ->groupBy(\DB::raw($critExpr))
             ->get()
             ->keyBy('critica');
 

@@ -88,6 +88,12 @@ Route::put('password1/{id}', 'UsuarioController@actualizarpassword1')->name('act
 Route::get('archivo', 'ArchivoController@index')->name('archivo')->middleware('superConsultor');
 Route::post('guardar', 'Admin\EntradaController@guardar')->name('subir_archivo')->middleware('superEditor');
 Route::get('sincronizar-entradas', 'Admin\EntradaController@sincronizarApi')->name('sincronizar.entradas')->middleware('superConsultor');
+/* LECTURAS ANTERIORES — carga desde facturas o Excel */
+Route::get('lecturas/importar', 'LecturaImportController@index')->name('lecturas.importar')->middleware('superEditor');
+Route::post('lecturas/sincronizar', 'LecturaImportController@sincronizarDesdeFacturas')->name('lecturas.sincronizar')->middleware('superEditor');
+Route::post('lecturas/importar-excel', 'LecturaImportController@importarExcel')->name('lecturas.importar-excel')->middleware('superEditor');
+Route::get('lecturas/plantilla', 'LecturaImportController@plantilla')->name('lecturas.plantilla')->middleware('superEditor');
+
 /* RUTAS DE ASIGNACION */
 Route::get('asignacion', 'OrdenesmtlasignarController@index')->name('asignacion')->middleware('superEditor');
 Route::post('asignacion_orden', 'OrdenesmtlasignarController@actualizar')->name('actualizar_asignacion')->middleware('superEditor');

@@ -146,51 +146,31 @@ class FacturaController extends Controller
             'total'    => (float) ($rows[$estado]->total ?? 0),
         ];
 
-        // KPIs por tipo de consumo (calculado desde los campos de factura)
-        $cats = (clone $base)->selectRaw("
-            SUM(CASE WHEN tiene_medidor_snapshot = 0
-                THEN 1 ELSE 0 END) as promedio_cnt,
-            SUM(CASE WHEN tiene_medidor_snapshot = 0
-                THEN COALESCE(total_a_pagar,0) ELSE 0 END) as promedio_total,
+        // KPIs por Critica (desde ordenescu, 1 fila por suscriptor+periodo)
+        $critRows = \DB::table('facturas as f')
+            ->leftJoin(
+                \DB::raw('(SELECT Suscriptor, Periodo, MAX(Critica) as Critica FROM ordenescu GROUP BY Suscriptor, Periodo) as o'),
+                fn($j) => $j->on('o.Suscriptor', '=', 'f.suscriptor')->on('o.Periodo', '=', 'f.periodo')
+            )
+            ->when($request->filled('periodo'),    fn($q) => $q->where('f.periodo',    $request->periodo))
+            ->when($request->filled('suscriptor'), fn($q) => $q->where('f.suscriptor', 'like', '%'.$request->suscriptor.'%'))
+            ->when($request->filled('estado'),     fn($q) => $q->where('f.estado',     $request->estado))
+            ->when($request->filled('id_ruta') && \Schema::hasColumn('facturas', 'id_ruta'),
+                   fn($q) => $q->where('f.id_ruta', $request->id_ruta))
+            ->selectRaw("UPPER(TRIM(COALESCE(o.Critica, 'SIN CRITICA'))) as critica, COUNT(*) as cnt, SUM(f.total_a_pagar) as total")
+            ->groupBy('critica')
+            ->get()
+            ->keyBy('critica');
 
-            SUM(CASE WHEN tiene_medidor_snapshot = 1 AND consumo_m3 < 0
-                THEN 1 ELSE 0 END) as negativa_cnt,
-            SUM(CASE WHEN tiene_medidor_snapshot = 1 AND consumo_m3 < 0
-                THEN COALESCE(total_a_pagar,0) ELSE 0 END) as negativa_total,
+        $getCrit = fn($key) => [
+            'cantidad' => (int)   ($critRows[$key]->cnt   ?? 0),
+            'total'    => (float) ($critRows[$key]->total ?? 0),
+        ];
 
-            SUM(CASE WHEN tiene_medidor_snapshot = 1 AND consumo_m3 >= 0
-                 AND promedio_consumo_snapshot > 0
-                 AND consumo_m3 > promedio_consumo_snapshot * 2
-                THEN 1 ELSE 0 END) as alta_cnt,
-            SUM(CASE WHEN tiene_medidor_snapshot = 1 AND consumo_m3 >= 0
-                 AND promedio_consumo_snapshot > 0
-                 AND consumo_m3 > promedio_consumo_snapshot * 2
-                THEN COALESCE(total_a_pagar,0) ELSE 0 END) as alta_total,
-
-            SUM(CASE WHEN tiene_medidor_snapshot = 1 AND consumo_m3 >= 0
-                 AND promedio_consumo_snapshot > 0
-                 AND consumo_m3 < promedio_consumo_snapshot * 0.5
-                THEN 1 ELSE 0 END) as baja_cnt,
-            SUM(CASE WHEN tiene_medidor_snapshot = 1 AND consumo_m3 >= 0
-                 AND promedio_consumo_snapshot > 0
-                 AND consumo_m3 < promedio_consumo_snapshot * 0.5
-                THEN COALESCE(total_a_pagar,0) ELSE 0 END) as baja_total,
-
-            SUM(CASE WHEN tiene_medidor_snapshot = 1 AND consumo_m3 >= 0
-                 AND (promedio_consumo_snapshot = 0
-                      OR (consumo_m3 >= promedio_consumo_snapshot * 0.5
-                          AND consumo_m3 <= promedio_consumo_snapshot * 2))
-                THEN 1 ELSE 0 END) as normal_cnt,
-            SUM(CASE WHEN tiene_medidor_snapshot = 1 AND consumo_m3 >= 0
-                 AND (promedio_consumo_snapshot = 0
-                      OR (consumo_m3 >= promedio_consumo_snapshot * 0.5
-                          AND consumo_m3 <= promedio_consumo_snapshot * 2))
-                THEN COALESCE(total_a_pagar,0) ELSE 0 END) as normal_total
-        ")->first();
-
-        $cat = fn($key) => [
-            'cantidad' => (int)   ($cats->{$key.'_cnt'}   ?? 0),
-            'total'    => (float) ($cats->{$key.'_total'} ?? 0),
+        // Agrupar: Normal=NORMAL+IGUAL, Alta=ALTO+ELEVADO, Baja=BAJO
+        $merge = fn($a, $b) => [
+            'cantidad' => $getCrit($a)['cantidad'] + $getCrit($b)['cantidad'],
+            'total'    => $getCrit($a)['total']    + $getCrit($b)['total'],
         ];
 
         return response()->json([
@@ -198,11 +178,11 @@ class FacturaController extends Controller
             'pagada'    => $get('PAGADA'),
             'vencida'   => $get('VENCIDA'),
             'anulada'   => $get('ANULADA'),
-            'normal'    => $cat('normal'),
-            'alta'      => $cat('alta'),
-            'baja'      => $cat('baja'),
-            'negativa'  => $cat('negativa'),
-            'promedio'  => $cat('promedio'),
+            'normal'    => $merge('NORMAL', 'IGUAL'),
+            'alta'      => $merge('ALTO',   'ELEVADO'),
+            'baja'      => $getCrit('BAJO'),
+            'negativa'  => $getCrit('NEGATIVA'),
+            'promedio'  => $getCrit('SIN CRITICA'),
         ]);
     }
 

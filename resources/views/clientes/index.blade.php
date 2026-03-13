@@ -179,10 +179,12 @@ label.requerido::after { content: " *"; color: #f5576c; font-weight: 700; }
                         {{ $c->updated_at ? $c->updated_at->format('d/m/Y') : '—' }}
                     </td>
                     <td>
-                        <a href="{{ route('clientes.show', $c->id) }}"
-                           class="btn btn-info btn-sm" title="Ver perfil">
+                        <button class="btn btn-info btn-sm btn-ver-cliente"
+                                data-panel-url="{{ route('clientes.panel', $c->id) }}"
+                                data-ver-url="{{ route('clientes.show', $c->id) }}"
+                                title="Ver perfil">
                             <i class="fa fa-eye"></i>
-                        </a>
+                        </button>
                     </td>
                 </tr>
                 @empty
@@ -412,6 +414,55 @@ label.requerido::after { content: " *"; color: #f5576c; font-weight: 700; }
     </div>
 </div>
 
+{{-- ════════════════════════════════════════════════════════════════════════
+     DRAWER — Panel lateral de detalle rápido de cliente
+     Slide-in desde la derecha; no recarga la tabla ni pierde los filtros.
+     ════════════════════════════════════════════════════════════════════════ --}}
+
+{{-- Overlay oscuro --}}
+<div id="panelClienteOverlay" onclick="cerrarPanelCliente()"
+     style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1049;transition:opacity .3s;"></div>
+
+{{-- Drawer --}}
+<div id="panelCliente"
+     style="
+        position:fixed; top:0; right:-500px; width:460px; max-width:95vw; height:100vh;
+        background:white; z-index:1050;
+        transition:right .35s cubic-bezier(.4,0,.2,1);
+        overflow-y:auto; overflow-x:hidden;
+        box-shadow:-8px 0 40px rgba(0,0,0,.18);
+     ">
+
+    {{-- Barra superior fija del drawer --}}
+    <div style="position:sticky;top:0;z-index:10;background:white;border-bottom:2px solid #f0f0f0;
+                padding:12px 16px;display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-weight:700;color:#2d3748;font-size:.9rem;">
+            <i class="fa fa-id-card" style="color:#2e50e4;"></i> Perfil del Cliente
+        </span>
+        <div style="display:flex;gap:8px;align-items:center;">
+            <a href="#" id="panelBtnVerPerfil" target="_blank"
+               style="font-size:.78rem;font-weight:700;color:#2e50e4;text-decoration:none;
+                      background:#eef2ff;padding:4px 12px;border-radius:10px;">
+                <i class="fa fa-external-link-alt"></i> Ver perfil completo
+            </a>
+            <button onclick="cerrarPanelCliente()" title="Cerrar"
+                    style="background:none;border:none;font-size:1.4rem;color:#718096;cursor:pointer;line-height:1;">
+                &times;
+            </button>
+        </div>
+    </div>
+
+    {{-- Spinner --}}
+    <div id="panelClienteSpinner" style="text-align:center;padding:60px 20px;">
+        <i class="fa fa-circle-notch fa-spin fa-2x" style="color:#2e50e4;"></i>
+        <div style="margin-top:12px;color:#718096;font-size:.85rem;">Cargando perfil…</div>
+    </div>
+
+    {{-- Contenido inyectado vía AJAX --}}
+    <div id="panelClienteBody"></div>
+
+</div>
+
 @endsection
 
 @section('scriptsPlugins')
@@ -445,6 +496,55 @@ $(function () {
         ],
     });
 });
+
+// ── Panel lateral de cliente ──────────────────────────────────────────────────
+
+function abrirPanelCliente(panelUrl, verUrl) {
+    // Mostrar overlay y panel
+    var overlay = document.getElementById('panelClienteOverlay');
+    var panel   = document.getElementById('panelCliente');
+    var body    = document.getElementById('panelClienteBody');
+    var spinner = document.getElementById('panelClienteSpinner');
+
+    body.innerHTML = '';
+    spinner.style.display = 'block';
+    overlay.style.display = 'block';
+    panel.style.right      = '0';
+
+    document.getElementById('panelBtnVerPerfil').href = verUrl;
+
+    // Cargar contenido
+    $.get(panelUrl)
+        .done(function (html) {
+            spinner.style.display = 'none';
+            body.innerHTML = html;
+        })
+        .fail(function () {
+            spinner.style.display = 'none';
+            body.innerHTML = '<div style="text-align:center;padding:40px;color:#e53e3e;">' +
+                '<i class="fa fa-exclamation-circle fa-2x"></i>' +
+                '<div style="margin-top:10px;">No se pudo cargar el perfil.</div></div>';
+        });
+}
+
+function cerrarPanelCliente() {
+    document.getElementById('panelCliente').style.right   = '-500px';
+    document.getElementById('panelClienteOverlay').style.display = 'none';
+    setTimeout(function () {
+        document.getElementById('panelClienteBody').innerHTML = '';
+    }, 400);
+}
+
+// Cerrar con Escape
+document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') cerrarPanelCliente();
+});
+
+$(document).on('click', '.btn-ver-cliente', function () {
+    abrirPanelCliente($(this).data('panel-url'), $(this).data('ver-url'));
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 var idioma_espanol = {
     "sProcessing": "Procesando...",

@@ -69,6 +69,21 @@ class ClienteOtrosCobro extends Model
         $this->save();
     }
 
+    /** Revierte el pago de una cuota (usado al anular una factura) */
+    public function revertirCuota(): void
+    {
+        if ($this->cuotas_pagadas <= 0) return;
+
+        $this->cuotas_pagadas -= 1;
+        $this->saldo = min((float) $this->monto_total, $this->saldo + (float) $this->cuota_mensual);
+
+        if ($this->estado === 'PAGADO' && $this->saldo > 0) {
+            $this->estado = 'ACTIVO';
+        }
+
+        $this->save();
+    }
+
     public function estaAlDia(): bool
     {
         return $this->estado !== 'ACTIVO' || $this->saldo <= 0;

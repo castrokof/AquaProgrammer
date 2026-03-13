@@ -149,7 +149,14 @@
             </div>
             <div class="col-md-2">
                 <label style="font-weight:600;font-size:.8rem;color:#4a5568;text-transform:uppercase;">Crítica</label>
-                <input type="text" id="fCritica" class="form-control" placeholder="Ej: ALTA">
+                <select id="fCritica" class="form-control">
+                    <option value="">— Todas —</option>
+                    <option value="ALTO">ALTO</option>
+                    <option value="ELEVADO">ELEVADO</option>
+                    <option value="BAJO">BAJO</option>
+                    <option value="IGUAL">IGUAL</option>
+                    <option value="NORMAL">NORMAL</option>
+                </select>
             </div>
             <div class="col-md-2">
                 <label style="font-weight:600;font-size:.8rem;color:#4a5568;text-transform:uppercase;">Suscriptor</label>
@@ -194,6 +201,7 @@
                     <th>N° Factura</th>
                     <th>Suscriptor</th>
                     <th>Ruta</th>
+                    <th>Consec.</th>
                     <th>Período</th>
                     <th>Expedición</th>
                     <th>Vencimiento</th>
@@ -448,6 +456,12 @@ $(function () {
                     return v ? '<span style="font-weight:700;color:#2e50e4;">' + v + '</span>' : '<span style="color:#cbd5e0;">—</span>';
                 }
             },
+            {
+                data: 'consecutivo',
+                render: function (v) {
+                    return v ? '<span style="font-size:.8rem;color:#555;">' + v + '</span>' : '<span style="color:#cbd5e0;">—</span>';
+                }
+            },
             { data: 'periodo' },
             { data: 'expedicion' },
             { data: 'vencimiento' },
@@ -509,12 +523,12 @@ $(function () {
         if (tablaReporte) tablaReporte.ajax.reload();
     });
 
-    // Filtrar también al presionar Enter en los inputs de texto
-    $('#fCritica, #fSuscriptor').on('keypress', function (e) {
+    // Filtrar al presionar Enter en inputs de texto
+    $('#fSuscriptor').on('keypress', function (e) {
         if (e.which === 13) { tabla.ajax.reload(); cargarKpis(); }
     });
-    // Ruta es select — filtrar al cambiar
-    $('#fRuta').on('change', function () { tabla.ajax.reload(); cargarKpis(); });
+    // Selects — filtrar al cambiar
+    $('#fRuta, #fCritica').on('change', function () { tabla.ajax.reload(); cargarKpis(); });
 
     // ── Selección masiva ───────────────────────────────────────────────────────
     function actualizarBulkBar() {

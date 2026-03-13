@@ -41,9 +41,9 @@ class FacturaController extends Controller
             ->select('facturas.*', 'clientes.id_ruta as cl_ruta', 'clientes.consecutivo as cl_consecutivo',
                      'clientes.nombre as cl_nombre', 'clientes.apellido as cl_apellido');
 
-        if ($request->filled('periodo'))    $query->where('periodo', $request->periodo);
+        if ($request->filled('periodo'))    $query->where('facturas.periodo', $request->periodo);
         if ($request->filled('suscriptor')) $query->where('facturas.suscriptor', 'like', '%'.$request->suscriptor.'%');
-        if ($request->filled('estado'))     $query->where('estado', $request->estado);
+        if ($request->filled('estado'))     $query->where('facturas.estado', $request->estado);
 
         if ($request->filled('id_ruta')) {
             $query->where('clientes.id_ruta', $request->id_ruta);

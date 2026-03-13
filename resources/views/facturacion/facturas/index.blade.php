@@ -469,7 +469,7 @@ function switchTab(tab) {
                 pageLength: 50,
                 order: [[3, 'desc']],
                 language: { url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json' },
-                dom: 'Bfrtip',
+                dom: 'lBfrtip',
                 buttons: [
                     { extend: 'excelHtml5', text: '<i class="fa fa-file-excel"></i> Exportar Excel', className: 'btn btn-success btn-sm',
                       title: 'Reporte de Liquidación',
@@ -577,7 +577,7 @@ $(function () {
         language: {
             url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json'
         },
-        dom: 'Bfrtip',
+        dom: 'lBfrtip',
         buttons: [
             { extend: 'excelHtml5', text: '<i class="fa fa-file-excel"></i> Excel', className: 'btn btn-success btn-sm' },
             { extend: 'print',      text: '<i class="fa fa-print"></i> Imprimir',   className: 'btn btn-info btn-sm' }

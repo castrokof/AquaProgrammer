@@ -114,42 +114,76 @@ class FacturaController extends Controller
     /** AJAX: KPIs (totales por estado) aplicando los mismos filtros */
     public function kpis(Request $request)
     {
-        $query = Factura::query();
+        $base = Factura::query();
 
-        if ($request->filled('periodo'))    $query->where('periodo', $request->periodo);
-        if ($request->filled('suscriptor')) $query->where('suscriptor', 'like', '%'.$request->suscriptor.'%');
-        if ($request->filled('estado'))     $query->where('estado', $request->estado);
+        if ($request->filled('periodo'))    $base->where('periodo', $request->periodo);
+        if ($request->filled('suscriptor')) $base->where('suscriptor', 'like', '%'.$request->suscriptor.'%');
+        if ($request->filled('estado'))     $base->where('estado', $request->estado);
 
         if ($request->filled('id_ruta')) {
             if (\Schema::hasColumn('facturas', 'id_ruta')) {
-                $query->where('id_ruta', $request->id_ruta);
+                $base->where('id_ruta', $request->id_ruta);
             } else {
                 $subs = \App\Models\Admin\Ordenesmtl::where('id_Ruta', $request->id_ruta)->pluck('Suscriptor');
-                $query->whereIn('suscriptor', $subs);
+                $base->whereIn('suscriptor', $subs);
             }
         }
 
         if ($request->filled('critica')) {
             $subs = \App\Models\Admin\Ordenesmtl::where('Critica', 'like', '%'.$request->critica.'%')->pluck('Suscriptor');
-            $query->whereIn('suscriptor', $subs);
+            $base->whereIn('suscriptor', $subs);
         }
 
-        $rows = $query->selectRaw("estado, COUNT(*) as cnt, SUM(total_a_pagar) as total")
+        // KPIs por estado
+        $rows = (clone $base)
+            ->selectRaw("estado, COUNT(*) as cnt, SUM(total_a_pagar) as total")
             ->groupBy('estado')
             ->get()
             ->keyBy('estado');
 
         $get = fn($estado) => [
-            'cantidad' => (int) ($rows[$estado]->cnt   ?? 0),
+            'cantidad' => (int)   ($rows[$estado]->cnt   ?? 0),
             'total'    => (float) ($rows[$estado]->total ?? 0),
         ];
 
+        // KPIs por Critica (desde ordenescu, 1 fila por suscriptor+periodo)
+        $critRows = \DB::table('facturas as f')
+            ->leftJoin(
+                \DB::raw('(SELECT Suscriptor, Periodo, MAX(Critica) as Critica FROM ordenescu GROUP BY Suscriptor, Periodo) as o'),
+                fn($j) => $j->on('o.Suscriptor', '=', 'f.suscriptor')->on('o.Periodo', '=', 'f.periodo')
+            )
+            ->when($request->filled('periodo'),    fn($q) => $q->where('f.periodo',    $request->periodo))
+            ->when($request->filled('suscriptor'), fn($q) => $q->where('f.suscriptor', 'like', '%'.$request->suscriptor.'%'))
+            ->when($request->filled('estado'),     fn($q) => $q->where('f.estado',     $request->estado))
+            ->when($request->filled('id_ruta') && \Schema::hasColumn('facturas', 'id_ruta'),
+                   fn($q) => $q->where('f.id_ruta', $request->id_ruta))
+            ->selectRaw("UPPER(TRIM(COALESCE(o.Critica, 'SIN CRITICA'))) as critica, COUNT(*) as cnt, SUM(f.total_a_pagar) as total")
+            ->groupBy('critica')
+            ->get()
+            ->keyBy('critica');
+
+        $getCrit = fn($key) => [
+            'cantidad' => (int)   ($critRows[$key]->cnt   ?? 0),
+            'total'    => (float) ($critRows[$key]->total ?? 0),
+        ];
+
+        // Agrupar: Normal=NORMAL+IGUAL, Alta=ALTO+ELEVADO, Baja=BAJO
+        $merge = fn($a, $b) => [
+            'cantidad' => $getCrit($a)['cantidad'] + $getCrit($b)['cantidad'],
+            'total'    => $getCrit($a)['total']    + $getCrit($b)['total'],
+        ];
+
         return response()->json([
-            'total'     => $query->count(),
             'pendiente' => $get('PENDIENTE'),
             'pagada'    => $get('PAGADA'),
             'vencida'   => $get('VENCIDA'),
             'anulada'   => $get('ANULADA'),
+            'normal'    => $merge('NORMAL', 'IGUAL'),
+            'alta'      => $merge('ALTO',   'ELEVADO'),
+            'baja'      => $getCrit('BAJO'),
+            'negativa'  => $getCrit('NEGATIVA'),
+            'causado'   => $getCrit('CAUSADO'),
+            'promedio'  => $getCrit('SIN CRITICA'),
         ]);
     }
 

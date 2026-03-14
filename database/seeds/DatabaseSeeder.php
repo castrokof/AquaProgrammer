@@ -26,6 +26,7 @@ class DatabaseSeeder extends Seeder
         //$this->call(FacturacionMenuSeeder::class);
         $this->call(NuevosMenuSeeder::class);
         //$this->call(LecturasMenuSeeder::class);
+        $this->call(EstratoSubsidioSeeder::class);
     }
 
     protected function truncateTablas(array $tablas){

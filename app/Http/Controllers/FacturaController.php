@@ -603,7 +603,12 @@ public function exportarSeleccionadas(Request $request)
         $pago->total_pago_realizado = $pago->calcularTotal();
         $pago->save();
 
-        $facturaFresh = $factura->fresh();
+        // Actualizar estado de la factura según el saldo resultante
+        $facturaFresh = $factura->fresh(['pagos']);
+        if ($facturaFresh->saldoPendiente() <= 0) {
+            $facturaFresh->update(['estado' => 'PAGADA']);
+        }
+
         return response()->json([
             'ok'      => true,
             'saldo'   => $facturaFresh->saldoPendiente(),

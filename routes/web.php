@@ -71,6 +71,8 @@ Route::group(['middleware' => ['auth']], function () {
 
 Route::get('/tablero', 'AdminController@index')->name('tablero');
 
+Route::get('/manual', 'ManualController@index')->name('manual');
+
 /* RUTAS DEL USUARIO */
 Route::get('usuario', 'UsuarioController@index')->name('usuario')->middleware('superConsultor');
 Route::get('usuario/crear', 'UsuarioController@crear')->name('crear_usuario')->middleware('superEditor');
@@ -205,6 +207,10 @@ Route::group(['middleware' => 'auth'], function () {
     // Panel lateral rápido (fragmento HTML sin layout)
     Route::get('clientes/{id}/panel', 'ClienteController@showPanel')
         ->name('clientes.panel');
+
+    // Actualización rápida del medidor (sin abrir perfil completo)
+    Route::post('clientes/{id}/medidor', 'ClienteController@actualizarMedidor')
+        ->name('clientes.medidor');
 
     // Crear / actualizar perfil (formulario web)
     Route::post('clientes', 'ClienteController@store')

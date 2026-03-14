@@ -49,6 +49,7 @@
         El subsidio se aplica sobre el <strong>consumo básico</strong> de acueducto Y alcantarillado.<br>
         • <strong>Porcentaje</strong>: se calcula como % del consumo básico. Positivo = descuento (estratos 1-3). Negativo = sobretasa (estratos 5-6, comercial, industrial).<br>
         • <strong>Valor fijo acueducto / Valor fijo alcantarillado</strong>: si se ingresa un valor &gt; 0, se usa ese monto fijo en lugar del porcentaje para ese servicio.<br>
+        • <strong>Consumo mínimo (m³)</strong>: el subsidio o contribución <strong>solo aplica si el consumo supera este valor</strong>. Ejemplo: 4 m³ significa que si el cliente consumió 4 m³ o menos, no se aplica subsidio. Poner 0 para que aplique siempre que haya cualquier consumo.<br>
         • Si ambos están en 0 y el porcentaje también es 0, no se aplica subsidio.
     </div>
 
@@ -65,15 +66,17 @@
                     <th>% Subsidio/Sobretasa</th>
                     <th>Valor fijo Acueducto ($)</th>
                     <th>Valor fijo Alcantarillado ($)</th>
+                    <th>Consumo mínimo (m³)</th>
                     <th>Acción</th>
                 </tr>
             </thead>
             <tbody>
             @foreach($estratos as $e)
             @php
-                $pct = (float) $e->porcentaje_subsidio;
-                $fijoAc = (float) ($e->subsidio_fijo_acueducto ?? 0);
-                $fijoAl = (float) ($e->subsidio_fijo_alcantarillado ?? 0);
+                $pct       = (float) $e->porcentaje_subsidio;
+                $fijoAc    = (float) ($e->subsidio_fijo_acueducto      ?? 0);
+                $fijoAl    = (float) ($e->subsidio_fijo_alcantarillado ?? 0);
+                $consMinio = (float) ($e->consumo_minimo_subsidio       ?? 4);
             @endphp
             <tr id="fila-{{ $e->id }}">
                 <td>
@@ -110,6 +113,12 @@
                     <span class="info-tip">0 = usar porcentaje</span>
                 </td>
                 <td style="text-align:center;">
+                    <input type="number" class="inp-sub" step="0.01" min="0"
+                           id="consMin-{{ $e->id }}" value="{{ $consMinio }}"
+                           title="m³ mínimos de consumo para que aplique el subsidio. 0 = siempre aplica.">
+                    <span class="info-tip">0 = aplica siempre</span>
+                </td>
+                <td style="text-align:center;">
                     <button class="btn-guardar-fila" onclick="guardarEstrato({{ $e->id }})">
                         <i class="fa fa-save"></i> Guardar
                     </button>
@@ -138,9 +147,10 @@ var CSRF = $("meta[name='csrf-token']").attr("content");
 function guardarEstrato(id) {
     var btn  = $('button[onclick="guardarEstrato(' + id + ')"]');
     var msg  = $('#msg-' + id);
-    var pct  = parseFloat($('#pct-' + id).val()) || 0;
-    var fiAc = parseFloat($('#fijoAc-' + id).val()) || 0;
-    var fiAl = parseFloat($('#fijoAl-' + id).val()) || 0;
+    var pct     = parseFloat($('#pct-' + id).val()) || 0;
+    var fiAc    = parseFloat($('#fijoAc-' + id).val()) || 0;
+    var fiAl    = parseFloat($('#fijoAl-' + id).val()) || 0;
+    var consMin = parseFloat($('#consMin-' + id).val()) || 0;
 
     btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i>');
     msg.hide();
@@ -153,6 +163,7 @@ function guardarEstrato(id) {
             porcentaje_subsidio:           pct,
             subsidio_fijo_acueducto:       fiAc,
             subsidio_fijo_alcantarillado:  fiAl,
+            consumo_minimo_subsidio:       consMin,
         },
         success: function(r) {
             btn.prop('disabled', false).html('<i class="fa fa-save"></i> Guardar');

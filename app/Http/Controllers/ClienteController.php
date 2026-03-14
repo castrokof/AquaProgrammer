@@ -73,6 +73,31 @@ class ClienteController extends Controller
     }
 
     /**
+     * Actualización rápida del medidor desde la tabla de clientes.
+     * No requiere abrir el perfil completo.
+     */
+    public function actualizarMedidor(Request $request, $id)
+    {
+        $request->validate([
+            'serie_medidor' => 'required|string|max:100',
+        ]);
+
+        $cliente = Cliente::findOrFail($id);
+        $serie   = trim($request->serie_medidor);
+
+        $cliente->update(['serie_medidor' => $serie]);
+
+        // Registrar en el historial de series
+        ClienteSerie::registrar($cliente->id, $serie, date('Ym'));
+
+        return response()->json([
+            'ok'     => true,
+            'serie'  => $serie,
+            'mensaje' => 'Medidor actualizado correctamente.',
+        ]);
+    }
+
+    /**
      * Panel lateral rápido: retorna fragmento HTML sin layout.
      * Usado por el drawer de derecha en el listado de clientes.
      */

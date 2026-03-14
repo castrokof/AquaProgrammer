@@ -143,6 +143,9 @@ class FacturacionService
 
         // ── Subsidio / Contribución por estrato ───────────────────────────────
         // Aplica sobre consumo básico de ACUEDUCTO y ALCANTARILLADO.
+        // Condición: solo se aplica cuando hay consumo real (consumoM3 > 0).
+        //   Si el período solo genera cargo fijo (consumo = 0) no se descuenta ni
+        //   se cobra sobretasa, ya que el subsidio está ligado al consumo.
         // Prioridad: valor fijo (subsidio_fijo_*) > porcentaje (porcentaje_subsidio).
         // porcentaje_subsidio > 0 → estratos 1-3: descuento
         // porcentaje_subsidio < 0 → estratos 5-6/COM/IND: sobretasa
@@ -153,19 +156,23 @@ class FacturacionService
 
         // — Acueducto —
         $subsidioAcueducto = 0.0;
-        if ($fijoAcueducto != 0) {
-            $subsidioAcueducto = round($fijoAcueducto, 2);           // fijo: positivo=descuento
-        } elseif ($pctSubsidio != 0 && $acueducto['basico_valor'] > 0) {
-            $subsidioAcueducto = round($acueducto['basico_valor'] * $pctSubsidio / 100, 2);
+        if ($consumoM3 > 0) {
+            if ($fijoAcueducto != 0) {
+                $subsidioAcueducto = round($fijoAcueducto, 2);           // fijo: positivo=descuento
+            } elseif ($pctSubsidio != 0 && $acueducto['basico_valor'] > 0) {
+                $subsidioAcueducto = round($acueducto['basico_valor'] * $pctSubsidio / 100, 2);
+            }
         }
         $acueducto['total'] = round($acueducto['total'] - $subsidioAcueducto, 2);
 
         // — Alcantarillado —
         $subsidioAlcantarillado = 0.0;
-        if ($fijoAlcantarillado != 0) {
-            $subsidioAlcantarillado = round($fijoAlcantarillado, 2);
-        } elseif ($pctSubsidio != 0 && $alcantarillado['basico_valor'] > 0) {
-            $subsidioAlcantarillado = round($alcantarillado['basico_valor'] * $pctSubsidio / 100, 2);
+        if ($consumoM3 > 0) {
+            if ($fijoAlcantarillado != 0) {
+                $subsidioAlcantarillado = round($fijoAlcantarillado, 2);
+            } elseif ($pctSubsidio != 0 && $alcantarillado['basico_valor'] > 0) {
+                $subsidioAlcantarillado = round($alcantarillado['basico_valor'] * $pctSubsidio / 100, 2);
+            }
         }
         $alcantarillado['total'] = round($alcantarillado['total'] - $subsidioAlcantarillado, 2);
 

@@ -178,12 +178,20 @@ label.requerido::after { content: " *"; color: #f5576c; font-weight: 700; }
                     <td style="font-size:0.78rem;color:#718096;">
                         {{ $c->updated_at ? $c->updated_at->format('d/m/Y') : '—' }}
                     </td>
-                    <td>
+                    <td style="white-space:nowrap;">
                         <button class="btn btn-info btn-sm btn-ver-cliente"
                                 data-panel-url="{{ route('clientes.panel', $c->id) }}"
                                 data-ver-url="{{ route('clientes.show', $c->id) }}"
                                 title="Ver perfil">
                             <i class="fa fa-eye"></i>
+                        </button>
+                        <button class="btn btn-warning btn-sm btn-editar-medidor"
+                                data-id="{{ $c->id }}"
+                                data-suscriptor="{{ $c->suscriptor }}"
+                                data-serie="{{ $c->serie_medidor }}"
+                                data-url="{{ route('clientes.medidor', $c->id) }}"
+                                title="Editar medidor">
+                            <i class="fa fa-tachometer-alt"></i>
                         </button>
                     </td>
                 </tr>
@@ -415,6 +423,50 @@ label.requerido::after { content: " *"; color: #f5576c; font-weight: 700; }
 </div>
 
 {{-- ════════════════════════════════════════════════════════════════════════
+     MODAL — Edición rápida de medidor
+     ════════════════════════════════════════════════════════════════════════ --}}
+<div class="modal fade" id="modalMedidor" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content" style="border-radius:18px;overflow:hidden;">
+            <div class="modal-header" style="background:linear-gradient(135deg,#f6ad55,#ed8936);border:none;padding:16px 20px;">
+                <h5 class="modal-title" style="color:white;font-weight:700;font-size:.95rem;">
+                    <i class="fa fa-tachometer-alt"></i> Editar Medidor
+                </h5>
+                <button type="button" class="close" data-dismiss="modal" style="color:white;opacity:.8;">&times;</button>
+            </div>
+            <div class="modal-body" style="padding:22px;">
+                <div style="font-size:.8rem;color:#718096;margin-bottom:14px;">
+                    Suscriptor: <strong id="medidorSuscriptor" style="color:#2d3748;"></strong>
+                </div>
+                <div class="form-group mb-3">
+                    <label style="font-weight:700;font-size:.78rem;text-transform:uppercase;color:#4a5568;letter-spacing:.4px;">
+                        Serie del Medidor
+                    </label>
+                    <input type="text" id="medidorSerie"
+                           class="form-control"
+                           placeholder="Ej: M-00345 o XXXX-0001"
+                           style="border-radius:10px;border:2px solid #e2e8f0;font-family:monospace;font-size:.95rem;padding:10px 13px;">
+                    <small class="text-muted" style="font-size:.72rem;">
+                        Se registrará en el historial del período actual.
+                    </small>
+                </div>
+                <div style="display:flex;gap:8px;margin-top:6px;">
+                    <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal"
+                            style="border-radius:10px;flex:1;">
+                        Cancelar
+                    </button>
+                    <button type="button" id="btnGuardarMedidor"
+                            class="btn btn-warning btn-sm"
+                            style="border-radius:10px;flex:2;font-weight:700;color:white;">
+                        <i class="fa fa-save"></i> Guardar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- ════════════════════════════════════════════════════════════════════════
      DRAWER — Panel lateral de detalle rápido de cliente
      Slide-in desde la derecha; no recarga la tabla ni pierde los filtros.
      ════════════════════════════════════════════════════════════════════════ --}}
@@ -543,6 +595,54 @@ document.addEventListener('keydown', function (e) {
 $(document).on('click', '.btn-ver-cliente', function () {
     abrirPanelCliente($(this).data('panel-url'), $(this).data('ver-url'));
 });
+
+// ── Modal edición rápida de medidor ───────────────────────────────────────────
+var _medidorUrl   = '';
+var _medidorRowId = '';
+
+$(document).on('click', '.btn-editar-medidor', function () {
+    _medidorUrl   = $(this).data('url');
+    _medidorRowId = $(this).data('id');
+    $('#medidorSuscriptor').text($(this).data('suscriptor'));
+    $('#medidorSerie').val($(this).data('serie') || '');
+    $('#modalMedidor').modal('show');
+    setTimeout(function () { $('#medidorSerie').focus().select(); }, 400);
+});
+
+$('#btnGuardarMedidor').on('click', function () {
+    var serie = $.trim($('#medidorSerie').val());
+    if (!serie) {
+        $('#medidorSerie').addClass('is-invalid').focus();
+        return;
+    }
+    $('#medidorSerie').removeClass('is-invalid');
+
+    var $btn = $(this).prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Guardando...');
+
+    $.ajax({
+        url   : _medidorUrl,
+        method: 'POST',
+        data  : { _token: $('meta[name="csrf-token"]').attr('content'), serie_medidor: serie },
+    }).done(function (res) {
+        if (res.ok) {
+            // Actualizar celda en la tabla sin recargar página
+            var $btn2 = $('[data-id="' + _medidorRowId + '"].btn-editar-medidor');
+            $btn2.data('serie', res.serie).attr('data-serie', res.serie);
+
+            var $td = $btn2.closest('tr').find('td:nth-child(6)');
+            $td.html('<span style="font-family:monospace;font-size:.82rem;background:#f0f4ff;padding:3px 8px;border-radius:6px;">' + $('<span>').text(res.serie).html() + '</span>');
+
+            $('#modalMedidor').modal('hide');
+            toastr.success(res.mensaje, 'Medidor actualizado');
+        }
+    }).fail(function (xhr) {
+        var msg = xhr.responseJSON && xhr.responseJSON.message ? xhr.responseJSON.message : 'Error al guardar.';
+        toastr.error(msg, 'Error');
+    }).always(function () {
+        $btn.prop('disabled', false).html('<i class="fa fa-save"></i> Guardar');
+    });
+});
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 

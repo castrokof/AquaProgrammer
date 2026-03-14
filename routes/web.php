@@ -206,6 +206,10 @@ Route::group(['middleware' => 'auth'], function () {
     Route::get('clientes/{id}/panel', 'ClienteController@showPanel')
         ->name('clientes.panel');
 
+    // Actualización rápida del medidor (sin abrir perfil completo)
+    Route::post('clientes/{id}/medidor', 'ClienteController@actualizarMedidor')
+        ->name('clientes.medidor');
+
     // Crear / actualizar perfil (formulario web)
     Route::post('clientes', 'ClienteController@store')
         ->name('clientes.store');

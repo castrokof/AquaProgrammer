@@ -71,6 +71,8 @@ Route::group(['middleware' => ['auth']], function () {
 
 Route::get('/tablero', 'AdminController@index')->name('tablero');
 
+Route::get('/manual', 'ManualController@index')->name('manual');
+
 /* RUTAS DEL USUARIO */
 Route::get('usuario', 'UsuarioController@index')->name('usuario')->middleware('superConsultor');
 Route::get('usuario/crear', 'UsuarioController@crear')->name('crear_usuario')->middleware('superEditor');

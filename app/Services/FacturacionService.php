@@ -143,20 +143,23 @@ class FacturacionService
 
         // ── Subsidio / Contribución por estrato ───────────────────────────────
         // Aplica sobre consumo básico de ACUEDUCTO y ALCANTARILLADO.
-        // Condición: solo se aplica cuando hay consumo real (consumoM3 > 0).
-        //   Si el período solo genera cargo fijo (consumo = 0) no se descuenta ni
-        //   se cobra sobretasa, ya que el subsidio está ligado al consumo.
+        // Condición: solo se aplica cuando el consumo real supera el umbral mínimo
+        //   configurado en el estrato (consumo_minimo_subsidio, default 4 m³).
+        //   Si consumoM3 <= umbral no se descuenta ni se cobra sobretasa.
         // Prioridad: valor fijo (subsidio_fijo_*) > porcentaje (porcentaje_subsidio).
         // porcentaje_subsidio > 0 → estratos 1-3: descuento
         // porcentaje_subsidio < 0 → estratos 5-6/COM/IND: sobretasa
-        $estrato           = $cliente->estrato;
-        $pctSubsidio       = $estrato ? (float) $estrato->porcentaje_subsidio       : 0.0;
-        $fijoAcueducto     = $estrato ? (float) ($estrato->subsidio_fijo_acueducto     ?? 0) : 0.0;
-        $fijoAlcantarillado= $estrato ? (float) ($estrato->subsidio_fijo_alcantarillado ?? 0) : 0.0;
+        $estrato              = $cliente->estrato;
+        $pctSubsidio          = $estrato ? (float) $estrato->porcentaje_subsidio          : 0.0;
+        $fijoAcueducto        = $estrato ? (float) ($estrato->subsidio_fijo_acueducto      ?? 0) : 0.0;
+        $fijoAlcantarillado   = $estrato ? (float) ($estrato->subsidio_fijo_alcantarillado ?? 0) : 0.0;
+        $consumoMinimoSub     = $estrato ? (float) ($estrato->consumo_minimo_subsidio      ?? 0) : 0.0;
+
+        $aplicaSubsidio = $consumoM3 > $consumoMinimoSub;
 
         // — Acueducto —
         $subsidioAcueducto = 0.0;
-        if ($consumoM3 > 0) {
+        if ($aplicaSubsidio) {
             if ($fijoAcueducto != 0) {
                 $subsidioAcueducto = round($fijoAcueducto, 2);           // fijo: positivo=descuento
             } elseif ($pctSubsidio != 0 && $acueducto['basico_valor'] > 0) {
@@ -167,7 +170,7 @@ class FacturacionService
 
         // — Alcantarillado —
         $subsidioAlcantarillado = 0.0;
-        if ($consumoM3 > 0) {
+        if ($aplicaSubsidio) {
             if ($fijoAlcantarillado != 0) {
                 $subsidioAlcantarillado = round($fijoAlcantarillado, 2);
             } elseif ($pctSubsidio != 0 && $alcantarillado['basico_valor'] > 0) {

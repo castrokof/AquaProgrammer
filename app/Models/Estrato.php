@@ -13,7 +13,8 @@ class Estrato extends Model
 
     protected $fillable = [
         'numero', 'nombre', 'codigo', 'porcentaje_subsidio',
-        'subsidio_fijo_acueducto', 'subsidio_fijo_alcantarillado', 'activo',
+        'subsidio_fijo_acueducto', 'subsidio_fijo_alcantarillado',
+        'consumo_minimo_subsidio', 'activo',
     ];
 
     protected $casts = [
@@ -21,6 +22,7 @@ class Estrato extends Model
         'porcentaje_subsidio'          => 'decimal:2',
         'subsidio_fijo_acueducto'      => 'decimal:2',
         'subsidio_fijo_alcantarillado' => 'decimal:2',
+        'consumo_minimo_subsidio'      => 'decimal:2',
         'activo'                       => 'boolean',
     ];
 

@@ -269,6 +269,9 @@
         <a href="#" data-sec="reportes"     class="nav-link-manual">
             <i class="fa fa-chart-bar"></i> Reportes y Exportación
         </a>
+        <a href="#" data-sec="revisiones"   class="nav-link-manual">
+            <i class="fa fa-clipboard-check"></i> Revisiones
+        </a>
         <a href="#" data-sec="admin"        class="nav-link-manual">
             <i class="fa fa-cogs"></i> Administración
         </a>
@@ -325,6 +328,11 @@
                         <i class="fa fa-chart-bar" style="color:#ed8936;"></i>
                         <strong>Reportes</strong>
                         <span>PDF, Excel y KPIs</span>
+                    </div>
+                    <div class="sitemap-card" onclick="mostrarSeccion('revisiones')">
+                        <i class="fa fa-clipboard-check" style="color:#38b2ac;"></i>
+                        <strong>Revisiones</strong>
+                        <span>Órdenes técnicas y macromedidores</span>
                     </div>
                     <div class="sitemap-card" onclick="mostrarSeccion('admin')">
                         <i class="fa fa-cogs" style="color:#718096;"></i>
@@ -599,6 +607,55 @@
                 </ul>
                 <div class="m-ok"><i class="fa fa-check-circle"></i> <strong>Condición de consumo:</strong> El subsidio y la contribución <strong>solo se aplican si el cliente tuvo consumo real (m³ &gt; 0)</strong>. Si en un período el cliente solo tiene cargo fijo (consumo = 0), no se aplica ningún ajuste de subsidio.</div>
                 <div class="m-tip"><i class="fa fa-info-circle"></i> Los cambios en las tablas de estratos/subsidios aplican únicamente a <strong>facturas generadas después del cambio</strong>. Las facturas ya emitidas no se recalculan.</div>
+            </div>
+        </div>
+
+        {{-- ─── REVISIONES ─── --}}
+        <div class="manual-section" id="sec-revisiones">
+            <div class="m-card">
+                <h1><i class="fa fa-clipboard-check" style="color:#38b2ac;margin-right:8px;"></i>Revisiones</h1>
+                <p class="subtitle">Módulo para gestionar órdenes de revisión técnica en campo: inspecciones físicas, revisiones de macromedidores y control de novedades independientes del ciclo de facturación normal.</p>
+
+                <h2>Tablero de Revisiones</h2>
+                <p>Menú: <strong>Revisiones → Tablero</strong>. Muestra el estado general de las órdenes de revisión activas:</p>
+                <ul>
+                    <li>Total de revisiones asignadas, pendientes y ejecutadas.</li>
+                    <li>Distribución por tipo de novedad o crítica.</li>
+                    <li>Acceso rápido al posicionamiento geográfico de las órdenes.</li>
+                </ul>
+
+                <h2>Posicionamiento</h2>
+                <p>Vista de mapa que ubica las órdenes de revisión en el territorio. Permite ver en tiempo real la ubicación de las órdenes pendientes y ejecutadas por los técnicos.</p>
+
+                <h2>Listado de Revisiones</h2>
+                <p>Menú: <strong>Revisiones → Listado</strong>. Tabla con todas las órdenes de revisión. Acciones por orden:</p>
+                <ul>
+                    <li><strong>Ver detalle</strong> — Información completa de la revisión: cliente, dirección, novedad, fecha, técnico asignado.</li>
+                    <li><strong>Reasignar</strong> — Cambia el técnico responsable de una orden.</li>
+                    <li><strong>Eliminar</strong> — Borra una orden que fue creada por error.</li>
+                </ul>
+
+                <h2>Críticas de Revisión</h2>
+                <p>Las críticas son novedades detectadas durante una revisión que requieren seguimiento. Menú: <strong>Revisiones → Críticas</strong>.</p>
+                <ul>
+                    <li><strong>Adicionar crítica</strong> — Registra una novedad sobre una orden de revisión existente (fraude, daño en medidor, conexión irregular, etc.).</li>
+                    <li><strong>Eliminar crítica</strong> — Retira una crítica si fue ingresada por error.</li>
+                    <li><strong>Generar</strong> — Consolida las críticas del período y genera el reporte para gestión.</li>
+                </ul>
+
+                <h2>Listas de Parámetros</h2>
+                <p>Tablas de referencia usadas en el módulo de revisiones: tipos de novedad, causas, estados de resolución. Se configuran desde <strong>Revisiones → Listas de Parámetros</strong>.</p>
+
+                <h2>Relación con Macromedidores</h2>
+                <p>Las revisiones de macromedidores se gestionan desde el módulo <strong>Macromedidores</strong> (acceso directo desde el menú lateral). Allí se registra:</p>
+                <ul>
+                    <li>Lectura del macromedidor por sector.</li>
+                    <li>Comparación con la suma de consumos individuales del sector.</li>
+                    <li>Cálculo de pérdidas y eficiencia de la red.</li>
+                </ul>
+
+                <div class="m-tip"><i class="fa fa-info-circle"></i> Las revisiones son independientes del ciclo de lectura/facturación. Una orden de revisión puede generarse en cualquier momento, no solo durante un período activo.</div>
+                <div class="m-warn"><i class="fa fa-exclamation-triangle"></i> Si una revisión detecta un medidor dañado o alterado, actualiza la serie del medidor del cliente desde el módulo de Clientes antes de generar la próxima factura del período.</div>
             </div>
         </div>
 

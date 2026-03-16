@@ -9,10 +9,8 @@ class AlterOrdenescuAddPeriodoLectura extends Migration
 {
     public function up()
     {
-        // Deshabilitar modo estricto para tolerar fechas '0000-00-00' heredadas (MySQL only)
-        if (DB::getDriverName() === 'mysql') {
-            DB::statement("SET SESSION sql_mode = ''");
-        }
+        // Deshabilitar modo estricto para tolerar fechas '0000-00-00' heredadas
+        DB::statement("SET SESSION sql_mode = ''");
 
         Schema::table('ordenescu', function (Blueprint $table) {
             // FK al período de lectura formal (gestión de ciclos)

@@ -78,7 +78,7 @@ class PDOConnection extends PDO implements Connection, ServerInfoAwareConnection
      *
      * @return \PDOStatement
      */
-    public function query(string $query = '', ?int $fetchMode = null, mixed ...$fetchModeArgs): \PDOStatement|false
+    public function query()
     {
         $args = func_get_args();
 

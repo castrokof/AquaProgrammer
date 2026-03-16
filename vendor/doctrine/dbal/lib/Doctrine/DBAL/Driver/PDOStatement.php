@@ -49,12 +49,24 @@ class PDOStatement extends \PDOStatement implements Statement
     /**
      * {@inheritdoc}
      */
-    public function setFetchMode(int $mode, mixed ...$args): true
+    public function setFetchMode($fetchMode, $arg2 = null, $arg3 = null)
     {
-        $mode = $this->convertFetchMode($mode);
+        $fetchMode = $this->convertFetchMode($fetchMode);
 
+        // This thin wrapper is necessary to shield against the weird signature
+        // of PDOStatement::setFetchMode(): even if the second and third
+        // parameters are optional, PHP will not let us remove it from this
+        // declaration.
         try {
-            return parent::setFetchMode($mode, ...$args);
+            if ($arg2 === null && $arg3 === null) {
+                return parent::setFetchMode($fetchMode);
+            }
+
+            if ($arg3 === null) {
+                return parent::setFetchMode($fetchMode, $arg2);
+            }
+
+            return parent::setFetchMode($fetchMode, $arg2, $arg3);
         } catch (\PDOException $exception) {
             throw new PDOException($exception);
         }
@@ -111,7 +123,7 @@ class PDOStatement extends \PDOStatement implements Statement
     /**
      * {@inheritdoc}
      */
-    public function execute(?array $params = null): bool
+    public function execute($params = null)
     {
         try {
             return parent::execute($params);
@@ -123,10 +135,16 @@ class PDOStatement extends \PDOStatement implements Statement
     /**
      * {@inheritdoc}
      */
-    public function fetch(int $mode = PDO::FETCH_DEFAULT, int $cursorOrientation = PDO::FETCH_ORI_NEXT, int $cursorOffset = 0): mixed
+    public function fetch($fetchMode = null, $cursorOrientation = PDO::FETCH_ORI_NEXT, $cursorOffset = 0)
     {
+        $args = func_get_args();
+
+        if (isset($args[0])) {
+            $args[0] = $this->convertFetchMode($args[0]);
+        }
+
         try {
-            return parent::fetch($this->convertFetchMode($mode), $cursorOrientation, $cursorOffset);
+            return parent::fetch(...$args);
         } catch (\PDOException $exception) {
             throw new PDOException($exception);
         }
@@ -135,12 +153,26 @@ class PDOStatement extends \PDOStatement implements Statement
     /**
      * {@inheritdoc}
      */
-    public function fetchAll(int $mode = \PDO::FETCH_DEFAULT, mixed ...$args): array
+    public function fetchAll($fetchMode = null, $fetchArgument = null, $ctorArgs = null)
     {
-        $callArgs = [$this->convertFetchMode($mode), ...$args];
+        $args = func_get_args();
+
+        if (isset($args[0])) {
+            $args[0] = $this->convertFetchMode($args[0]);
+        }
+
+        if ($fetchMode === null && $fetchArgument === null && $ctorArgs === null) {
+            $args = [];
+        } elseif ($fetchArgument === null && $ctorArgs === null) {
+            $args = [$fetchMode];
+        } elseif ($ctorArgs === null) {
+            $args = [$fetchMode, $fetchArgument];
+        } else {
+            $args = [$fetchMode, $fetchArgument, $ctorArgs];
+        }
 
         try {
-            $data = parent::fetchAll(...$callArgs);
+            $data = parent::fetchAll(...$args);
             assert(is_array($data));
 
             return $data;
@@ -152,7 +184,7 @@ class PDOStatement extends \PDOStatement implements Statement
     /**
      * {@inheritdoc}
      */
-    public function fetchColumn(int $columnIndex = 0): mixed
+    public function fetchColumn($columnIndex = 0)
     {
         try {
             return parent::fetchColumn($columnIndex);

@@ -294,6 +294,11 @@ Route::group(['middleware' => 'auth', 'prefix' => 'facturacion'], function () {
     Route::post('facturas/pdf-masivo', 'FacturaController@pdfMasivo')
         ->name('facturas.pdf-masivo');
 
+    // ── Exportaciones en cola (Jobs) ──────────────────────────────
+    Route::post('exportaciones/despachar',        'ExportacionController@despachar')->name('exportaciones.despachar');
+    Route::get('exportaciones/{id}/estado',        'ExportacionController@estado')   ->name('exportaciones.estado');
+    Route::get('exportaciones/{id}/descargar',     'ExportacionController@descargar')->name('exportaciones.descargar');
+
     // ── Facturación Masiva ────────────────────────────────────────
     Route::get('facturasMasiva', 'FacturacionMasivaController@index')->name('facturas.masiva');
     Route::post('facturas/masiva/procesar', 'FacturacionMasivaController@procesar')->name('facturas.masiva.procesar');

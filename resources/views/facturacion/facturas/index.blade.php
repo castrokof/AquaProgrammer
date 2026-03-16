@@ -44,7 +44,24 @@
 #bulkBar .sel-count { font-size:.9rem; font-weight:700; }
 #bulkBar .btn-dl-pdf { background:white; color:#2e50e4; border:none; border-radius:10px; padding:8px 18px; font-weight:700; font-size:.85rem; cursor:pointer; }
 #bulkBar .btn-dl-pdf:hover { background:#e8edff; }
+#bulkBar .btn-dl-pdf:disabled { opacity:.6; cursor:not-allowed; }
 #bulkBar .btn-clear { background:rgba(255,255,255,.15); color:white; border:none; border-radius:10px; padding:8px 14px; font-weight:600; font-size:.82rem; cursor:pointer; margin-left:8px; }
+
+/* Toast de progreso exportación */
+#toastExportacion { position:fixed; bottom:28px; right:28px; z-index:9999; min-width:320px; max-width:400px;
+    background:white; border-radius:16px; box-shadow:0 8px 32px rgba(0,0,0,.18); padding:20px 22px;
+    display:none; border-left:5px solid #2e50e4; }
+#toastExportacion.visible { display:block; }
+#toastExportacion .tex-titulo { font-weight:700; font-size:.95rem; color:#1a202c; margin-bottom:4px; }
+#toastExportacion .tex-sub { font-size:.8rem; color:#718096; margin-bottom:12px; }
+#toastExportacion .barra-wrap { background:#e2e8f0; border-radius:8px; height:10px; overflow:hidden; }
+#toastExportacion .barra-fill { height:100%; border-radius:8px; background:linear-gradient(90deg,#2e50e4,#667eea);
+    transition:width .4s ease; }
+#toastExportacion .porcentaje { font-size:.85rem; font-weight:700; color:#2e50e4; margin-top:6px; }
+#toastExportacion .btn-descargar { display:none; margin-top:12px; background:linear-gradient(135deg,#48bb78,#38a169);
+    color:white; border:none; border-radius:10px; padding:9px 18px; font-weight:700; font-size:.85rem; cursor:pointer; width:100%; }
+#toastExportacion .btn-cerrar-toast { position:absolute; top:10px; right:14px; background:none; border:none;
+    font-size:1.1rem; color:#a0aec0; cursor:pointer; }
 
 .check-factura { width:16px; height:16px; cursor:pointer; accent-color:#2e50e4; }
 #checkAll { width:16px; height:16px; cursor:pointer; accent-color:#2e50e4; }
@@ -370,11 +387,19 @@
     </div>
 </div>
 
-{{-- Formulario oculto para descarga masiva de PDF --}}
-<form id="formPdfMasivo" action="{{ route('facturas.pdf-masivo') }}" method="POST" target="_blank" style="display:none;">
-    @csrf
-    <div id="idsContainer"></div>
-</form>
+{{-- Toast de progreso de exportación --}}
+<div id="toastExportacion">
+    <button class="btn-cerrar-toast" id="btnCerrarToast" title="Cerrar">&times;</button>
+    <div class="tex-titulo"><i class="fa fa-file-pdf" style="color:#2e50e4;"></i> Generando PDFs...</div>
+    <div class="tex-sub" id="toastSub">Preparando la exportación…</div>
+    <div class="barra-wrap">
+        <div class="barra-fill" id="toastBarra" style="width:0%"></div>
+    </div>
+    <div class="porcentaje" id="toastPorcentaje">0%</div>
+    <button class="btn-descargar" id="btnDescargarZip">
+        <i class="fa fa-download"></i> Descargar ZIP
+    </button>
+</div>
 
 @endsection
 @section('scriptsPlugins')
@@ -661,16 +686,100 @@ $(function () {
         actualizarBulkBar();
     });
 
-    // ── Descarga masiva PDF ────────────────────────────────────────────────────
+    // ── Descarga masiva PDF (con Job en cola) ─────────────────────────────────
+    var exportPollingTimer = null;
+    var exportacionIdActual = null;
+
+    var DESPACHAR_URL  = '{{ route("exportaciones.despachar") }}';
+    var ESTADO_URL_TPL = '{{ route("exportaciones.estado", ":id") }}';
+    var DESCARGAR_URL_TPL = '{{ route("exportaciones.descargar", ":id") }}';
+
+    function mostrarToast(titulo, sub) {
+        $('#toastExportacion .tex-titulo').html('<i class="fa fa-file-pdf" style="color:#2e50e4;"></i> ' + titulo);
+        $('#toastSub').text(sub);
+        $('#toastBarra').css('width', '0%');
+        $('#toastPorcentaje').text('0%');
+        $('#btnDescargarZip').hide();
+        $('#toastExportacion').addClass('visible');
+    }
+
+    function actualizarToast(progreso, procesados, total) {
+        $('#toastBarra').css('width', progreso + '%');
+        $('#toastPorcentaje').text(progreso + '%  (' + procesados + ' / ' + total + ')');
+        $('#toastSub').text('Generando PDFs, por favor espere…');
+    }
+
+    function toastListo(urlDescarga) {
+        $('#toastBarra').css('width', '100%');
+        $('#toastPorcentaje').text('100% — ¡Listo!');
+        $('#toastSub').text('Tu archivo ZIP está listo para descargar.');
+        $('#toastExportacion .tex-titulo').html('<i class="fa fa-check-circle" style="color:#38a169;"></i> PDFs generados');
+        $('#btnDescargarZip').show().off('click').on('click', function () {
+            window.location.href = urlDescarga;
+            setTimeout(function () { cerrarToast(); }, 2000);
+        });
+        $('#btnDescargaPDF').prop('disabled', false).html('<i class="fa fa-file-pdf"></i> Descargar PDF');
+    }
+
+    function toastError(msg) {
+        $('#toastSub').text('Error: ' + (msg || 'No se pudo generar el ZIP.'));
+        $('#toastExportacion .tex-titulo').html('<i class="fa fa-exclamation-circle" style="color:#e53e3e;"></i> Error en exportación');
+        $('#btnDescargaPDF').prop('disabled', false).html('<i class="fa fa-file-pdf"></i> Descargar PDF');
+    }
+
+    function cerrarToast() {
+        clearInterval(exportPollingTimer);
+        exportPollingTimer = null;
+        $('#toastExportacion').removeClass('visible');
+    }
+
+    function iniciarPolling(exportacionId) {
+        exportPollingTimer = setInterval(function () {
+            var url = ESTADO_URL_TPL.replace(':id', exportacionId);
+            $.get(url, function (r) {
+                if (r.estado === 'PENDIENTE' || r.estado === 'PROCESANDO') {
+                    actualizarToast(r.progreso, r.procesados, r.total);
+                } else if (r.estado === 'LISTO') {
+                    clearInterval(exportPollingTimer);
+                    toastListo(r.url_descarga);
+                } else if (r.estado === 'ERROR') {
+                    clearInterval(exportPollingTimer);
+                    toastError(r.error);
+                }
+            }).fail(function () {
+                // Si falla la consulta, seguir intentando
+            });
+        }, 4000); // Cada 4 segundos
+    }
+
     $('#btnDescargaPDF').on('click', function () {
         var ids = $('.check-factura:checked').map(function () { return this.value; }).get();
         if (!ids.length) return;
-        var $cont = $('#idsContainer').empty();
-        ids.forEach(function (id) {
-            $cont.append('<input type="hidden" name="ids[]" value="' + id + '">');
+
+        $(this).prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Enviando…');
+
+        $.ajax({
+            url:  DESPACHAR_URL,
+            method: 'POST',
+            data: { ids: ids, _token: CSRF },
+            success: function (r) {
+                if (r.ok) {
+                    exportacionIdActual = r.exportacion_id;
+                    mostrarToast('Generando PDFs…', 'Se procesarán ' + r.total + ' factura(s). Esto puede tomar unos minutos.');
+                    iniciarPolling(r.exportacion_id);
+                } else {
+                    alert('Error al iniciar exportación.');
+                    $('#btnDescargaPDF').prop('disabled', false).html('<i class="fa fa-file-pdf"></i> Descargar PDF');
+                }
+            },
+            error: function () {
+                alert('No se pudo iniciar la exportación. Intente de nuevo.');
+                $('#btnDescargaPDF').prop('disabled', false).html('<i class="fa fa-file-pdf"></i> Descargar PDF');
+            }
         });
-        $('#formPdfMasivo').submit();
     });
+
+    $('#btnCerrarToast').on('click', function () { cerrarToast(); });
 
     // ── Ver Detalle en Modal ───────────────────────────────────────────────────
     $(document).on('click', '.btn-ver-detalle', function () {

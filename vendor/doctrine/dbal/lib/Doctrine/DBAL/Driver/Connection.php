@@ -26,7 +26,7 @@ interface Connection
      *
      * @return Statement
      */
-    public function query();
+    public function query(string $query = '', ?int $fetchMode = null, mixed ...$fetchModeArgs);
 
     /**
      * Quotes a string for use in a query.
@@ -36,7 +36,7 @@ interface Connection
      *
      * @return mixed
      */
-    public function quote($value, $type = ParameterType::STRING);
+    public function quote(string $value, int $type = ParameterType::STRING): string|false;
 
     /**
      * Executes an SQL statement and return the number of affected rows.

@@ -93,7 +93,7 @@ trait Creator
             setlocale(LC_NUMERIC, $locale);
         }
 
-        static::setLastErrors(parent::getLastErrors());
+        static::setLastErrors(parent::getLastErrors() ?: []);
     }
 
     /**
@@ -600,7 +600,7 @@ trait Creator
 
         // First attempt to create an instance, so that error messages are based on the unmodified format.
         $date = self::createFromFormatAndTimezone($format, $time, $tz);
-        $lastErrors = parent::getLastErrors();
+        $lastErrors = parent::getLastErrors() ?: [];
         /** @var \Carbon\CarbonImmutable|\Carbon\Carbon|null $mock */
         $mock = static::getMockedTestNow($tz);
 

@@ -35,7 +35,7 @@ interface ResultStatement extends Traversable
      *
      * @return bool
      */
-    public function setFetchMode($fetchMode, $arg2 = null, $arg3 = null);
+    public function setFetchMode(int $fetchMode, mixed ...$args): true;
 
     /**
      * Returns the next row of a result set.
@@ -62,7 +62,7 @@ interface ResultStatement extends Traversable
      * @return mixed The return value of this method on success depends on the fetch mode. In all cases, FALSE is
      *               returned on failure.
      */
-    public function fetch($fetchMode = null, $cursorOrientation = PDO::FETCH_ORI_NEXT, $cursorOffset = 0);
+    public function fetch(int $fetchMode = PDO::FETCH_DEFAULT, int $cursorOrientation = PDO::FETCH_ORI_NEXT, int $cursorOffset = 0): mixed;
 
     /**
      * Returns an array containing all of the result set rows.
@@ -86,7 +86,7 @@ interface ResultStatement extends Traversable
      *
      * @return mixed[]
      */
-    public function fetchAll($fetchMode = null, $fetchArgument = null, $ctorArgs = null);
+    public function fetchAll(int $fetchMode = PDO::FETCH_DEFAULT, mixed ...$args): array;
 
     /**
      * Returns a single column from the next row of a result set or FALSE if there are no more rows.
@@ -96,5 +96,5 @@ interface ResultStatement extends Traversable
      *
      * @return mixed|false A single column in the next row of a result set, or FALSE if there are no more rows.
      */
-    public function fetchColumn($columnIndex = 0);
+    public function fetchColumn(int $columnIndex = 0): mixed;
 }

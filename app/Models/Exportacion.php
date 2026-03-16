@@ -17,6 +17,9 @@ class Exportacion extends Model
         'progreso',
         'archivo',
         'mensaje_error',
+        'periodo',
+        'id_ruta',
+        'tipo',
     ];
 
     protected $casts = [

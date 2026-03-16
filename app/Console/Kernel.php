@@ -24,8 +24,13 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        // $schedule->command('inspire')
-        //          ->hourly();
+        // Procesa un job por minuto desde la base de datos.
+        // Complementa el cron de cPanel:
+        // * * * * * /usr/local/bin/php /home/tu_usuario/public_html/artisan queue:work database --once --tries=1 --timeout=290 >> /dev/null 2>&1
+        $schedule->command('queue:work database --once --tries=1 --timeout=290')
+                 ->everyMinute()
+                 ->withoutOverlapping()
+                 ->runInBackground();
     }
 
     /**

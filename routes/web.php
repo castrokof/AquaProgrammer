@@ -294,6 +294,17 @@ Route::group(['middleware' => 'auth', 'prefix' => 'facturacion'], function () {
     Route::post('facturas/pdf-masivo', 'FacturaController@pdfMasivo')
         ->name('facturas.pdf-masivo');
 
+    // ── Exportaciones en cola (Jobs) ──────────────────────────────
+    Route::post('exportaciones/despachar',        'ExportacionController@despachar')->name('exportaciones.despachar');
+    Route::get('exportaciones/{id}/estado',        'ExportacionController@estado')   ->name('exportaciones.estado');
+    Route::get('exportaciones/{id}/descargar',     'ExportacionController@descargar')->name('exportaciones.descargar');
+
+    // ── PDFs por Ruta ─────────────────────────────────────────────
+    Route::get('exportaciones/ruta',                'ExportacionRutaController@index')   ->name('exportaciones.ruta.index');
+    Route::post('exportaciones/ruta/generar',       'ExportacionRutaController@generar') ->name('exportaciones.ruta.generar');
+    Route::get('exportaciones/ruta/{id}/estado',    'ExportacionRutaController@estado')  ->name('exportaciones.ruta.estado');
+    Route::get('exportaciones/ruta/{id}/descargar', 'ExportacionRutaController@descargar')->name('exportaciones.ruta.descargar');
+
     // ── Facturación Masiva ────────────────────────────────────────
     Route::get('facturasMasiva', 'FacturacionMasivaController@index')->name('facturas.masiva');
     Route::post('facturas/masiva/procesar', 'FacturacionMasivaController@procesar')->name('facturas.masiva.procesar');

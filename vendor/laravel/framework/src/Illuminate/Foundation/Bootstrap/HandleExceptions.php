@@ -65,10 +65,6 @@ class HandleExceptions
      */
     public function handleError($level, $message, $file = '', $line = 0, $context = [])
     {
-        if ($level === E_DEPRECATED || $level === E_USER_DEPRECATED) {
-            return;
-        }
-
         if (error_reporting() & $level) {
             throw new ErrorException($message, 0, $level, $file, $line);
         }

@@ -25,8 +25,8 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule)
     {
         // Procesa un job por minuto desde la base de datos.
-        // Complementa el cron de cPanel:
-        // * * * * * /usr/local/bin/php /home/tu_usuario/public_html/artisan queue:work database --once --tries=1 --timeout=290 >> /dev/null 2>&1
+        // Cron configurado en Hostinger cPanel:
+        // * * * * * /usr/bin/php /home/u359728731/domains/manteliviano.com/AquaProgrammerData/artisan queue:work database --once --tries=1 --timeout=290 >> /dev/null 2>&1
         $schedule->command('queue:work database --once --tries=1 --timeout=290')
                  ->everyMinute()
                  ->withoutOverlapping()

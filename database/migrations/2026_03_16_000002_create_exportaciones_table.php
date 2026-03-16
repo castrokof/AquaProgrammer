@@ -9,7 +9,7 @@ class CreateExportacionesTable extends Migration
     public function up()
     {
         Schema::create('exportaciones', function (Blueprint $table) {
-            $table->id();
+            $table->bigIncrements('id');
             $table->unsignedBigInteger('usuario_id')->nullable();
             $table->json('ids');                           // IDs de facturas a exportar
             $table->enum('estado', ['PENDIENTE', 'PROCESANDO', 'LISTO', 'ERROR'])

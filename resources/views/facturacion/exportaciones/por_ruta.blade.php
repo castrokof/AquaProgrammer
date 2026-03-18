@@ -22,6 +22,7 @@
 .badge-PENDIENTE   { background:#fef3c7; color:#92400e; padding:3px 10px; border-radius:20px; font-weight:700; font-size:.72rem; }
 .badge-PROCESANDO  { background:#dbeafe; color:#1e3a8a; padding:3px 10px; border-radius:20px; font-weight:700; font-size:.72rem; }
 .badge-LISTO       { background:#c6f6d5; color:#22543d; padding:3px 10px; border-radius:20px; font-weight:700; font-size:.72rem; }
+.badge-EXPIRADO    { background:#e2e8f0; color:#4a5568; padding:3px 10px; border-radius:20px; font-weight:700; font-size:.72rem; }
 .badge-ERROR       { background:#fed7d7; color:#742a2a; padding:3px 10px; border-radius:20px; font-weight:700; font-size:.72rem; }
 
 .barra-wrap { background:#e2e8f0; border-radius:8px; height:8px; overflow:hidden; min-width:80px; }
@@ -34,6 +35,24 @@
 #alertBox { display:none; border-radius:12px; padding:14px 18px; margin-bottom:16px; font-size:.88rem; }
 #alertBox.success { background:#c6f6d5; color:#22543d; border:1px solid #68d391; display:block; }
 #alertBox.error   { background:#fed7d7; color:#742a2a; border:1px solid #fc8181; display:block; }
+
+/* Modal Links */
+.modal-links .modal-content { border-radius:16px; border:none; box-shadow:0 20px 60px rgba(0,0,0,.2); }
+.modal-links .modal-header  { background:linear-gradient(135deg,#2e50e4 0%,#2b0c49 100%); border-radius:16px 16px 0 0; padding:18px 24px; border:none; }
+.modal-links .modal-header h4 { color:white; font-weight:700; margin:0; }
+.modal-links .modal-header .close { color:white; opacity:1; font-size:1.4rem; }
+.modal-links .modal-body { padding:20px 24px; max-height:65vh; overflow-y:auto; }
+.link-item { display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:10px; background:#f8f9ff; border:1px solid #e2e8f0; margin-bottom:8px; }
+.link-item .link-ruta { font-weight:700; color:#2e50e4; min-width:60px; font-size:.85rem; }
+.link-item .link-url  { flex:1; font-size:.78rem; color:#4a5568; word-break:break-all; }
+.link-item .link-exp  { font-size:.72rem; color:#a0aec0; white-space:nowrap; }
+.link-item.expirado   { background:#f7fafc; opacity:.65; }
+.btn-copy-one { background:#e2e8f0; color:#4a5568; border:none; border-radius:7px; padding:4px 10px; font-size:.75rem; cursor:pointer; white-space:nowrap; }
+.btn-copy-one:hover { background:#cbd5e0; }
+.btn-copy-all { background:linear-gradient(135deg,#2e50e4,#2b0c49); color:white; border:none; border-radius:10px; padding:8px 20px; font-weight:700; font-size:.85rem; cursor:pointer; }
+.btn-copy-all:hover { opacity:.88; }
+.btn-ver-links { background:linear-gradient(135deg,#667eea,#764ba2); color:white; border:none; border-radius:12px; padding:10px 22px; font-weight:700; font-size:.9rem; cursor:pointer; transition:.2s; }
+.btn-ver-links:hover { opacity:.88; }
 </style>
 @endsection
 
@@ -67,6 +86,9 @@
                         <button type="button" id="btnGenerar" class="btn-generar">
                             <i class="fa fa-cogs"></i> Generar PDFs
                         </button>
+                        <button type="button" id="btnVerLinks" class="btn-ver-links" data-toggle="modal" data-target="#modalLinks">
+                            <i class="fa fa-link"></i> Ver Links
+                        </button>
                         @endif
                     </div>
                 </div>
@@ -92,15 +114,26 @@
                         <th style="min-width:100px;">Progreso</th>
                         <th>Generado por</th>
                         <th>Fecha</th>
+                        <th>Vencimiento</th>
                         <th>Acciones</th>
                     </tr>
                 </thead>
                 <tbody id="tbodyRutas">
                 @forelse($exportaciones as $exp)
+                    @php
+                        $expirado = ($exp->estado === 'LISTO' && !$exp->archivo);
+                        $expiraEl = $exp->updated_at ? $exp->updated_at->copy()->addDays(7) : null;
+                    @endphp
                     <tr id="row-{{ $exp->id }}">
                         <td><strong>{{ $exp->id_ruta }}</strong></td>
                         <td style="text-align:center;">{{ $exp->total }}</td>
-                        <td><span class="badge badge-{{ $exp->estado }}" id="estado-{{ $exp->id }}">{{ $exp->estado }}</span></td>
+                        <td>
+                            @if($expirado)
+                                <span class="badge badge-EXPIRADO" id="estado-{{ $exp->id }}">EXPIRADO</span>
+                            @else
+                                <span class="badge badge-{{ $exp->estado }}" id="estado-{{ $exp->id }}">{{ $exp->estado }}</span>
+                            @endif
+                        </td>
                         <td>
                             <div class="barra-wrap">
                                 <div class="barra-fill" id="barra-{{ $exp->id }}" style="width:{{ $exp->progreso }}%"></div>
@@ -109,8 +142,25 @@
                         </td>
                         <td>{{ optional($exp->usuario)->name ?? 'Sistema' }}</td>
                         <td>{{ $exp->updated_at ? $exp->updated_at->format('d/m/Y H:i') : '—' }}</td>
+                        <td style="font-size:.78rem;color:#718096;">
+                            @if($exp->estado === 'LISTO' && $expiraEl)
+                                @if($expirado)
+                                    <span style="color:#a0aec0;">Eliminado</span>
+                                @elseif($expiraEl->isPast())
+                                    <span style="color:#e53e3e;">Vencido</span>
+                                @else
+                                    {{ $expiraEl->format('d/m/Y') }}
+                                @endif
+                            @else
+                                —
+                            @endif
+                        </td>
                         <td>
-                            @if($exp->estado === 'LISTO')
+                            @if($expirado)
+                                <span style="color:#a0aec0;font-size:.78rem;">
+                                    <i class="fa fa-ban"></i> Expirado
+                                </span>
+                            @elseif($exp->estado === 'LISTO')
                                 <a href="{{ route('exportaciones.ruta.descargar', $exp->id) }}"
                                    class="btn-dl" id="btn-dl-{{ $exp->id }}">
                                     <i class="fa fa-download"></i> Descargar
@@ -127,7 +177,7 @@
                         </td>
                     </tr>
                 @empty
-                    <tr id="rowVacio"><td colspan="7" style="text-align:center;color:#a0aec0;padding:30px;">
+                    <tr id="rowVacio"><td colspan="8" style="text-align:center;color:#a0aec0;padding:30px;">
                         Ningún PDF generado para este período. Haga clic en <strong>Generar PDFs</strong>.
                     </td></tr>
                 @endforelse
@@ -138,6 +188,62 @@
 
     </div>
 </div>
+
+{{-- ── Modal Ver Links ──────────────────────────────────────────────────── --}}
+@if($periodo)
+<div class="modal fade modal-links" id="modalLinks" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4><i class="fa fa-link"></i> Links de descarga &mdash; {{ $periodo }}</h4>
+                <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+            </div>
+            <div class="modal-body">
+                @php
+                    $listos = $exportaciones->where('estado', 'LISTO')->filter(fn($e) => $e->archivo !== null);
+                @endphp
+
+                @if($listos->isEmpty())
+                    <p style="text-align:center;color:#a0aec0;padding:20px 0;">
+                        <i class="fa fa-info-circle"></i>
+                        No hay ZIPs disponibles para el período <strong>{{ $periodo }}</strong>.
+                        @if($exportaciones->where('estado','LISTO')->isNotEmpty())
+                            <br><small>Algunos archivos ya expiraron y fueron eliminados.</small>
+                        @endif
+                    </p>
+                @else
+                    <p style="color:#718096;font-size:.85rem;margin-bottom:14px;">
+                        {{ $listos->count() }} enlace(s) disponibles. Los ZIPs se eliminan automáticamente a los 7 días.
+                    </p>
+                    <div id="listaLinks">
+                    @foreach($listos as $exp)
+                        @php $url = route('exportaciones.ruta.descargar', $exp->id); @endphp
+                        <div class="link-item">
+                            <span class="link-ruta">Ruta {{ $exp->id_ruta }}</span>
+                            <span class="link-url">{{ $url }}</span>
+                            <span class="link-exp">
+                                Vence: {{ $exp->updated_at->copy()->addDays(7)->format('d/m/Y') }}
+                            </span>
+                            <button class="btn-copy-one" onclick="copiarLink('{{ $url }}', this)">
+                                <i class="fa fa-copy"></i> Copiar
+                            </button>
+                            <a href="{{ $url }}" class="btn-dl" style="padding:4px 10px;font-size:.78rem;">
+                                <i class="fa fa-download"></i>
+                            </a>
+                        </div>
+                    @endforeach
+                    </div>
+                    <div style="margin-top:16px;text-align:right;">
+                        <button class="btn-copy-all" id="btnCopiarTodos" onclick="copiarTodos()">
+                            <i class="fa fa-copy"></i> Copiar todos los enlaces
+                        </button>
+                    </div>
+                @endif
+            </div>
+        </div>
+    </div>
+</div>
+@endif
 @endsection
 
 @section('scripts')
@@ -287,5 +393,41 @@
         el.textContent = msg;
     }
 })();
+
+/* ── Helpers para copiar links ───────────────────────────────────────── */
+function copiarLink(url, btn) {
+    navigator.clipboard.writeText(url).then(function () {
+        var orig = btn.innerHTML;
+        btn.innerHTML = '<i class="fa fa-check"></i> Copiado';
+        btn.style.background = '#c6f6d5';
+        btn.style.color = '#22543d';
+        setTimeout(function () {
+            btn.innerHTML = orig;
+            btn.style.background = '';
+            btn.style.color = '';
+        }, 2000);
+    }).catch(function () {
+        prompt('Copia este enlace:', url);
+    });
+}
+
+function copiarTodos() {
+    var items = document.querySelectorAll('#listaLinks .link-item');
+    var links = [];
+    items.forEach(function (item) {
+        var ruta = item.querySelector('.link-ruta').textContent.trim();
+        var url  = item.querySelector('.link-url').textContent.trim();
+        links.push(ruta + ': ' + url);
+    });
+    var texto = links.join('\n');
+    navigator.clipboard.writeText(texto).then(function () {
+        var btn = document.getElementById('btnCopiarTodos');
+        var orig = btn.innerHTML;
+        btn.innerHTML = '<i class="fa fa-check"></i> ¡Copiados!';
+        setTimeout(function () { btn.innerHTML = orig; }, 2500);
+    }).catch(function () {
+        prompt('Copia estos enlaces:', texto);
+    });
+}
 </script>
 @endsection

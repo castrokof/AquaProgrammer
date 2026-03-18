@@ -25,12 +25,17 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule)
     {
         // Procesa un job por minuto desde la base de datos.
-        // Complementa el cron de cPanel:
-        // * * * * * /usr/bin/php /home/u359728731/domains/manteliviano.com/AquaProgrammerData/artisan queue:work database --once --tries=1 --timeout=290 >> /dev/null 2>&1
+        // Cron configurado en Hostinger cPanel (usar schedule:run):
+        // * * * * * /usr/bin/php /home/u359728731/domains/manteliviano.com/AquaProgrammerData/artisan schedule:run >> /dev/null 2>&1
         $schedule->command('queue:work database --once --tries=1 --timeout=290')
                  ->everyMinute()
                  ->withoutOverlapping()
                  ->runInBackground();
+
+        // Elimina ZIPs de exportaciones con más de 7 días (se ejecuta diariamente a medianoche)
+        $schedule->command('exportaciones:limpiar')
+                 ->dailyAt('00:00')
+                 ->withoutOverlapping();
     }
 
     /**

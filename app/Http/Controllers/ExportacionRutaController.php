@@ -24,9 +24,10 @@ class ExportacionRutaController extends Controller
         if ($request->filled('periodo')) {
             $periodo = $request->periodo;
 
-            // Todas las rutas que tienen facturas en el período
+            // Todas las rutas que tienen facturas activas en el período
             $rutas = Factura::join('clientes', 'clientes.suscriptor', '=', 'facturas.suscriptor')
                 ->where('facturas.periodo', $periodo)
+                ->where('facturas.estado', '!=', 'ANULADA')
                 ->whereNotNull('clientes.id_ruta')
                 ->distinct()
                 ->orderBy('clientes.id_ruta')
@@ -60,9 +61,10 @@ class ExportacionRutaController extends Controller
             ->whereIn('estado', ['PENDIENTE', 'PROCESANDO'])
             ->delete();
 
-        // Obtener todas las rutas que tienen facturas en este período
+        // Obtener todas las rutas que tienen facturas activas en este período
         $rutas = Factura::join('clientes', 'clientes.suscriptor', '=', 'facturas.suscriptor')
             ->where('facturas.periodo', $periodo)
+            ->where('facturas.estado', '!=', 'ANULADA')
             ->whereNotNull('clientes.id_ruta')
             ->distinct()
             ->orderBy('clientes.id_ruta')
@@ -80,6 +82,7 @@ class ExportacionRutaController extends Controller
         foreach ($rutas as $ruta) {
             $ids = Factura::join('clientes', 'clientes.suscriptor', '=', 'facturas.suscriptor')
                 ->where('facturas.periodo', $periodo)
+                ->where('facturas.estado', '!=', 'ANULADA')
                 ->where('clientes.id_ruta', $ruta)
                 ->pluck('facturas.id')
                 ->toArray();
@@ -134,6 +137,7 @@ class ExportacionRutaController extends Controller
 
         $ids = Factura::join('clientes', 'clientes.suscriptor', '=', 'facturas.suscriptor')
             ->where('facturas.periodo', $periodo)
+            ->where('facturas.estado', '!=', 'ANULADA')
             ->where('clientes.id_ruta', $idRuta)
             ->pluck('facturas.id')
             ->toArray();

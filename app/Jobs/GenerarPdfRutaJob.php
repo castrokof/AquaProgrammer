@@ -18,7 +18,7 @@ class GenerarPdfRutaJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public $timeout = 300;
+    public $timeout = 1800; // 30 minutos máximo (aumentado para lotes grandes)
     public $tries   = 1;
 
     protected int $exportacionId;
@@ -66,6 +66,7 @@ class GenerarPdfRutaJob implements ShouldQueue
             foreach (array_chunk($ids, 10) as $chunk) {
                 $facturas = Factura::with(['cliente', 'pagos', 'tarifaPeriodo'])
                     ->whereIn('id', $chunk)
+                    ->where('estado', '!=', 'ANULADA')
                     ->get();
 
                 foreach ($facturas as $factura) {

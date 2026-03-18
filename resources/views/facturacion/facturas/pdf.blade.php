@@ -3,6 +3,26 @@
 <head>
 <meta charset="UTF-8">
 <title>Facturas</title>
+@php
+    /* ── Colores desde configuración de empresa ── */
+    $cPrimario = $empresa->colorPrimario();
+    $cAcento   = $empresa->colorAcento();
+    $subtitulo = $empresa->factura_subtitulo ?? 'Servicio Público Domiciliario';
+
+    /* ── Visibilidad de secciones ── */
+    $verLogo          = $empresa->factura_mostrar_logo          ?? true;
+    $verLectura       = $empresa->factura_mostrar_lectura       ?? true;
+    $verSerie         = $empresa->factura_mostrar_serie_medidor ?? true;
+    $verSector        = $empresa->factura_mostrar_sector        ?? true;
+    $verTipoUso       = $empresa->factura_mostrar_tipo_uso      ?? true;
+    $verEstrato       = $empresa->factura_mostrar_estrato       ?? true;
+    $verTarifa        = $empresa->factura_mostrar_tarifa        ?? true;
+    $verSaldoAnt      = $empresa->factura_mostrar_saldo_anterior ?? true;
+    $verCreditos      = $empresa->factura_mostrar_creditos      ?? true;
+    $verBarras        = $empresa->factura_mostrar_barras_consumo ?? true;
+    $verObservaciones = $empresa->factura_mostrar_observaciones ?? true;
+    $verCodBarras     = $empresa->factura_mostrar_codigo_barras ?? true;
+@endphp
 <style>
 @page { size: letter; margin: 7mm 9mm; }
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -21,7 +41,7 @@ body { font-family: 'DejaVu Sans', 'Arial', sans-serif; font-size: 7pt; color: #
 .hdr-outer { border:1.5px solid #888; border-collapse:collapse; width:100%; margin-bottom:4px; }
 .hdr-empresa { border-right:1.5px solid #888; padding:5px 7px; vertical-align:top; width:42%; }
 .hdr-suscriptor { padding:0; vertical-align:top; width:58%; }
-.hdr-suscriptor-title { background:#2e50e4; color:white; font-weight:700; font-size:7pt;
+.hdr-suscriptor-title { background:{{ $cPrimario }}; color:white; font-weight:700; font-size:7pt;
     text-transform:uppercase; padding:3px 6px; letter-spacing:.4px; }
 .hdr-suscriptor-body { padding:0; }
 .hdr-suscriptor-body table { width:100%; border-collapse:collapse; }
@@ -30,7 +50,7 @@ body { font-family: 'DejaVu Sans', 'Arial', sans-serif; font-size: 7pt; color: #
 .empresa-name { font-size:9pt; font-weight:bold; color:#1a1a1a; }
 .empresa-sub { font-size:6.5pt; color:#555; margin-top:1px; }
 .empresa-num { font-size:7pt; color:#333; margin-top:3px; }
-.num-fact { font-size:13pt; font-weight:bold; color:#2e50e4; }
+.num-fact { font-size:13pt; font-weight:bold; color:{{ $cAcento }}; }
 .fact-badge { display:inline-block; padding:1px 5px; border-radius:4px; font-size:6pt; font-weight:bold; }
 .badge-auto   { background:#e0f2fe; color:#0369a1; }
 .badge-manual { background:#fef3c7; color:#b45309; }
@@ -38,7 +58,7 @@ body { font-family: 'DejaVu Sans', 'Arial', sans-serif; font-size: 7pt; color: #
     padding:1px 5px; font-size:6.5pt; margin-top:2px; display:block; }
 
 /* ── Sección de consumo (2 columnas) ── */
-.detalle-title { background:#2e50e4; color:white; font-weight:700; font-size:7pt;
+.detalle-title { background:{{ $cPrimario }}; color:white; font-weight:700; font-size:7pt;
     padding:3px 6px; text-transform:uppercase; letter-spacing:.4px; margin-bottom:0; }
 .servicio-title { background:#e8eeff; color:#1e3a8a; font-weight:700; font-size:7pt;
     padding:2px 5px; text-align:center; border:1px solid #bbb; border-bottom:none; }
@@ -49,11 +69,11 @@ body { font-family: 'DejaVu Sans', 'Arial', sans-serif; font-size: 7pt; color: #
 .subsidio-neg { color:#991b1b; }
 
 /* ── Resumen del cobro ── */
-.resumen-title { background:#2e50e4; color:white; font-weight:700; font-size:7pt;
+.resumen-title { background:{{ $cPrimario }}; color:white; font-weight:700; font-size:7pt;
     padding:3px 6px; text-transform:uppercase; letter-spacing:.4px; }
 .resumen-tbl td { padding:2px 6px; font-size:7pt; border-bottom:1px solid #f0f0f0; }
 .resumen-tbl tr:last-child td { border-bottom:none; }
-.resumen-total td { background:#2e50e4; color:white; font-weight:700; font-size:9pt; padding:4px 6px; }
+.resumen-total td { background:{{ $cPrimario }}; color:white; font-weight:700; font-size:9pt; padding:4px 6px; }
 
 /* ── Gráfica de barras (SVG) ── */
 .barras-title { font-size:6.5pt; font-weight:700; color:#374151; margin-bottom:2px; text-align:center; }
@@ -67,7 +87,7 @@ body { font-family: 'DejaVu Sans', 'Arial', sans-serif; font-size: 7pt; color: #
 .estado-cell { padding:4px 7px; vertical-align:top; font-size:7pt; }
 .estado-lbl  { font-weight:700; font-size:6.5pt; color:#555; text-transform:uppercase;
     letter-spacing:.3px; display:block; margin-bottom:1px; }
-.total-pagar-box { background:#2e50e4; color:white; border-radius:0; padding:4px 8px;
+.total-pagar-box { background:{{ $cPrimario }}; color:white; border-radius:0; padding:4px 8px;
     text-align:right; }
 .total-pagar-box .lbl { font-size:7pt; font-weight:700; }
 .total-pagar-box .val { font-size:12pt; font-weight:bold; }
@@ -106,7 +126,7 @@ body { font-family: 'DejaVu Sans', 'Arial', sans-serif; font-size: 7pt; color: #
                     ? round($factura->consumo_suntuario_alcantarillado_valor / $factura->consumo_suntuario_alcantarillado_m3, 2) : 0;
 
     // ── Subsidio / contribución ──
-    $subsidioAc   = (float)($factura->subsidio_emergencia    ?? 0); // + = subsidio (descuento), - = contribución (cargo)
+    $subsidioAc   = (float)($factura->subsidio_emergencia    ?? 0);
     $esSubsidio   = $subsidioAc > 0;
     $subsidioAl   = (float)($factura->subsidio_alcantarillado ?? 0);
     $esSubsidioAl = $subsidioAl > 0;
@@ -119,7 +139,7 @@ body { font-family: 'DejaVu Sans', 'Arial', sans-serif; font-size: 7pt; color: #
     $totalPagado    = $factura->pagos->sum('total_pago_realizado');
     $ultimoPago     = $factura->pagos->sortByDesc('fecha_pago')->first();
 
-    // ── Barras de consumo: prom_m1..m6 + actual ──
+    // ── Barras de consumo ──
     $consumos = [
         $factura->prom_m6, $factura->prom_m5, $factura->prom_m4,
         $factura->prom_m3, $factura->prom_m2, $factura->prom_m1,
@@ -133,6 +153,10 @@ body { font-family: 'DejaVu Sans', 'Arial', sans-serif; font-size: 7pt; color: #
 
     // Tarifa nombre
     $tarifaNombre = optional($factura->tarifaPeriodo)->nombre ?? '—';
+
+    // Estrato
+    $estrNombres = [1=>'BAJO-BAJO',2=>'BAJO',3=>'MEDIO BAJO',4=>'MEDIO',5=>'MEDIO ALTO',6=>'ALTO'];
+    $eN = $factura->estrato_snapshot ? ($estrNombres[$factura->estrato_snapshot] ?? '') : '';
 @endphp
 
 @if(!$loop->first)<div class="page-break"></div>@endif
@@ -144,7 +168,7 @@ body { font-family: 'DejaVu Sans', 'Arial', sans-serif; font-size: 7pt; color: #
 <tr>
     {{-- Empresa --}}
     <td class="hdr-empresa">
-        @if($empresa->logo_path)
+        @if($verLogo && $empresa->logo_path)
             @php $logoB64 = $empresa->logoBase64(); @endphp
             @if($logoB64)
             <img src="{{ $logoB64 }}" style="max-height:100px;max-width:100px;object-fit:contain;display:block;margin-bottom:2px;margin-top:6px;">
@@ -155,6 +179,7 @@ body { font-family: 'DejaVu Sans', 'Arial', sans-serif; font-size: 7pt; color: #
         <div class="empresa-sub">NIT {{ $empresa->nit }}</div>
         @endif
         <div class="empresa-sub">{{ $empresa->texto_documento_equivalente }}</div>
+        <div class="empresa-sub" style="margin-top:1px;">{{ $subtitulo }}</div>
         <div class="empresa-num">No. <strong>{{ $numFacturaMostrar }}</strong></div>
         <div style="margin-top:3px;font-size:6.5pt;color:#444;">
             Período: <strong>{{ $factura->mes_cuenta }}</strong><br>
@@ -180,39 +205,47 @@ body { font-family: 'DejaVu Sans', 'Arial', sans-serif; font-size: 7pt; color: #
                 <td style="width:50%;"><span class="cell-lbl">Nombre:</span>
                     @if($factura->cliente){{ trim($factura->cliente->nombre.' '.$factura->cliente->apellido) }}@else—@endif
                 </td>
+                @if($verSector)
                 <td><span class="cell-lbl">Ubicación:</span> {{ $factura->sector ?? '—' }}</td>
+                @endif
             </tr>
             <tr>
+                @if($verSerie)
                 <td><span class="cell-lbl">Medidor:</span> {{ $factura->serie_medidor ?? '—' }}</td>
+                @endif
                 <td><span class="cell-lbl">Suscriptor N°:</span> {{ $factura->suscriptor }}</td>
             </tr>
+            @if($verTipoUso || $verEstrato)
             <tr>
+                @if($verTipoUso)
                 <td><span class="cell-lbl">Clase de servicio:</span> {{ $factura->clase_uso ?? '—' }}</td>
+                @endif
+                @if($verEstrato)
                 <td><span class="cell-lbl">Estrato:</span>
-                    @php
-                        $estrNombres = [1=>'BAJO-BAJO',2=>'BAJO',3=>'MEDIO BAJO',4=>'MEDIO',5=>'MEDIO ALTO',6=>'ALTO'];
-                        $eN = $factura->estrato_snapshot ? ($estrNombres[$factura->estrato_snapshot] ?? '') : '';
-                    @endphp
                     {{ $factura->estrato_snapshot ? $factura->estrato_snapshot.' - '.$eN : '—' }}
                 </td>
+                @endif
             </tr>
+            @endif
             <tr>
                 <td><span class="cell-lbl">Ciclo / Período:</span> {{ $factura->periodo }}</td>
+                @if($verTarifa)
                 <td><span class="cell-lbl">Tarifa:</span> {{ $tarifaNombre }}</td>
+                @endif
             </tr>
         </table>
         </div>
         {{-- Caja de pago destacada --}}
-        <div style="margin:4px 6px 5px 6px;border:2px solid #2e50e4;border-radius:3px;overflow:hidden;">
-            <div style="background:#2e50e4;color:white;font-weight:700;font-size:7pt;padding:3px 7px;text-transform:uppercase;letter-spacing:.4px;">
+        <div style="margin:4px 6px 5px 6px;border:2px solid {{ $cPrimario }};border-radius:3px;overflow:hidden;">
+            <div style="background:{{ $cPrimario }};color:white;font-weight:700;font-size:7pt;padding:3px 7px;text-transform:uppercase;letter-spacing:.4px;">
                 Información de Pago
             </div>
             <table style="width:100%;border-collapse:collapse;">
                 <tr>
                     <td style="padding:4px 7px;vertical-align:middle;width:55%;border-right:1px solid #d1d5db;">
                         <div style="font-size:6pt;color:#6b7280;text-transform:uppercase;letter-spacing:.3px;">Total a Pagar</div>
-                        <div style="font-size:14pt;font-weight:bold;color:#2e50e4;line-height:1.1;">{{ $nf($factura->total_a_pagar) }}</div>
-                        @if($factura->saldo_anterior > 0)
+                        <div style="font-size:14pt;font-weight:bold;color:{{ $cAcento }};line-height:1.1;">{{ $nf($factura->total_a_pagar) }}</div>
+                        @if($verSaldoAnt && $factura->saldo_anterior > 0)
                         <div style="font-size:6pt;color:#dc2626;">Incluye saldo ant. {{ $nf($factura->saldo_anterior) }}</div>
                         @endif
                     </td>
@@ -236,6 +269,7 @@ body { font-family: 'DejaVu Sans', 'Arial', sans-serif; font-size: 7pt; color: #
 {{-- ══════════════════════════════════════════════════════════════════════ --}}
 {{-- LECTURA + DETALLE DEL CONSUMO                                         --}}
 {{-- ══════════════════════════════════════════════════════════════════════ --}}
+@if($verLectura)
 <div class="detalle-title" style="margin-bottom:3px;">Detalle del Consumo</div>
 <table class="tbl" style="margin-bottom:3px;">
     <thead>
@@ -255,6 +289,7 @@ body { font-family: 'DejaVu Sans', 'Arial', sans-serif; font-size: 7pt; color: #
         </tr>
     </tbody>
 </table>
+@endif
 
 {{-- ACUEDUCTO | ALCANTARILLADO side by side --}}
 <table style="width:100%;border-collapse:collapse;margin-bottom:3px;">
@@ -273,14 +308,12 @@ body { font-family: 'DejaVu Sans', 'Arial', sans-serif; font-size: 7pt; color: #
             </tr>
         </thead>
         <tbody>
-            {{-- Cargo fijo --}}
             <tr>
                 <td>Cargo fijo</td>
                 <td class="c">—</td>
                 <td class="r">{{ number_format($factura->cargo_fijo_acueducto,2,',','.') }}</td>
                 <td class="r">{{ number_format($factura->cargo_fijo_acueducto,2,',','.') }}</td>
             </tr>
-            {{-- Básico --}}
             @if($factura->consumo_basico_acueducto_m3 > 0 || true)
             <tr>
                 <td>Consumo básico</td>
@@ -289,7 +322,6 @@ body { font-family: 'DejaVu Sans', 'Arial', sans-serif; font-size: 7pt; color: #
                 <td class="r">{{ number_format($factura->consumo_basico_acueducto_valor,2,',','.') }}</td>
             </tr>
             @endif
-            {{-- Complementario --}}
             @if($factura->consumo_complementario_acueducto_m3 > 0)
             <tr>
                 <td>Consumo comp.</td>
@@ -298,7 +330,6 @@ body { font-family: 'DejaVu Sans', 'Arial', sans-serif; font-size: 7pt; color: #
                 <td class="r">{{ number_format($factura->consumo_complementario_acueducto_valor,2,',','.') }}</td>
             </tr>
             @endif
-            {{-- Suntuario --}}
             @if($factura->consumo_suntuario_acueducto_m3 > 0)
             <tr>
                 <td>Consumo sunt.</td>
@@ -307,7 +338,6 @@ body { font-family: 'DejaVu Sans', 'Arial', sans-serif; font-size: 7pt; color: #
                 <td class="r">{{ number_format($factura->consumo_suntuario_acueducto_valor,2,',','.') }}</td>
             </tr>
             @endif
-            {{-- Subsidio como fila --}}
             @if($subsidioAc != 0)
             <tr>
                 <td colspan="3" class="{{ $esSubsidio ? 'subsidio-pos' : 'subsidio-neg' }}" style="font-style:italic;">
@@ -374,7 +404,6 @@ body { font-family: 'DejaVu Sans', 'Arial', sans-serif; font-size: 7pt; color: #
                 <td class="r">{{ number_format($factura->consumo_suntuario_alcantarillado_valor,2,',','.') }}</td>
             </tr>
             @endif
-            {{-- Subsidio como fila --}}
             @if($subsidioAl != 0)
             <tr>
                 <td colspan="3" class="{{ $esSubsidioAl ? 'subsidio-pos' : 'subsidio-neg' }}" style="font-style:italic;">
@@ -411,6 +440,7 @@ body { font-family: 'DejaVu Sans', 'Arial', sans-serif; font-size: 7pt; color: #
 <td style="width:46%;padding-right:3px;">
 
     {{-- Créditos y financiación --}}
+    @if($verCreditos)
     <div class="creditos-title">Créditos Otorgados y Financiación</div>
     <table class="tbl" style="font-size:7.5pt;">
         <thead>
@@ -473,8 +503,10 @@ body { font-family: 'DejaVu Sans', 'Arial', sans-serif; font-size: 7pt; color: #
             </tr>
         </tfoot>
     </table>
+    @endif
 
     {{-- Últimos 6 consumos (barras HTML — DomPDF compatible) --}}
+    @if($verBarras)
     <div style="margin-top:4px;border:1px solid #bbb;padding:3px 5px;border-radius:0;">
         <div class="barras-title">Últimos 6 consumos + actual (m³)</div>
         @php
@@ -482,37 +514,34 @@ body { font-family: 'DejaVu Sans', 'Arial', sans-serif; font-size: 7pt; color: #
             $chartH = 38;
         @endphp
         <table style="width:100%;border-collapse:collapse;table-layout:fixed;">
-            {{-- Fila: valores --}}
             <tr>
                 @foreach($consumos as $i => $val)
                 @php $v = (int)($val ?? 0); @endphp
                 <td style="text-align:center;font-size:5pt;vertical-align:bottom;padding:0 1px;height:10px;border:none;">{{ $v > 0 ? $v : '' }}</td>
                 @endforeach
             </tr>
-            {{-- Fila: barras --}}
             <tr>
                 @foreach($consumos as $i => $val)
                 @php
                     $v        = (int)($val ?? 0);
                     $barH     = $v > 0 ? max(3, (int)round($v / $maxConsumo * $chartH)) : 2;
-                    $spH      = $chartH - $barH;
                     $isActual = ($i === count($consumos) - 1);
-                    $color    = $isActual ? '#2e50e4' : '#93c5fd';
+                    $color    = $isActual ? $cPrimario : '#93c5fd';
                 @endphp
                 <td style="vertical-align:bottom;padding:0 1px;height:{{ $chartH }}px;border:none;border-bottom:1px solid #ccc;">
                     <div style="height:{{ $barH }}px;background:{{ $color }};border-radius:2px 2px 0 0;"></div>
                 </td>
                 @endforeach
             </tr>
-            {{-- Fila: etiquetas --}}
             <tr>
                 @foreach($labels as $i => $lbl)
                 @php $isActual = ($i === count($labels) - 1); @endphp
-                <td style="text-align:center;font-size:5pt;padding:1px 0 0;border:none;color:{{ $isActual ? '#2e50e4' : '#6b7280' }};font-weight:{{ $isActual ? 'bold' : 'normal' }};">{{ $lbl }}</td>
+                <td style="text-align:center;font-size:5pt;padding:1px 0 0;border:none;color:{{ $isActual ? $cPrimario : '#6b7280' }};font-weight:{{ $isActual ? 'bold' : 'normal' }};">{{ $lbl }}</td>
                 @endforeach
             </tr>
         </table>
     </div>
+    @endif
 
 </td>
 
@@ -535,10 +564,12 @@ body { font-family: 'DejaVu Sans', 'Arial', sans-serif; font-size: 7pt; color: #
             @endif
             @php $otrosCobros = ($factura->cuota_otros_cobros_acueducto ?? 0) + ($factura->cuota_otros_cobros_alcantarillado ?? 0); @endphp
             <tr style="{{ $otrosCobros > 0 ? '' : 'color:#aaa;' }}"><td>Otros Cobros</td><td class="r">{{ $nf($otrosCobros) }}</td></tr>
+            @if($verSaldoAnt)
             <tr style="{{ ($factura->saldo_anterior ?? 0) > 0 ? 'color:#dc2626;' : 'color:#aaa;' }}">
                 <td>+ Saldo Anterior</td>
                 <td class="r" style="font-weight:{{ ($factura->saldo_anterior ?? 0) > 0 ? '700' : '400' }};">{{ $nf($factura->saldo_anterior ?? 0) }}</td>
             </tr>
+            @endif
             @if($ultimoPago)
             <tr>
                 <td style="color:#166534;">Último Pago
@@ -631,10 +662,17 @@ body { font-family: 'DejaVu Sans', 'Arial', sans-serif; font-size: 7pt; color: #
 </tr>
 </table>
 
-{{-- Código de barras --}}
+@if($verObservaciones && $factura->observaciones)
+<div class="obs-box">
+    <strong>Observaciones:</strong> {{ $factura->observaciones }}
+</div>
+@endif
+
+@if($verCodBarras)
 <div style="font-family:'Courier New',monospace;font-size:7.5pt;letter-spacing:2px;text-align:center;margin:3px 0 1px;">
     {{ str_pad($factura->numero_factura, 22, '0', STR_PAD_LEFT) }}
 </div>
+@endif
 
 <div class="footer-txt">
     Generado el {{ \Carbon\Carbon::now()->format('d/m/Y H:i') }}

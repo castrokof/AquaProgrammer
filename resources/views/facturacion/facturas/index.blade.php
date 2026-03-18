@@ -103,6 +103,9 @@
         <div class="card-header">
             <h3><i class="fa fa-file-invoice-dollar"></i> Facturas</h3>
             <div style="display:flex;gap:10px;">
+                <a href="{{ route('exportaciones.ruta.index') }}" class="btn btn-light" style="border-radius:12px;font-weight:700;">
+                    <i class="fa fa-route"></i> Por Ruta
+                </a>
                 <a href="{{ route('facturas.masiva') }}" class="btn btn-light" style="border-radius:12px;font-weight:700;">
                     <i class="fa fa-bolt"></i> Facturación Masiva
                 </a>

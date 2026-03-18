@@ -28,7 +28,7 @@ class Exportacion extends Model
 
     public function usuario()
     {
-        return $this->belongsTo(\App\User::class, 'usuario_id');
+        return $this->belongsTo(\App\Models\Seguridad\Usuario::class, 'usuario_id');
     }
 
     /** Actualiza progreso y estado basado en cuántos se han procesado */

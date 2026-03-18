@@ -29,6 +29,9 @@ class ExportacionController extends Controller
             'total'      => count($ids),
             'procesados' => 0,
             'progreso'   => 0,
+            'periodo'    => $request->periodo ?: null,
+            'id_ruta'    => $request->id_ruta  ?: null,
+            'tipo'       => 'masiva',
         ]);
 
         // Despachar job a la cola (database)

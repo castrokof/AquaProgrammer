@@ -619,7 +619,6 @@ $(function () {
                 render: function (d, t, row) {
                     var modalUrl = row.url_ver.replace(/\/facturas\/(\d+)$/, '/facturas/$1/modal');
                     var html = '<button class="btn btn-info btn-sm btn-ver-detalle" data-url="' + modalUrl + '" data-ver="' + row.url_ver + '" title="Ver detalle"><i class="fa fa-eye"></i></button> ';
-                    html    += '<a href="' + row.url_pdf + '" class="btn btn-secondary btn-sm" title="PDF" target="_blank"><i class="fa fa-file-pdf"></i></a>';
                     if (!row.anulada) {
                         html += ' <button class="btn btn-danger btn-sm btn-anular" data-id="' + row.id + '" title="Anular"><i class="fa fa-ban"></i></button>';
                     }

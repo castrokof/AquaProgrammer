@@ -68,6 +68,12 @@ class NuevosMenuSeeder extends Seeder
                 'icono'  => 'fas fa-percentage',
                 'orden'  => $maxOrdenHijo + 5,
             ],
+            [
+                'nombre' => 'Parametrización de Factura',
+                'url'    => 'facturacion/diseno-factura',
+                'icono'  => 'fas fa-sliders-h',
+                'orden'  => $maxOrdenHijo + 6,
+            ],
         ];
 
         $idsPorNombre = [];
@@ -111,7 +117,7 @@ class NuevosMenuSeeder extends Seeder
         }
 
         // Qué ve cada rol
-        $soloAdmin = ['Configuración Empresa', 'Subsidios por Estrato'];
+        $soloAdmin = ['Configuración Empresa', 'Subsidios por Estrato', 'Parametrización de Factura'];
         $permisosPorRol = [
             'administrador' => array_values($idsPorNombre),
             'supervisor'    => array_values(array_filter($idsPorNombre,

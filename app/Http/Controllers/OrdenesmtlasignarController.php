@@ -1187,7 +1187,9 @@ public function seguimiento()
     } 
 
     // Construir la consulta en base a los filtros proporcionados
-    $datas = Ordenesmtl::select('Suscriptor', 'Lect_Actual', 'Causa_des', 'Observacion_des', 'Fecha_de_ejecucion')->orderBy('id');
+    $datas = Ordenesmtl::select('Suscriptor', 'Lect_Actual', 'Causa_des', 'Observacion_des', 'Fecha_de_ejecucion')
+        ->whereNotIn('Estado_des', ['ANULADO', 'ANULADA'])
+        ->orderBy('id');
 
     // Aplicar filtros basados en el request
     if (!empty($request->periodo) && !empty($request->zona) && !empty($request->estado)) {

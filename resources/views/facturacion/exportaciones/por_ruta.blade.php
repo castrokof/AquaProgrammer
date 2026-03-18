@@ -137,9 +137,9 @@
                         <td style="text-align:center;" id="total-{{ $idRuta }}">{{ $total }}</td>
                         <td>
                             @if($expirado)
-                                <span class="badge badge-EXPIRADO" id="estado-{{ $idRuta }}">EXPIRADO</span>
+                                <span class="badge badge-EXPIRADO" id="estado-{{ $idRuta }}" data-exp-id="{{ $expId }}">EXPIRADO</span>
                             @else
-                                <span class="badge badge-{{ $estado }}" id="estado-{{ $idRuta }}">{{ $estado }}</span>
+                                <span class="badge badge-{{ $estado }}" id="estado-{{ $idRuta }}" data-exp-id="{{ $expId }}">{{ $estado }}</span>
                             @endif
                         </td>
                         <td>

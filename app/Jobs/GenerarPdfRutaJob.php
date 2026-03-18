@@ -18,7 +18,7 @@ class GenerarPdfRutaJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public $timeout = 300;
+    public $timeout = 1800; // 30 minutos máximo (aumentado para lotes grandes)
     public $tries   = 1;
 
     protected int $exportacionId;

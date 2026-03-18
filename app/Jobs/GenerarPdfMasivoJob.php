@@ -18,7 +18,7 @@ class GenerarPdfMasivoJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public $timeout = 300; // 5 minutos máximo
+    public $timeout = 1800; // 30 minutos máximo (aumentado para lotes grandes)
     public $tries   = 1;   // No reintentar si falla
 
     protected int $exportacionId;

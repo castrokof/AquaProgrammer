@@ -174,6 +174,14 @@ class ExportacionRutaController extends Controller
     {
         $exportacion = Exportacion::findOrFail($id);
 
+        // Detectar job colgado: PROCESANDO sin actualización en más de 5 minutos
+        if ($exportacion->estado === 'PROCESANDO' &&
+            $exportacion->updated_at &&
+            $exportacion->updated_at->diffInMinutes(now()) >= 5) {
+
+            $exportacion->marcarError('Job interrumpido (sin actividad por más de 5 minutos). Intenta generar de nuevo.');
+        }
+
         $data = [
             'estado'     => $exportacion->estado,
             'progreso'   => $exportacion->progreso,

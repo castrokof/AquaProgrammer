@@ -75,18 +75,21 @@ class GenerarPdfRutaJob implements ShouldQueue
                             'empresa'  => $empresa,
                         ])->setPaper('letter', 'portrait');
 
+                        $contenido = $pdf->output();
+
                         $zip->addFromString(
                             "Factura_{$factura->numero_factura}_{$factura->suscriptor}.pdf",
-                            $pdf->output()
+                            $contenido
                         );
+
+                        unset($pdf, $contenido);
                     } catch (\Throwable $e) {
                         Log::warning("PDF omitido factura #{$factura->id}: " . $e->getMessage());
                     }
 
                     $procesados++;
+                    $exportacion->actualizarProgreso($procesados);
                 }
-
-                $exportacion->actualizarProgreso($procesados);
             }
 
             $zip->close();

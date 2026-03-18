@@ -43,6 +43,37 @@ class ExportacionController extends Controller
     }
 
     /**
+     * Devuelve la última exportación del usuario autenticado (PENDIENTE, PROCESANDO o LISTO).
+     * Permite retomar el estado al recargar la página.
+     */
+    public function ultima()
+    {
+        $exportacion = Exportacion::where('usuario_id', auth()->id())
+            ->whereIn('estado', ['PENDIENTE', 'PROCESANDO', 'LISTO'])
+            ->latest()
+            ->first();
+
+        if (!$exportacion) {
+            return response()->json(['encontrada' => false]);
+        }
+
+        $data = [
+            'encontrada'  => true,
+            'id'          => $exportacion->id,
+            'estado'      => $exportacion->estado,
+            'progreso'    => $exportacion->progreso,
+            'total'       => $exportacion->total,
+            'procesados'  => $exportacion->procesados,
+        ];
+
+        if ($exportacion->estado === 'LISTO' && $exportacion->archivo) {
+            $data['url_descarga'] = route('exportaciones.descargar', $exportacion->id);
+        }
+
+        return response()->json($data);
+    }
+
+    /**
      * Devuelve el estado actual de una exportación (para polling desde el frontend).
      */
     public function estado(int $id)

@@ -11,14 +11,15 @@
 
 .filtros-box { background:#f8f9ff; border-radius:14px; padding:20px; margin-bottom:24px; border:1px solid #e2e8f0; }
 
-.btn-generar { background:linear-gradient(135deg,#2e50e4,#2b0c49); color:white; border:none; border-radius:12px; padding:10px 26px; font-weight:700; font-size:.9rem; cursor:pointer; transition:.2s; }
-.btn-generar:hover { opacity:.88; }
-.btn-generar:disabled { opacity:.5; cursor:not-allowed; }
+.btn-generar-todos { background:linear-gradient(135deg,#2e50e4,#2b0c49); color:white; border:none; border-radius:12px; padding:10px 26px; font-weight:700; font-size:.9rem; cursor:pointer; transition:.2s; }
+.btn-generar-todos:hover { opacity:.88; }
+.btn-generar-todos:disabled { opacity:.5; cursor:not-allowed; }
 
 .tbl-rutas thead th { background:linear-gradient(135deg,#3d57ce 0%,#776a84 100%); color:white; font-weight:600; font-size:.73rem; text-transform:uppercase; padding:12px 10px; border:none; white-space:nowrap; }
 .tbl-rutas tbody td { padding:11px 10px; vertical-align:middle; border-bottom:1px solid #f0f0f0; font-size:.85rem; }
 .tbl-rutas tbody tr:hover { background:#f8f9ff; }
 
+.badge-SIN_GENERAR { background:#f0f4ff; color:#4a5568; padding:3px 10px; border-radius:20px; font-weight:700; font-size:.72rem; }
 .badge-PENDIENTE   { background:#fef3c7; color:#92400e; padding:3px 10px; border-radius:20px; font-weight:700; font-size:.72rem; }
 .badge-PROCESANDO  { background:#dbeafe; color:#1e3a8a; padding:3px 10px; border-radius:20px; font-weight:700; font-size:.72rem; }
 .badge-LISTO       { background:#c6f6d5; color:#22543d; padding:3px 10px; border-radius:20px; font-weight:700; font-size:.72rem; }
@@ -31,6 +32,10 @@
 .btn-dl { background:linear-gradient(135deg,#48bb78,#38a169); color:white; border:none; border-radius:8px; padding:5px 14px; font-weight:700; font-size:.8rem; cursor:pointer; text-decoration:none; display:inline-block; }
 .btn-dl:hover { opacity:.85; color:white; text-decoration:none; }
 .btn-dl:disabled, .btn-dl.disabled { background:#a0aec0; cursor:not-allowed; pointer-events:none; }
+
+.btn-gen-uno { background:linear-gradient(135deg,#667eea,#764ba2); color:white; border:none; border-radius:8px; padding:5px 14px; font-weight:700; font-size:.8rem; cursor:pointer; white-space:nowrap; }
+.btn-gen-uno:hover { opacity:.85; }
+.btn-gen-uno:disabled { opacity:.5; cursor:not-allowed; }
 
 #alertBox { display:none; border-radius:12px; padding:14px 18px; margin-bottom:16px; font-size:.88rem; }
 #alertBox.success { background:#c6f6d5; color:#22543d; border:1px solid #68d391; display:block; }
@@ -46,7 +51,6 @@
 .link-item .link-ruta { font-weight:700; color:#2e50e4; min-width:60px; font-size:.85rem; }
 .link-item .link-url  { flex:1; font-size:.78rem; color:#4a5568; word-break:break-all; }
 .link-item .link-exp  { font-size:.72rem; color:#a0aec0; white-space:nowrap; }
-.link-item.expirado   { background:#f7fafc; opacity:.65; }
 .btn-copy-one { background:#e2e8f0; color:#4a5568; border:none; border-radius:7px; padding:4px 10px; font-size:.75rem; cursor:pointer; white-space:nowrap; }
 .btn-copy-one:hover { background:#cbd5e0; }
 .btn-copy-all { background:linear-gradient(135deg,#2e50e4,#2b0c49); color:white; border:none; border-radius:10px; padding:8px 20px; font-weight:700; font-size:.85rem; cursor:pointer; }
@@ -83,10 +87,10 @@
                             <i class="fa fa-search"></i> Ver rutas
                         </button>
                         @if($periodo)
-                        <button type="button" id="btnGenerar" class="btn-generar">
-                            <i class="fa fa-cogs"></i> Generar PDFs
+                        <button type="button" id="btnGenerarTodos" class="btn-generar-todos">
+                            <i class="fa fa-cogs"></i> Generar Todos
                         </button>
-                        <button type="button" id="btnVerLinks" class="btn-ver-links" data-toggle="modal" data-target="#modalLinks">
+                        <button type="button" class="btn-ver-links" data-toggle="modal" data-target="#modalLinks">
                             <i class="fa fa-link"></i> Ver Links
                         </button>
                         @endif
@@ -101,7 +105,7 @@
         @if($periodo)
         <p style="color:#718096;font-size:.85rem;margin-bottom:10px;">
             Período: <strong>{{ $periodo }}</strong> &mdash;
-            <span id="txtTotal">{{ $exportaciones->count() }}</span> ruta(s) encontrada(s).
+            {{ $rutas->count() }} ruta(s) encontrada(s).
         </p>
 
         <div class="table-responsive">
@@ -114,71 +118,60 @@
                         <th style="min-width:100px;">Progreso</th>
                         <th>Generado por</th>
                         <th>Fecha</th>
-                        <th>Vencimiento</th>
                         <th>Acciones</th>
                     </tr>
                 </thead>
                 <tbody id="tbodyRutas">
-                @forelse($exportaciones as $exp)
+                @forelse($rutas as $idRuta)
                     @php
-                        $expirado = ($exp->estado === 'LISTO' && !$exp->archivo);
-                        $expiraEl = $exp->updated_at ? $exp->updated_at->copy()->addDays(7) : null;
+                        $exp       = $exportaciones->get($idRuta);
+                        $estado    = $exp ? $exp->estado : 'SIN_GENERAR';
+                        $expirado  = ($estado === 'LISTO' && $exp && !$exp->archivo);
+                        $expiraEl  = ($exp && $exp->updated_at) ? $exp->updated_at->copy()->addDays(7) : null;
+                        $expId     = $exp ? $exp->id : null;
+                        $progreso  = $exp ? $exp->progreso : 0;
+                        $total     = $exp ? $exp->total : '—';
                     @endphp
-                    <tr id="row-{{ $exp->id }}">
-                        <td><strong>{{ $exp->id_ruta }}</strong></td>
-                        <td style="text-align:center;">{{ $exp->total }}</td>
+                    <tr id="row-{{ $idRuta }}">
+                        <td><strong>{{ $idRuta }}</strong></td>
+                        <td style="text-align:center;" id="total-{{ $idRuta }}">{{ $total }}</td>
                         <td>
                             @if($expirado)
-                                <span class="badge badge-EXPIRADO" id="estado-{{ $exp->id }}">EXPIRADO</span>
+                                <span class="badge badge-EXPIRADO" id="estado-{{ $idRuta }}">EXPIRADO</span>
                             @else
-                                <span class="badge badge-{{ $exp->estado }}" id="estado-{{ $exp->id }}">{{ $exp->estado }}</span>
+                                <span class="badge badge-{{ $estado }}" id="estado-{{ $idRuta }}">{{ $estado }}</span>
                             @endif
                         </td>
                         <td>
                             <div class="barra-wrap">
-                                <div class="barra-fill" id="barra-{{ $exp->id }}" style="width:{{ $exp->progreso }}%"></div>
+                                <div class="barra-fill" id="barra-{{ $idRuta }}" style="width:{{ $progreso }}%"></div>
                             </div>
-                            <span id="pct-{{ $exp->id }}" style="font-size:.72rem;color:#718096;">{{ $exp->progreso }}%</span>
+                            <span id="pct-{{ $idRuta }}" style="font-size:.72rem;color:#718096;">{{ $progreso }}%</span>
                         </td>
-                        <td>{{ optional($exp->usuario)->name ?? 'Sistema' }}</td>
-                        <td>{{ $exp->updated_at ? $exp->updated_at->format('d/m/Y H:i') : '—' }}</td>
-                        <td style="font-size:.78rem;color:#718096;">
-                            @if($exp->estado === 'LISTO' && $expiraEl)
-                                @if($expirado)
-                                    <span style="color:#a0aec0;">Eliminado</span>
-                                @elseif($expiraEl->isPast())
-                                    <span style="color:#e53e3e;">Vencido</span>
-                                @else
-                                    {{ $expiraEl->format('d/m/Y') }}
-                                @endif
-                            @else
-                                —
-                            @endif
-                        </td>
-                        <td>
-                            @if($expirado)
-                                <span style="color:#a0aec0;font-size:.78rem;">
-                                    <i class="fa fa-ban"></i> Expirado
-                                </span>
-                            @elseif($exp->estado === 'LISTO')
-                                <a href="{{ route('exportaciones.ruta.descargar', $exp->id) }}"
-                                   class="btn-dl" id="btn-dl-{{ $exp->id }}">
+                        <td id="usuario-{{ $idRuta }}">{{ $exp ? (optional($exp->usuario)->nombre ?? 'Sistema') : '—' }}</td>
+                        <td id="fecha-{{ $idRuta }}">{{ ($exp && $exp->updated_at) ? $exp->updated_at->format('d/m/Y H:i') : '—' }}</td>
+                        <td id="acciones-{{ $idRuta }}">
+                            @if($expirado || $estado === 'SIN_GENERAR' || $estado === 'ERROR')
+                                <button class="btn-gen-uno"
+                                        onclick="generarUna('{{ $idRuta }}')"
+                                        id="btnGen-{{ $idRuta }}">
+                                    <i class="fa fa-play"></i> Generar
+                                </button>
+                            @elseif($estado === 'LISTO')
+                                <a href="{{ route('exportaciones.ruta.descargar', $expId) }}"
+                                   class="btn-dl" id="btn-dl-{{ $idRuta }}">
                                     <i class="fa fa-download"></i> Descargar
                                 </a>
-                            @elseif($exp->estado === 'ERROR')
-                                <span style="color:#e53e3e;font-size:.78rem;" title="{{ $exp->mensaje_error }}">
-                                    <i class="fa fa-exclamation-triangle"></i> Error
-                                </span>
                             @else
-                                <span class="btn-dl disabled" id="btn-dl-{{ $exp->id }}">
+                                <span class="btn-dl disabled" id="btn-dl-{{ $idRuta }}">
                                     <i class="fa fa-clock-o"></i> Espere...
                                 </span>
                             @endif
                         </td>
                     </tr>
                 @empty
-                    <tr id="rowVacio"><td colspan="8" style="text-align:center;color:#a0aec0;padding:30px;">
-                        Ningún PDF generado para este período. Haga clic en <strong>Generar PDFs</strong>.
+                    <tr><td colspan="7" style="text-align:center;color:#a0aec0;padding:30px;">
+                        No hay rutas con facturas para este período.
                     </td></tr>
                 @endforelse
                 </tbody>
@@ -200,7 +193,7 @@
             </div>
             <div class="modal-body">
                 @php
-                    $listos = $exportaciones->where('estado', 'LISTO')->filter(fn($e) => $e->archivo !== null);
+                    $listos = $exportaciones->filter(fn($e) => $e->estado === 'LISTO' && $e->archivo !== null);
                 @endphp
 
                 @if($listos->isEmpty())
@@ -251,18 +244,52 @@
 (function () {
     'use strict';
 
-    var periodo  = @json($periodo);
-    var pollers  = {};  // exportacion_id -> intervalId
+    var periodo = @json($periodo);
+    var pollers = {};  // idRuta -> intervalId
 
-    /* ── Botón Generar ──────────────────────────────────────────────────── */
-    var btnGenerar = document.getElementById('btnGenerar');
-    if (btnGenerar) {
-        btnGenerar.addEventListener('click', function () {
-            if (!periodo) return;
+    /* ── Generar una sola ruta ───────────────────────────────────────────── */
+    window.generarUna = function (idRuta) {
+        var btn = document.getElementById('btnGen-' + idRuta);
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i>';
+        }
 
-            btnGenerar.disabled = true;
-            btnGenerar.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Generando...';
-            showAlert('', '');
+        fetch('{{ route("exportaciones.ruta.generar-una") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
+                'Accept': 'application/json',
+            },
+            body: JSON.stringify({ periodo: periodo, id_ruta: idRuta }),
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            if (!data.ok) {
+                showAlert(data.mensaje, 'error');
+                if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa fa-play"></i> Generar'; }
+                return;
+            }
+
+            // Actualizar la fila con estado PENDIENTE
+            actualizarFilaLocal(idRuta, 'PENDIENTE', 0, data.total, data.exportacion_id);
+            iniciarPoller(idRuta, data.exportacion_id);
+        })
+        .catch(function (err) {
+            showAlert('Error de red: ' + err, 'error');
+            if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa fa-play"></i> Generar'; }
+        });
+    };
+
+    /* ── Botón Generar Todos ─────────────────────────────────────────────── */
+    var btnTodos = document.getElementById('btnGenerarTodos');
+    if (btnTodos) {
+        btnTodos.addEventListener('click', function () {
+            if (!confirm('¿Generar PDFs para TODAS las rutas del período ' + periodo + '?')) return;
+
+            btnTodos.disabled = true;
+            btnTodos.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Generando...';
 
             fetch('{{ route("exportaciones.ruta.generar") }}', {
                 method: 'POST',
@@ -275,113 +302,106 @@
             })
             .then(function (r) { return r.json(); })
             .then(function (data) {
-                if (!data.ok) {
-                    showAlert(data.mensaje, 'error');
-                    btnGenerar.disabled = false;
-                    btnGenerar.innerHTML = '<i class="fa fa-cogs"></i> Generar PDFs';
-                    return;
-                }
+                btnTodos.disabled = false;
+                btnTodos.innerHTML = '<i class="fa fa-cogs"></i> Generar Todos';
+
+                if (!data.ok) { showAlert(data.mensaje, 'error'); return; }
 
                 showAlert(data.mensaje, 'success');
-
-                // Insertar filas para las rutas creadas
-                var tbody = document.getElementById('tbodyRutas');
-                var rowVacio = document.getElementById('rowVacio');
-                if (rowVacio) rowVacio.remove();
-
                 data.rutas.forEach(function (item) {
-                    insertarFila(tbody, item);
-                    iniciarPoller(item.exportacion_id);
+                    actualizarFilaLocal(item.ruta, 'PENDIENTE', 0, item.total, item.exportacion_id);
+                    iniciarPoller(item.ruta, item.exportacion_id);
                 });
-
-                document.getElementById('txtTotal').textContent = data.rutas.length;
-
-                btnGenerar.disabled = false;
-                btnGenerar.innerHTML = '<i class="fa fa-cogs"></i> Generar PDFs';
             })
             .catch(function (err) {
                 showAlert('Error de red: ' + err, 'error');
-                btnGenerar.disabled = false;
-                btnGenerar.innerHTML = '<i class="fa fa-cogs"></i> Generar PDFs';
+                btnTodos.disabled = false;
+                btnTodos.innerHTML = '<i class="fa fa-cogs"></i> Generar Todos';
             });
         });
     }
 
-    /* ── Polling de filas existentes en estado no-final ─────────────────── */
+    /* ── Reanudar polling para filas ya en proceso ───────────────────────── */
     document.querySelectorAll('[id^="estado-"]').forEach(function (el) {
-        var id = el.id.replace('estado-', '');
+        var idRuta = el.id.replace('estado-', '');
         var estado = el.textContent.trim();
         if (estado === 'PENDIENTE' || estado === 'PROCESANDO') {
-            iniciarPoller(parseInt(id));
+            // Necesitamos el exportacion_id para el endpoint; lo buscamos por atributo data
+            var expId = el.getAttribute('data-exp-id');
+            if (expId) iniciarPoller(idRuta, parseInt(expId));
         }
     });
 
     /* ── Helpers ─────────────────────────────────────────────────────────── */
-    function insertarFila(tbody, item) {
-        // Si ya existe la fila, no duplicar
-        if (document.getElementById('row-' + item.exportacion_id)) return;
+    function actualizarFilaLocal(idRuta, estado, progreso, total, expId) {
+        var elEstado  = document.getElementById('estado-'  + idRuta);
+        var elBarra   = document.getElementById('barra-'   + idRuta);
+        var elPct     = document.getElementById('pct-'     + idRuta);
+        var elTotal   = document.getElementById('total-'   + idRuta);
+        var elAccion  = document.getElementById('acciones-'+ idRuta);
 
-        var tr = document.createElement('tr');
-        tr.id = 'row-' + item.exportacion_id;
-        tr.innerHTML =
-            '<td><strong>' + item.ruta + '</strong></td>' +
-            '<td style="text-align:center;">' + item.total + '</td>' +
-            '<td><span class="badge badge-PENDIENTE" id="estado-' + item.exportacion_id + '">PENDIENTE</span></td>' +
-            '<td>' +
-                '<div class="barra-wrap"><div class="barra-fill" id="barra-' + item.exportacion_id + '" style="width:0%"></div></div>' +
-                '<span id="pct-' + item.exportacion_id + '" style="font-size:.72rem;color:#718096;">0%</span>' +
-            '</td>' +
-            '<td>—</td>' +
-            '<td>—</td>' +
-            '<td><span class="btn-dl disabled" id="btn-dl-' + item.exportacion_id + '"><i class="fa fa-clock-o"></i> Espere...</span></td>';
-        tbody.appendChild(tr);
+        if (elEstado) {
+            elEstado.className   = 'badge badge-' + estado;
+            elEstado.textContent = estado;
+            if (expId) elEstado.setAttribute('data-exp-id', expId);
+        }
+        if (elBarra)  elBarra.style.width = progreso + '%';
+        if (elPct)    elPct.textContent   = progreso + '%';
+        if (elTotal && total !== undefined) elTotal.textContent = total;
+        if (elAccion) {
+            elAccion.innerHTML =
+                '<span class="btn-dl disabled" id="btn-dl-' + idRuta + '">' +
+                '<i class="fa fa-clock-o"></i> Espere...</span>';
+        }
     }
 
-    function iniciarPoller(id) {
-        if (pollers[id]) return; // ya hay un poller activo
+    function iniciarPoller(idRuta, expId) {
+        if (pollers[idRuta]) clearInterval(pollers[idRuta]);
 
-        pollers[id] = setInterval(function () {
-            fetch('{{ url("facturacion/exportaciones/ruta") }}/' + id + '/estado', {
+        pollers[idRuta] = setInterval(function () {
+            fetch('{{ url("facturacion/exportaciones/ruta") }}/' + expId + '/estado', {
                 headers: { 'Accept': 'application/json' },
             })
             .then(function (r) { return r.json(); })
-            .then(function (d) { actualizarFila(id, d); })
+            .then(function (d) { actualizarFilaPoller(idRuta, expId, d); })
             .catch(function () {});
         }, 3000);
     }
 
-    function actualizarFila(id, d) {
-        var elEstado = document.getElementById('estado-' + id);
-        var elBarra  = document.getElementById('barra-'  + id);
-        var elPct    = document.getElementById('pct-'    + id);
-        var elBtnDl  = document.getElementById('btn-dl-' + id);
+    function actualizarFilaPoller(idRuta, expId, d) {
+        var elEstado = document.getElementById('estado-'  + idRuta);
+        var elBarra  = document.getElementById('barra-'   + idRuta);
+        var elPct    = document.getElementById('pct-'     + idRuta);
+        var elAccion = document.getElementById('acciones-'+ idRuta);
 
         if (elEstado) {
-            elEstado.className = 'badge badge-' + d.estado;
+            elEstado.className   = 'badge badge-' + d.estado;
             elEstado.textContent = d.estado;
         }
         if (elBarra) elBarra.style.width = (d.progreso || 0) + '%';
         if (elPct)   elPct.textContent   = (d.progreso || 0) + '%';
 
         if (d.estado === 'LISTO' && d.url_descarga) {
-            clearInterval(pollers[id]);
-            delete pollers[id];
+            clearInterval(pollers[idRuta]);
+            delete pollers[idRuta];
 
-            if (elBtnDl) {
-                elBtnDl.outerHTML =
-                    '<a href="' + d.url_descarga + '" class="btn-dl" id="btn-dl-' + id + '">' +
+            if (elAccion) {
+                elAccion.innerHTML =
+                    '<a href="' + d.url_descarga + '" class="btn-dl" id="btn-dl-' + idRuta + '">' +
                     '<i class="fa fa-download"></i> Descargar</a>';
             }
         }
 
         if (d.estado === 'ERROR') {
-            clearInterval(pollers[id]);
-            delete pollers[id];
+            clearInterval(pollers[idRuta]);
+            delete pollers[idRuta];
 
-            if (elBtnDl) {
-                elBtnDl.outerHTML =
-                    '<span style="color:#e53e3e;font-size:.78rem;" title="' + (d.error || '') + '">' +
-                    '<i class="fa fa-exclamation-triangle"></i> Error</span>';
+            if (elAccion) {
+                elAccion.innerHTML =
+                    '<button class="btn-gen-uno" onclick="generarUna(\'' + idRuta + '\')" id="btnGen-' + idRuta + '">' +
+                    '<i class="fa fa-refresh"></i> Reintentar</button>' +
+                    '<span style="color:#e53e3e;font-size:.75rem;margin-left:6px;" title="' + (d.error || '') + '">' +
+                    '<i class="fa fa-exclamation-triangle"></i></span>';
             }
         }
     }
@@ -391,6 +411,7 @@
         if (!msg) { el.style.display = 'none'; return; }
         el.className = type;
         el.textContent = msg;
+        setTimeout(function () { el.style.display = 'none'; }, 5000);
     }
 })();
 

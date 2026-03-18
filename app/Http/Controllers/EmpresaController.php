@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Empresa;
+use App\Models\Factura;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -58,5 +59,78 @@ class EmpresaController extends Controller
 
         return redirect()->route('empresa.edit')
             ->with('success', 'Configuración de empresa guardada correctamente.');
+    }
+
+    // ── Diseño de factura ──────────────────────────────────────────────────────
+
+    public function editDiseno()
+    {
+        $empresa  = Empresa::instancia();
+        $factura  = Factura::with(['cliente', 'pagos', 'tarifaPeriodo'])->latest()->first();
+        return view('configuracion.diseno-factura', compact('empresa', 'factura'));
+    }
+
+    public function updateDiseno(Request $request)
+    {
+        $request->validate([
+            'factura_color_primario'        => 'nullable|regex:/^#[0-9A-Fa-f]{6}$/',
+            'factura_color_acento'          => 'nullable|regex:/^#[0-9A-Fa-f]{6}$/',
+            'factura_subtitulo'             => 'nullable|string|max:150',
+        ]);
+
+        $empresa = Empresa::instancia();
+
+        $data = $request->only([
+            'factura_color_primario', 'factura_color_acento', 'factura_subtitulo',
+        ]);
+
+        // Checkboxes: si no viene el campo, vale false
+        $bools = [
+            'factura_mostrar_logo', 'factura_mostrar_lectura',
+            'factura_mostrar_serie_medidor', 'factura_mostrar_sector',
+            'factura_mostrar_tipo_uso', 'factura_mostrar_estrato',
+            'factura_mostrar_tarifa', 'factura_mostrar_saldo_anterior',
+            'factura_mostrar_creditos', 'factura_mostrar_barras_consumo',
+            'factura_mostrar_observaciones', 'factura_mostrar_codigo_barras',
+        ];
+        foreach ($bools as $campo) {
+            $data[$campo] = $request->boolean($campo);
+        }
+
+        $empresa->update($data);
+
+        return redirect()->route('diseno-factura.edit')
+            ->with('success', 'Diseño de factura guardado correctamente.');
+    }
+
+    /**
+     * Devuelve el HTML de una factura de muestra con los parámetros de diseño
+     * enviados por GET (preview en tiempo real sin guardar).
+     */
+    public function previewDiseno(Request $request)
+    {
+        // Construir empresa virtual con los valores del request
+        $empresa = Empresa::instancia();
+        $empresa->factura_color_primario        = $request->get('factura_color_primario',  $empresa->colorPrimario());
+        $empresa->factura_color_acento          = $request->get('factura_color_acento',    $empresa->colorAcento());
+        $empresa->factura_subtitulo             = $request->get('factura_subtitulo',        $empresa->factura_subtitulo ?? 'Servicio Público Domiciliario');
+        $empresa->factura_mostrar_logo          = $request->boolean('factura_mostrar_logo',          true);
+        $empresa->factura_mostrar_lectura       = $request->boolean('factura_mostrar_lectura',       true);
+        $empresa->factura_mostrar_serie_medidor = $request->boolean('factura_mostrar_serie_medidor', true);
+        $empresa->factura_mostrar_sector        = $request->boolean('factura_mostrar_sector',        true);
+        $empresa->factura_mostrar_tipo_uso      = $request->boolean('factura_mostrar_tipo_uso',      true);
+        $empresa->factura_mostrar_estrato       = $request->boolean('factura_mostrar_estrato',       true);
+        $empresa->factura_mostrar_tarifa        = $request->boolean('factura_mostrar_tarifa',        true);
+        $empresa->factura_mostrar_saldo_anterior= $request->boolean('factura_mostrar_saldo_anterior',true);
+        $empresa->factura_mostrar_creditos      = $request->boolean('factura_mostrar_creditos',      true);
+        $empresa->factura_mostrar_barras_consumo= $request->boolean('factura_mostrar_barras_consumo',true);
+        $empresa->factura_mostrar_observaciones = $request->boolean('factura_mostrar_observaciones', true);
+        $empresa->factura_mostrar_codigo_barras = $request->boolean('factura_mostrar_codigo_barras', true);
+
+        $factura  = Factura::with(['cliente', 'pagos', 'tarifaPeriodo'])->latest()->first();
+        $facturas = $factura ? collect([$factura]) : collect();
+
+        return response()->view('facturacion.facturas.pdf', compact('facturas', 'empresa'))
+            ->header('X-Frame-Options', 'SAMEORIGIN');
     }
 }

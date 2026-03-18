@@ -350,6 +350,14 @@ Route::group(['middleware' => 'auth', 'prefix' => 'facturacion'], function () {
     Route::put('empresa', 'EmpresaController@update')
         ->name('empresa.update');
 
+    // ── Diseño de Factura ─────────────────────────────────────────
+    Route::get('diseno-factura', 'EmpresaController@editDiseno')
+        ->name('diseno-factura.edit');
+    Route::put('diseno-factura', 'EmpresaController@updateDiseno')
+        ->name('diseno-factura.update');
+    Route::get('diseno-factura/preview', 'EmpresaController@previewDiseno')
+        ->name('diseno-factura.preview');
+
     // ── Subsidios por Estrato ─────────────────────────────────────
     Route::get('estratos/subsidios', 'EstratoController@index')
         ->name('estratos.subsidios');

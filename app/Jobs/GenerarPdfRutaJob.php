@@ -66,6 +66,7 @@ class GenerarPdfRutaJob implements ShouldQueue
             foreach (array_chunk($ids, 10) as $chunk) {
                 $facturas = Factura::with(['cliente', 'pagos', 'tarifaPeriodo'])
                     ->whereIn('id', $chunk)
+                    ->where('estado', '!=', 'ANULADA')
                     ->get();
 
                 foreach ($facturas as $factura) {

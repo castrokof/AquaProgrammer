@@ -296,6 +296,7 @@ Route::group(['middleware' => 'auth', 'prefix' => 'facturacion'], function () {
 
     // ── Exportaciones en cola (Jobs) ──────────────────────────────
     Route::post('exportaciones/despachar',        'ExportacionController@despachar')->name('exportaciones.despachar');
+    Route::get('exportaciones/ultima',             'ExportacionController@ultima')   ->name('exportaciones.ultima');
     Route::get('exportaciones/{id}/estado',        'ExportacionController@estado')   ->name('exportaciones.estado');
     Route::get('exportaciones/{id}/descargar',     'ExportacionController@descargar')->name('exportaciones.descargar');
 

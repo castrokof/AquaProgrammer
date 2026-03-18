@@ -693,6 +693,7 @@ $(function () {
     var DESPACHAR_URL  = '{{ route("exportaciones.despachar") }}';
     var ESTADO_URL_TPL = '{{ route("exportaciones.estado", ":id") }}';
     var DESCARGAR_URL_TPL = '{{ route("exportaciones.descargar", ":id") }}';
+    var ULTIMA_URL     = '{{ route("exportaciones.ultima") }}';
 
     function mostrarToast(titulo, sub) {
         $('#toastExportacion .tex-titulo').html('<i class="fa fa-file-pdf" style="color:#2e50e4;"></i> ' + titulo);
@@ -751,6 +752,20 @@ $(function () {
             });
         }, 4000); // Cada 4 segundos
     }
+
+    // Al cargar la página, retomar si hay una exportación pendiente o lista
+    $.get(ULTIMA_URL, function (r) {
+        if (!r.encontrada) return;
+        exportacionIdActual = r.id;
+        if (r.estado === 'LISTO') {
+            mostrarToast('PDFs generados', 'Tu archivo ZIP está listo para descargar.');
+            toastListo(r.url_descarga);
+        } else if (r.estado === 'PENDIENTE' || r.estado === 'PROCESANDO') {
+            mostrarToast('Generando PDFs…', 'Exportación en proceso. Esto puede tomar unos minutos.');
+            actualizarToast(r.progreso, r.procesados, r.total);
+            iniciarPolling(r.id);
+        }
+    });
 
     $('#btnDescargaPDF').on('click', function () {
         var ids = $('.check-factura:checked').map(function () { return this.value; }).get();

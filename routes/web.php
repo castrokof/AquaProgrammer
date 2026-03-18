@@ -302,7 +302,8 @@ Route::group(['middleware' => 'auth', 'prefix' => 'facturacion'], function () {
 
     // ── PDFs por Ruta ─────────────────────────────────────────────
     Route::get('exportaciones/ruta',                'ExportacionRutaController@index')   ->name('exportaciones.ruta.index');
-    Route::post('exportaciones/ruta/generar',       'ExportacionRutaController@generar') ->name('exportaciones.ruta.generar');
+    Route::post('exportaciones/ruta/generar',       'ExportacionRutaController@generar')    ->name('exportaciones.ruta.generar');
+    Route::post('exportaciones/ruta/generar-una',   'ExportacionRutaController@generarUna') ->name('exportaciones.ruta.generar-una');
     Route::get('exportaciones/ruta/{id}/estado',    'ExportacionRutaController@estado')  ->name('exportaciones.ruta.estado');
     Route::get('exportaciones/ruta/{id}/descargar', 'ExportacionRutaController@descargar')->name('exportaciones.ruta.descargar');
 

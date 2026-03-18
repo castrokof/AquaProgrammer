@@ -16,19 +16,30 @@ class ExportacionRutaController extends Controller
      */
     public function index(Request $request)
     {
-        $periodos      = PeriodoLectura::orderBy('codigo', 'desc')->get(['id', 'codigo', 'nombre']);
+        $periodos    = PeriodoLectura::orderBy('codigo', 'desc')->get(['id', 'codigo', 'nombre']);
+        $rutas       = collect();
         $exportaciones = collect();
-        $periodo       = null;
+        $periodo     = null;
 
         if ($request->filled('periodo')) {
             $periodo = $request->periodo;
+
+            // Todas las rutas que tienen facturas en el período
+            $rutas = Factura::join('clientes', 'clientes.suscriptor', '=', 'facturas.suscriptor')
+                ->where('facturas.periodo', $periodo)
+                ->whereNotNull('clientes.id_ruta')
+                ->distinct()
+                ->orderBy('clientes.id_ruta')
+                ->pluck('clientes.id_ruta');
+
+            // Exportaciones ya existentes, indexadas por id_ruta
             $exportaciones = Exportacion::where('tipo', 'por_ruta')
                 ->where('periodo', $periodo)
-                ->orderBy('id_ruta')
-                ->get();
+                ->get()
+                ->keyBy('id_ruta');
         }
 
-        return view('facturacion.exportaciones.por_ruta', compact('periodos', 'exportaciones', 'periodo'));
+        return view('facturacion.exportaciones.por_ruta', compact('periodos', 'rutas', 'exportaciones', 'periodo'));
     }
 
     /**
@@ -98,6 +109,61 @@ class ExportacionRutaController extends Controller
             'ok'      => true,
             'rutas'   => $creadas,
             'mensaje' => count($creadas) . ' ruta(s) enviadas a la cola de generación.',
+        ]);
+    }
+
+    /**
+     * AJAX: crea un job de generación de PDF para una sola ruta.
+     */
+    public function generarUna(Request $request)
+    {
+        $request->validate([
+            'periodo' => 'required|string|max:6',
+            'id_ruta' => 'required',
+        ]);
+
+        $periodo = $request->periodo;
+        $idRuta  = $request->id_ruta;
+
+        // Cancelar generación previa pendiente/procesando para esta ruta
+        Exportacion::where('tipo', 'por_ruta')
+            ->where('periodo', $periodo)
+            ->where('id_ruta', $idRuta)
+            ->whereIn('estado', ['PENDIENTE', 'PROCESANDO'])
+            ->delete();
+
+        $ids = Factura::join('clientes', 'clientes.suscriptor', '=', 'facturas.suscriptor')
+            ->where('facturas.periodo', $periodo)
+            ->where('clientes.id_ruta', $idRuta)
+            ->pluck('facturas.id')
+            ->toArray();
+
+        if (empty($ids)) {
+            return response()->json([
+                'ok'      => false,
+                'mensaje' => 'No hay facturas para la ruta ' . $idRuta . ' en el período ' . $periodo . '.',
+            ], 422);
+        }
+
+        $exportacion = Exportacion::create([
+            'usuario_id' => auth()->id(),
+            'ids'        => $ids,
+            'estado'     => 'PENDIENTE',
+            'total'      => count($ids),
+            'procesados' => 0,
+            'progreso'   => 0,
+            'periodo'    => $periodo,
+            'id_ruta'    => $idRuta,
+            'tipo'       => 'por_ruta',
+        ]);
+
+        GenerarPdfRutaJob::dispatch($exportacion->id);
+
+        return response()->json([
+            'ok'             => true,
+            'exportacion_id' => $exportacion->id,
+            'total'          => count($ids),
+            'mensaje'        => 'Ruta ' . $idRuta . ' enviada a la cola.',
         ]);
     }
 

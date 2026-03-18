@@ -779,7 +779,7 @@ $(function () {
         $.ajax({
             url:  DESPACHAR_URL,
             method: 'POST',
-            data: { ids: ids, _token: CSRF },
+            data: { ids: ids, _token: CSRF, periodo: $('#fPeriodo').val(), id_ruta: $('#fRuta').val() },
             success: function (r) {
                 if (r.ok) {
                     exportacionIdActual = r.exportacion_id;

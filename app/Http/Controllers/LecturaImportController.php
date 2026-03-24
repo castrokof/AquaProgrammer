@@ -107,27 +107,32 @@ class LecturaImportController extends Controller
     public function importarExcel(Request $request)
     {
         $request->validate([
-            'archivo'          => 'required|file|mimes:xlsx,xls,csv',
-            'periodo_destino'  => 'required|string|size:6',
+            'archivo'           => 'required|file|max:10240',
+            'periodo_destino'   => 'required|string|size:6',
             'periodo_facturado' => 'nullable|string|size:6',
         ]);
 
-        $import = new LecturaAnteriorImport(
-            $request->periodo_destino,
-            $request->periodo_facturado ?: null
-        );
+        try {
+            $import = new LecturaAnteriorImport(
+                $request->periodo_destino,
+                $request->periodo_facturado ?: null
+            );
 
-        Excel::import($import, $request->file('archivo'));
+            Excel::import($import, $request->file('archivo'));
 
-        $msg = "Excel procesado. Actualizados en ordenescu: {$import->actualizados}";
-        if ($import->noEncontrados > 0) {
-            $msg .= ", sin orden en el período: {$import->noEncontrados}";
+            $msg = "Excel procesado. Actualizados en ordenescu: {$import->actualizados}";
+            if ($import->noEncontrados > 0) {
+                $msg .= ", sin orden en el período: {$import->noEncontrados}";
+            }
+            if ($import->errores > 0) {
+                $msg .= ", con errores: {$import->errores}";
+            }
+
+            return back()->with('success', $msg . '.');
+        } catch (\Throwable $e) {
+            \Log::error('importarExcel error: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+            return back()->with('error', 'Error al procesar el archivo: ' . $e->getMessage());
         }
-        if ($import->errores > 0) {
-            $msg .= ", con errores: {$import->errores}";
-        }
-
-        return back()->with('success', $msg . '.');
     }
 
     /**

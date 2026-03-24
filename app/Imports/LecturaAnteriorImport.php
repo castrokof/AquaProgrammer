@@ -42,7 +42,7 @@ class LecturaAnteriorImport implements ToCollection, WithHeadingRow
         $suscriptores = $rows
             ->pluck('suscriptor')
             ->filter()
-            ->map(fn ($s) => trim((string) $s))
+            ->map(fn ($s) => trim(is_numeric($s) ? (string)(int)$s : (string)$s))
             ->unique()
             ->values();
 
@@ -52,8 +52,9 @@ class LecturaAnteriorImport implements ToCollection, WithHeadingRow
 
         foreach ($rows as $row) {
             try {
-                $suscriptor  = trim((string) ($row['suscriptor']  ?? ''));
-                $lecAnterior = $row['lec_anterior'] ?? null;
+                $rawSusc     = $row['suscriptor'] ?? '';
+                $suscriptor  = trim(is_numeric($rawSusc) ? (string)(int)$rawSusc : (string)$rawSusc);
+                $lecAnterior = $row['lec_anterior'] ?? $row['lectura_anterior'] ?? null;
                 $promedio    = $row['promedio']     ?? null;
                 $consumo     = $row['consumo']      ?? null;
 

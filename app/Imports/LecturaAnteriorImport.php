@@ -100,6 +100,9 @@ class LecturaAnteriorImport implements ToCollection, WithHeadingRow
                 }
             } catch (\Throwable $e) {
                 $this->errores++;
+                \Log::warning('LecturaAnteriorImport fila error: ' . $e->getMessage(), [
+                    'suscriptor' => $rawSusc ?? null,
+                ]);
             }
         }
     }

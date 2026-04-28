@@ -101,50 +101,61 @@ p{color:#374151}
 .hero-stat span{font-size:.8rem;opacity:.7;text-transform:uppercase;letter-spacing:1px}
 
 .hero-visual{
-  flex:0 0 320px;display:flex;justify-content:center;align-items:center
+  flex:0 0 400px;display:flex;justify-content:center;align-items:center
 }
-.hero-devices{
-  position:relative;width:300px;height:340px
+/* ── Hero browser mockup ── */
+.hero-browser{
+  width:380px;background:rgba(255,255,255,.07);
+  border-radius:14px;border:1px solid rgba(255,255,255,.18);
+  overflow:hidden;backdrop-filter:blur(8px)
 }
-.device-web{
-  width:260px;height:200px;background:rgba(255,255,255,.08);
-  border-radius:12px;border:1px solid rgba(255,255,255,.2);
-  position:absolute;top:0;left:20px;padding:10px;
-  backdrop-filter:blur(8px)
+.hb-bar{
+  display:flex;align-items:center;gap:8px;padding:7px 12px;
+  background:rgba(255,255,255,.09);border-bottom:1px solid rgba(255,255,255,.07)
 }
-.device-web-bar{
-  height:22px;background:rgba(255,255,255,.12);border-radius:6px;margin-bottom:8px;
-  display:flex;align-items:center;padding:0 8px;gap:5px
+.hb-dots{display:flex;gap:4px}
+.hb-dots span{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.3);display:block}
+.hb-url{
+  flex:1;background:rgba(255,255,255,.1);border-radius:4px;
+  padding:3px 8px;font-size:.58rem;color:rgba(255,255,255,.45);
+  display:flex;align-items:center;gap:5px
 }
-.device-web-bar span{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.4);display:inline-block}
-.device-web-lines div{
-  height:8px;background:rgba(255,255,255,.1);border-radius:4px;margin-bottom:6px
+.hb-content{display:flex;height:240px}
+.hb-sidebar{
+  width:76px;background:rgba(0,0,0,.28);border-right:1px solid rgba(255,255,255,.06);
+  padding:8px 0;display:flex;flex-direction:column;gap:1px
 }
-.device-web-lines div:nth-child(1){width:80%}
-.device-web-lines div:nth-child(2){width:60%}
-.device-web-lines div:nth-child(3){width:90%}
-.device-web-lines div:nth-child(4){width:50%}
-.device-web-lines div:nth-child(5){width:75%}
-
-.device-phone{
-  width:100px;height:180px;background:rgba(255,255,255,.12);
-  border-radius:18px;border:2px solid rgba(255,255,255,.25);
-  position:absolute;bottom:0;right:0;
-  display:flex;flex-direction:column;align-items:center;padding:12px 8px;
-  backdrop-filter:blur(8px)
+.hb-nav{
+  display:flex;flex-direction:column;align-items:center;gap:2px;
+  padding:6px 3px;font-size:.48rem;color:rgba(255,255,255,.3);border-radius:5px;margin:0 4px
 }
-.device-phone-notch{
-  width:36px;height:8px;background:rgba(255,255,255,.2);
-  border-radius:4px;margin-bottom:10px
+.hb-nav i{font-size:.78rem}
+.hb-nav.active{background:rgba(46,80,228,.65);color:#fff}
+.hb-main{flex:1;padding:8px 10px;display:flex;flex-direction:column;gap:7px;overflow:hidden}
+.hb-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
+.hb-kpi{background:rgba(255,255,255,.08);border-radius:5px;padding:5px 6px;text-align:center}
+.hb-warn{background:rgba(248,113,113,.15)}
+.hb-kn{font-size:.72rem;font-weight:700;color:var(--cyan);line-height:1.2}
+.hb-warn .hb-kn{color:#f87171}
+.hb-kl{font-size:.44rem;color:rgba(255,255,255,.35)}
+.hb-chart{
+  display:flex;align-items:flex-end;gap:4px;height:62px;
+  background:rgba(255,255,255,.04);border-radius:6px;padding:6px 6px 0
 }
-.device-phone-screen div{
-  height:6px;background:rgba(255,255,255,.12);border-radius:3px;margin-bottom:5px;width:72px
+.hb-bcol{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;height:100%;justify-content:flex-end}
+.hb-bbar{width:100%;background:rgba(46,80,228,.5);border-radius:2px 2px 0 0}
+.hb-active .hb-bbar{background:var(--cyan)}
+.hb-bcol span{font-size:.4rem;color:rgba(255,255,255,.3)}
+.hb-table{flex:1}
+.hb-trow{
+  display:grid;grid-template-columns:1fr 1fr 1fr;gap:3px;
+  padding:3px 4px;border-bottom:1px solid rgba(255,255,255,.06);
+  font-size:.48rem;color:rgba(255,255,255,.5)
 }
-.device-phone-icon{
-  margin-top:10px;width:36px;height:36px;border-radius:10px;
-  background:var(--cyan);display:flex;align-items:center;justify-content:center
-}
-.device-phone-icon i{color:var(--dark);font-size:.9rem}
+.hb-thead{color:rgba(255,255,255,.25);font-weight:600}
+.hb-badge{font-size:.42rem;font-weight:700;padding:1px 5px;border-radius:6px;text-align:center}
+.hb-ok{background:rgba(22,163,74,.25);color:#4ade80}
+.hb-crit{background:rgba(220,38,38,.25);color:#f87171}
 
 /* ═══════════════════════════════════════════════
    ② PROBLEMA
@@ -293,22 +304,47 @@ p{color:#374151}
       </div>
 
       <div class="hero-visual">
-        <div class="hero-devices">
-          <div class="device-web">
-            <div class="device-web-bar">
-              <span></span><span></span><span></span>
-            </div>
-            <div class="device-web-lines">
-              <div></div><div></div><div></div><div></div><div></div>
-            </div>
+        <div class="hero-browser">
+          <!-- Barra del navegador -->
+          <div class="hb-bar">
+            <div class="hb-dots"><span></span><span></span><span></span></div>
+            <div class="hb-url"><i class="fa fa-lock fa-xs"></i> app.aquaprogrammer.com / lecturas</div>
           </div>
-          <div class="device-phone">
-            <div class="device-phone-notch"></div>
-            <div class="device-phone-screen">
-              <div></div><div></div><div></div><div></div>
+          <!-- Contenido del dashboard -->
+          <div class="hb-content">
+            <!-- Sidebar de navegación -->
+            <div class="hb-sidebar">
+              <div class="hb-nav active"><i class="fa fa-tachometer-alt"></i><span>Lecturas</span></div>
+              <div class="hb-nav"><i class="fa fa-file-invoice-dollar"></i><span>Facturas</span></div>
+              <div class="hb-nav"><i class="fa fa-users"></i><span>Clientes</span></div>
+              <div class="hb-nav"><i class="fa fa-clipboard-check"></i><span>Revisiones</span></div>
+              <div class="hb-nav"><i class="fa fa-water"></i><span>Macros</span></div>
+              <div class="hb-nav"><i class="fa fa-chart-bar"></i><span>Reportes</span></div>
             </div>
-            <div class="device-phone-icon">
-              <i class="fa fa-tachometer-alt"></i>
+            <!-- Panel principal -->
+            <div class="hb-main">
+              <!-- KPI cards -->
+              <div class="hb-kpis">
+                <div class="hb-kpi"><div class="hb-kn">1,248</div><div class="hb-kl">Suscriptores</div></div>
+                <div class="hb-kpi"><div class="hb-kn">847</div><div class="hb-kl">Facturas</div></div>
+                <div class="hb-kpi hb-warn"><div class="hb-kn">23</div><div class="hb-kl">Críticas</div></div>
+              </div>
+              <!-- Gráfico de barras -->
+              <div class="hb-chart">
+                <div class="hb-bcol"><div class="hb-bbar" style="height:55%"></div><span>Ene</span></div>
+                <div class="hb-bcol"><div class="hb-bbar" style="height:70%"></div><span>Feb</span></div>
+                <div class="hb-bcol"><div class="hb-bbar" style="height:45%"></div><span>Mar</span></div>
+                <div class="hb-bcol"><div class="hb-bbar" style="height:82%"></div><span>Abr</span></div>
+                <div class="hb-bcol"><div class="hb-bbar" style="height:63%"></div><span>May</span></div>
+                <div class="hb-bcol hb-active"><div class="hb-bbar" style="height:76%"></div><span>Jun</span></div>
+              </div>
+              <!-- Mini tabla -->
+              <div class="hb-table">
+                <div class="hb-trow hb-thead"><span>Susc.</span><span>Lectura</span><span>Estado</span></div>
+                <div class="hb-trow"><span>1023</span><span>1,458</span><span class="hb-badge hb-ok">OK</span></div>
+                <div class="hb-trow"><span>1047</span><span>2,310</span><span class="hb-badge hb-crit">Crítica</span></div>
+                <div class="hb-trow"><span>1089</span><span>987</span><span class="hb-badge hb-ok">OK</span></div>
+              </div>
             </div>
           </div>
         </div>
@@ -459,6 +495,102 @@ p{color:#374151}
 </section>
 
 <!-- ══════════════════════════════════════════
+     ④.5 VISTA DEL DASHBOARD WEB
+══════════════════════════════════════════ -->
+<section class="section dash-preview">
+  <div class="container">
+    <div class="text-center">
+      <span class="section-label">Plataforma web en acción</span>
+      <h2 class="section-title">Así se ve AquaProgrammer<br>en su empresa</h2>
+      <p class="section-sub">Panel de control intuitivo, accesible desde cualquier navegador sin instalar nada.</p>
+    </div>
+
+    <div class="dash-browser">
+      <!-- Chrome del navegador -->
+      <div class="db-chrome">
+        <div class="db-dots"><span></span><span></span><span></span></div>
+        <div class="db-url"><i class="fa fa-lock"></i> app.aquaprogrammer.com / lecturas</div>
+        <div class="db-actions"><i class="fa fa-arrow-left"></i> &nbsp;<i class="fa fa-rotate-right"></i></div>
+      </div>
+      <!-- App layout -->
+      <div class="db-app">
+        <!-- Topbar -->
+        <div class="db-topbar">
+          <div class="db-brand"><i class="fa fa-water"></i> AquaProgrammer</div>
+          <div class="db-user"><i class="fa fa-user-circle"></i> Administrador</div>
+        </div>
+        <div class="db-body">
+          <!-- Sidebar de navegación -->
+          <div class="db-sidebar">
+            <div class="db-nav active"><i class="fa fa-tachometer-alt"></i> Lecturas</div>
+            <div class="db-nav"><i class="fa fa-file-invoice-dollar"></i> Facturas</div>
+            <div class="db-nav"><i class="fa fa-users"></i> Clientes</div>
+            <div class="db-nav"><i class="fa fa-credit-card"></i> Pagos</div>
+            <div class="db-nav"><i class="fa fa-clipboard-check"></i> Revisiones</div>
+            <div class="db-nav"><i class="fa fa-water"></i> Macros</div>
+            <div class="db-nav"><i class="fa fa-chart-bar"></i> Reportes</div>
+            <div class="db-nav"><i class="fa fa-cogs"></i> Config.</div>
+          </div>
+          <!-- Área principal -->
+          <div class="db-main">
+            <!-- Fila de KPIs -->
+            <div class="db-kpi-row">
+              <div class="db-kpi-card">
+                <div class="db-kpi-icon blue"><i class="fa fa-users"></i></div>
+                <div><div class="db-kpi-num">1,248</div><div class="db-kpi-lbl">Suscriptores activos</div></div>
+              </div>
+              <div class="db-kpi-card">
+                <div class="db-kpi-icon green"><i class="fa fa-tachometer-alt"></i></div>
+                <div><div class="db-kpi-num">1,186</div><div class="db-kpi-lbl">Lecturas completadas</div></div>
+              </div>
+              <div class="db-kpi-card">
+                <div class="db-kpi-icon orange"><i class="fa fa-exclamation-triangle"></i></div>
+                <div><div class="db-kpi-num">23</div><div class="db-kpi-lbl">Consumos críticos</div></div>
+              </div>
+              <div class="db-kpi-card">
+                <div class="db-kpi-icon purple"><i class="fa fa-file-invoice-dollar"></i></div>
+                <div><div class="db-kpi-num">847</div><div class="db-kpi-lbl">Facturas generadas</div></div>
+              </div>
+            </div>
+            <!-- Gráfico + Tabla -->
+            <div class="db-content-row">
+              <!-- Gráfico de barras -->
+              <div class="db-card">
+                <div class="db-card-title"><i class="fa fa-chart-bar" style="color:var(--blue)"></i> Consumo m³ — Últimos 6 meses</div>
+                <div class="db-chart">
+                  <div class="db-chart-bars">
+                    <div class="db-chart-col"><div class="db-chart-bar" style="height:55%"></div><span>Ene</span></div>
+                    <div class="db-chart-col"><div class="db-chart-bar" style="height:68%"></div><span>Feb</span></div>
+                    <div class="db-chart-col"><div class="db-chart-bar" style="height:44%"></div><span>Mar</span></div>
+                    <div class="db-chart-col"><div class="db-chart-bar" style="height:82%"></div><span>Abr</span></div>
+                    <div class="db-chart-col"><div class="db-chart-bar" style="height:61%"></div><span>May</span></div>
+                    <div class="db-chart-col active"><div class="db-chart-bar" style="height:75%"></div><span>Jun</span></div>
+                  </div>
+                </div>
+              </div>
+              <!-- Tabla de órdenes -->
+              <div class="db-card">
+                <div class="db-card-title"><i class="fa fa-list-ul" style="color:var(--blue)"></i> Órdenes recientes</div>
+                <table class="db-table">
+                  <thead><tr><th>Suscriptor</th><th>Lectura</th><th>Consumo</th><th>Estado</th></tr></thead>
+                  <tbody>
+                    <tr><td>001023</td><td>1,458</td><td>18 m³</td><td><span class="db-st ok">Normal</span></td></tr>
+                    <tr><td>001047</td><td>2,310</td><td>87 m³</td><td><span class="db-st crit">Crítica</span></td></tr>
+                    <tr><td>001089</td><td>987</td><td>15 m³</td><td><span class="db-st ok">Normal</span></td></tr>
+                    <tr><td>001102</td><td>3,201</td><td>0 m³</td><td><span class="db-st warn">Sin lect.</span></td></tr>
+                    <tr><td>001118</td><td>654</td><td>22 m³</td><td><span class="db-st ok">Normal</span></td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════
      ⑤ APP MÓVIL DE LECTURAS — SystemApp
 ══════════════════════════════════════════ -->
 <section class="section app-lecturas">
@@ -515,40 +647,58 @@ p{color:#374151}
 
       <div class="phones-showcase">
         <!-- PANTALLAZOS APP LECTURAS -->
-        <!-- INSTRUCCIÓN: Reemplaza cada .phone-placeholder por <img src="ruta/captura.png" class="phone-img"> -->
+        <!-- INSTRUCCIÓN: Reemplaza cada div.phone-screen por <img src="ruta/captura.png" class="phone-screen-img" alt="..."> -->
 
         <div class="phone-mockup">
           <div class="phone-frame">
+            <div class="phone-status-bar">
+              <span>9:41</span>
+              <div class="phone-status-icons"><i class="fa fa-signal fa-xs"></i><i class="fa fa-battery-three-quarters fa-xs"></i></div>
+            </div>
             <div class="phone-notch"></div>
-            <div class="phone-placeholder">
-              <!-- 📸 REEMPLAZAR: captura de pantalla "Lista de órdenes pendientes" de SystemApp -->
+            <!-- 📸 REEMPLAZAR: elimina el div.phone-screen y pon tu captura real aquí:
+                 <img src="ruta/lista-ordenes.png" class="phone-screen-img" alt="Lista de órdenes pendientes"> -->
+            <div class="phone-screen">
               <i class="fa fa-list-ul"></i>
               <span>Lista de órdenes<br>pendientes</span>
             </div>
+            <div class="phone-home-bar"></div>
           </div>
           <p class="phone-caption">Órdenes del día</p>
         </div>
 
         <div class="phone-mockup phone-main">
           <div class="phone-frame">
+            <div class="phone-status-bar">
+              <span>9:41</span>
+              <div class="phone-status-icons"><i class="fa fa-signal fa-xs"></i><i class="fa fa-battery-three-quarters fa-xs"></i></div>
+            </div>
             <div class="phone-notch"></div>
-            <div class="phone-placeholder">
-              <!-- 📸 REEMPLAZAR: captura de pantalla "Captura de lectura + foto medidor" de SystemApp -->
+            <!-- 📸 REEMPLAZAR: elimina el div.phone-screen y pon tu captura real aquí:
+                 <img src="ruta/captura-lectura.png" class="phone-screen-img" alt="Captura de lectura + foto medidor"> -->
+            <div class="phone-screen">
               <i class="fa fa-tachometer-alt"></i>
               <span>Ingreso de lectura<br>+ foto medidor</span>
             </div>
+            <div class="phone-home-bar"></div>
           </div>
           <p class="phone-caption">Captura de lectura</p>
         </div>
 
         <div class="phone-mockup">
           <div class="phone-frame">
+            <div class="phone-status-bar">
+              <span>9:41</span>
+              <div class="phone-status-icons"><i class="fa fa-signal fa-xs"></i><i class="fa fa-battery-three-quarters fa-xs"></i></div>
+            </div>
             <div class="phone-notch"></div>
-            <div class="phone-placeholder">
-              <!-- 📸 REEMPLAZAR: captura de pantalla "GPS en tiempo real" de SystemApp -->
+            <!-- 📸 REEMPLAZAR: elimina el div.phone-screen y pon tu captura real aquí:
+                 <img src="ruta/gps-precision.png" class="phone-screen-img" alt="GPS en tiempo real"> -->
+            <div class="phone-screen">
               <i class="fa fa-map-marker-alt"></i>
               <span>GPS con indicador<br>de precisión</span>
             </div>
+            <div class="phone-home-bar"></div>
           </div>
           <p class="phone-caption">Geolocalización</p>
         </div>
@@ -630,24 +780,36 @@ p{color:#374151}
       <div class="phones-col-center">
         <div class="phone-mockup">
           <div class="phone-frame dark-frame">
+            <div class="phone-status-bar">
+              <span>9:41</span>
+              <div class="phone-status-icons"><i class="fa fa-signal fa-xs"></i><i class="fa fa-battery-three-quarters fa-xs"></i></div>
+            </div>
             <div class="phone-notch"></div>
-            <div class="phone-placeholder dark-placeholder">
-              <!-- 📸 REEMPLAZAR: captura "Wizard paso 1 – datos visitador" de SystemAppDaily -->
+            <!-- 📸 REEMPLAZAR: elimina el div.phone-screen y pon tu captura real aquí:
+                 <img src="ruta/wizard-revision.png" class="phone-screen-img" alt="Wizard de revisión paso a paso"> -->
+            <div class="phone-screen dark-screen">
               <i class="fa fa-user-check"></i>
               <span>Wizard de revisión<br>paso a paso</span>
             </div>
+            <div class="phone-home-bar"></div>
           </div>
           <p class="phone-caption">Formulario de revisión</p>
         </div>
 
         <div class="phone-mockup">
           <div class="phone-frame dark-frame">
+            <div class="phone-status-bar">
+              <span>9:41</span>
+              <div class="phone-status-icons"><i class="fa fa-signal fa-xs"></i><i class="fa fa-battery-three-quarters fa-xs"></i></div>
+            </div>
             <div class="phone-notch"></div>
-            <div class="phone-placeholder dark-placeholder">
-              <!-- 📸 REEMPLAZAR: captura "Firma digital del cliente" de SystemAppDaily -->
+            <!-- 📸 REEMPLAZAR: elimina el div.phone-screen y pon tu captura real aquí:
+                 <img src="ruta/firma-digital.png" class="phone-screen-img" alt="Firma digital del cliente"> -->
+            <div class="phone-screen dark-screen">
               <i class="fa fa-signature"></i>
               <span>Firma digital<br>del cliente</span>
             </div>
+            <div class="phone-home-bar"></div>
           </div>
           <p class="phone-caption">Firma en pantalla</p>
         </div>
@@ -698,24 +860,36 @@ p{color:#374151}
         <div class="phones-inline">
           <div class="phone-mockup phone-sm">
             <div class="phone-frame dark-frame">
+              <div class="phone-status-bar">
+                <span>9:41</span>
+                <div class="phone-status-icons"><i class="fa fa-signal fa-xs"></i><i class="fa fa-battery-three-quarters fa-xs"></i></div>
+              </div>
               <div class="phone-notch"></div>
-              <div class="phone-placeholder dark-placeholder">
-                <!-- 📸 REEMPLAZAR: captura "Lista de macromedidores" de SystemAppDaily -->
+              <!-- 📸 REEMPLAZAR: elimina el div.phone-screen y pon tu captura real aquí:
+                   <img src="ruta/lista-macros.png" class="phone-screen-img" alt="Lista de macromedidores"> -->
+              <div class="phone-screen dark-screen">
                 <i class="fa fa-water"></i>
                 <span>Lista de<br>macromedidores</span>
               </div>
+              <div class="phone-home-bar"></div>
             </div>
             <p class="phone-caption">Macromedidores</p>
           </div>
 
           <div class="phone-mockup phone-sm">
             <div class="phone-frame dark-frame">
+              <div class="phone-status-bar">
+                <span>9:41</span>
+                <div class="phone-status-icons"><i class="fa fa-signal fa-xs"></i><i class="fa fa-battery-three-quarters fa-xs"></i></div>
+              </div>
               <div class="phone-notch"></div>
-              <div class="phone-placeholder dark-placeholder">
-                <!-- 📸 REEMPLAZAR: captura "Captura de lectura macro + GPS" de SystemAppDaily -->
+              <!-- 📸 REEMPLAZAR: elimina el div.phone-screen y pon tu captura real aquí:
+                   <img src="ruta/captura-macro.png" class="phone-screen-img" alt="Captura de lectura de macromedidor"> -->
+              <div class="phone-screen dark-screen">
                 <i class="fa fa-tachometer-alt"></i>
                 <span>Lectura de<br>macromedidor</span>
               </div>
+              <div class="phone-home-bar"></div>
             </div>
             <p class="phone-caption">Captura de caudal</p>
           </div>
@@ -1185,33 +1359,52 @@ p{color:#374151}
 }
 .phone-mockup{text-align:center}
 .phone-frame{
-  width:110px;height:220px;border-radius:24px;
-  border:3px solid rgba(255,255,255,.25);
-  background:rgba(255,255,255,.06);
+  width:130px;height:270px;border-radius:28px;
+  border:3px solid rgba(255,255,255,.28);
+  background:linear-gradient(160deg,rgba(20,20,50,.7) 0%,rgba(10,10,30,.85) 100%);
   overflow:hidden;position:relative;
-  display:flex;flex-direction:column;align-items:center;
-  padding-top:18px
+  display:flex;flex-direction:column;align-items:center
+}
+/* Barra de estado superior */
+.phone-status-bar{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:5px 12px 0;font-size:.52rem;color:rgba(255,255,255,.55);
+  flex-shrink:0;width:100%
+}
+.phone-status-icons{display:flex;gap:4px}
+/* Pantalla placeholder — reemplazable por <img class="phone-screen-img"> */
+.phone-screen{
+  flex:1;width:100%;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:10px;
+  color:rgba(255,255,255,.55);font-size:.65rem;text-align:center;
+  padding:10px;
+  background:linear-gradient(160deg,rgba(46,80,228,.18) 0%,rgba(0,0,0,.3) 100%)
+}
+.phone-screen i{font-size:2.2rem;opacity:.65}
+/* Imagen real — reemplaza al div.phone-screen */
+.phone-screen-img{
+  width:100%;flex:1;object-fit:cover;display:block
+}
+/* Barra de inicio inferior */
+.phone-home-bar{
+  height:4px;width:38px;background:rgba(255,255,255,.22);
+  border-radius:2px;margin:5px auto;flex-shrink:0
 }
 .dark-frame{
-  border-color:rgba(0,0,0,.4);background:#1a1a2e
+  border-color:rgba(255,255,255,.18);
+  background:linear-gradient(160deg,rgba(15,15,40,.9) 0%,rgba(5,5,20,.95) 100%)
 }
 .phone-notch{
   width:40px;height:8px;border-radius:4px;
-  background:rgba(255,255,255,.15);margin-bottom:10px;flex-shrink:0
+  background:rgba(255,255,255,.15);margin-bottom:6px;flex-shrink:0
 }
-.dark-frame .phone-notch{background:rgba(0,0,0,.4)}
-.phone-placeholder{
-  flex:1;width:100%;display:flex;flex-direction:column;
-  align-items:center;justify-content:center;gap:8px;
-  border:1.5px dashed rgba(255,255,255,.2);margin:4px;border-radius:14px;
-  color:rgba(255,255,255,.4);font-size:.6rem;text-align:center;padding:8px
+.dark-frame .phone-notch{background:rgba(0,0,0,.5)}
+/* Variante oscura para pantallas de App Revisiones */
+.dark-screen{
+  background:linear-gradient(160deg,rgba(15,15,45,.85) 0%,rgba(5,5,20,.92) 100%)
 }
-.dark-placeholder{
-  border-color:rgba(255,255,255,.15);color:rgba(255,255,255,.35)
-}
-.phone-placeholder i{font-size:1.6rem}
-.phone-main .phone-frame{width:130px;height:260px}
-.phone-sm .phone-frame{width:100px;height:200px}
+.phone-main .phone-frame{width:155px;height:310px}
+.phone-sm .phone-frame{width:115px;height:235px}
 .phone-caption{
   font-size:.72rem;font-weight:600;margin-top:8px;
   color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.5px
@@ -1222,8 +1415,6 @@ p{color:#374151}
 .app-revisiones .phone-caption{color:var(--muted)}
 .revisiones-cols{display:grid;grid-template-columns:1fr auto 1fr;gap:32px;align-items:start}
 .phones-col-center{display:flex;flex-direction:column;gap:16px;align-items:center}
-.phones-col-center .phone-placeholder{border-color:rgba(46,80,228,.25);color:var(--muted)}
-.phones-col-center .dark-frame{background:#1e1e3f}
 .phones-col-center .phone-caption{color:var(--muted)}
 
 .revision-col-header{display:flex;gap:16px;align-items:flex-start;margin-bottom:24px}
@@ -1266,13 +1457,112 @@ p{color:#374151}
 .macro-feature p{font-size:.78rem;color:var(--muted);margin:0}
 
 .phones-inline{display:flex;gap:12px;justify-content:center}
-.phones-inline .phone-placeholder{border-color:rgba(46,80,228,.2);color:var(--muted)}
 
 @media(max-width:960px){
   .revisiones-cols{grid-template-columns:1fr}
   .phones-col-center{flex-direction:row}
   .app-lecturas-inner{flex-direction:column}
   .phones-showcase{justify-content:center}
+}
+
+/* ─── Dashboard Preview ─── */
+.dash-preview{background:var(--light)}
+.dash-browser{
+  border-radius:16px;
+  box-shadow:0 30px 80px rgba(46,80,228,.2);
+  overflow:hidden;
+  border:1px solid rgba(46,80,228,.15);
+  max-width:960px;margin:0 auto
+}
+.db-chrome{
+  background:#e8ecf1;padding:10px 16px;
+  display:flex;align-items:center;gap:12px;
+  border-bottom:1px solid #d0d5dd
+}
+.db-dots{display:flex;gap:6px}
+.db-dots span{width:12px;height:12px;border-radius:50%;display:block}
+.db-dots span:nth-child(1){background:#f87171}
+.db-dots span:nth-child(2){background:#fbbf24}
+.db-dots span:nth-child(3){background:#34d399}
+.db-url{
+  flex:1;background:#fff;border:1px solid #d0d5dd;border-radius:8px;
+  padding:5px 12px;font-size:.78rem;color:#6b7280;
+  display:flex;align-items:center;gap:6px
+}
+.db-url i{color:#16a34a;font-size:.7rem}
+.db-actions{color:#9ca3af;font-size:.85rem;display:flex;gap:10px}
+
+.db-app{background:#f8fafc}
+.db-topbar{
+  background:linear-gradient(135deg,var(--dark),var(--blue));
+  padding:10px 20px;display:flex;justify-content:space-between;align-items:center
+}
+.db-brand{color:#fff;font-weight:700;font-size:.92rem;display:flex;align-items:center;gap:8px}
+.db-brand i{color:var(--cyan)}
+.db-user{color:rgba(255,255,255,.7);font-size:.78rem;display:flex;align-items:center;gap:6px}
+
+.db-body{display:flex;min-height:340px}
+.db-sidebar{
+  width:155px;background:var(--dark);padding:12px 0;flex-shrink:0
+}
+.db-nav{
+  display:flex;align-items:center;gap:8px;
+  padding:9px 16px;font-size:.76rem;color:rgba(255,255,255,.4);cursor:pointer
+}
+.db-nav i{width:14px;text-align:center}
+.db-nav.active{
+  background:rgba(46,80,228,.4);color:#fff;
+  border-left:3px solid var(--cyan)
+}
+
+.db-main{flex:1;padding:16px;display:flex;flex-direction:column;gap:14px;overflow:hidden}
+
+.db-kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.db-kpi-card{
+  background:#fff;border-radius:10px;padding:12px;
+  display:flex;align-items:center;gap:10px;
+  box-shadow:0 2px 8px rgba(0,0,0,.06)
+}
+.db-kpi-icon{
+  width:38px;height:38px;border-radius:10px;
+  display:flex;align-items:center;justify-content:center;font-size:.9rem;flex-shrink:0
+}
+.db-kpi-icon.blue{background:var(--mid);color:var(--blue)}
+.db-kpi-icon.green{background:#f0fdf4;color:#16a34a}
+.db-kpi-icon.orange{background:#fff7ed;color:#f97316}
+.db-kpi-icon.purple{background:#f5f3ff;color:#7c3aed}
+.db-kpi-num{font-size:.95rem;font-weight:700;color:var(--text);line-height:1.2}
+.db-kpi-lbl{font-size:.65rem;color:var(--muted)}
+
+.db-content-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;flex:1}
+.db-card{background:#fff;border-radius:10px;padding:14px;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.db-card-title{font-size:.76rem;font-weight:700;color:var(--text);margin-bottom:12px;display:flex;align-items:center;gap:6px}
+
+.db-chart{height:110px}
+.db-chart-bars{display:flex;align-items:flex-end;gap:8px;height:100%;padding-top:8px}
+.db-chart-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;height:100%;justify-content:flex-end}
+.db-chart-bar{width:100%;background:var(--mid);border-radius:4px 4px 0 0}
+.db-chart-col.active .db-chart-bar{background:var(--blue)}
+.db-chart-col span{font-size:.62rem;color:var(--muted)}
+
+.db-table{width:100%;border-collapse:collapse;font-size:.74rem}
+.db-table th{color:var(--muted);font-weight:600;padding:5px 8px;border-bottom:1px solid var(--mid);text-align:left}
+.db-table td{padding:7px 8px;border-bottom:1px solid var(--mid);color:var(--text)}
+.db-table tr:last-child td{border-bottom:none}
+.db-st{font-size:.67rem;font-weight:700;padding:2px 9px;border-radius:20px}
+.db-st.ok{background:#f0fdf4;color:#16a34a}
+.db-st.crit{background:#fef2f2;color:#dc2626}
+.db-st.warn{background:#fff7ed;color:#f97316}
+
+@media(max-width:900px){
+  .dash-browser{display:none}
+  .db-kpi-row{grid-template-columns:repeat(2,1fr)}
+  .db-content-row{grid-template-columns:1fr}
+}
+@media print{
+  .dash-browser{box-shadow:none}
+  .db-sidebar{background:#2b0c49!important}
+  .db-topbar{background:linear-gradient(135deg,#2b0c49,#2e50e4)!important}
 }
 </style>
 

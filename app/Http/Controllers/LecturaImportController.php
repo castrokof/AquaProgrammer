@@ -109,7 +109,7 @@ class LecturaImportController extends Controller
         $request->validate([
             'archivo'           => 'required|file|max:10240',
             'periodo_destino'   => 'required|string|size:6',
-            'periodo_facturado' => 'nullable|string|size:6',
+            'periodo_facturado' => 'nullable|string',
         ]);
 
         try {

@@ -545,6 +545,7 @@ class ComposerStaticInitb1e5642fa1891e1ad706c7e4075eda5c
     );
 
     public static $classMap = array (
+        'App\\Console\\Commands\\LimpiarExportaciones' => __DIR__ . '/../..' . '/app/Console/Commands/LimpiarExportaciones.php',
         'App\\Console\\Kernel' => __DIR__ . '/../..' . '/app/Console/Kernel.php',
         'App\\Exceptions\\Handler' => __DIR__ . '/../..' . '/app/Exceptions/Handler.php',
         'App\\Exports\\OrdenesExport' => __DIR__ . '/../..' . '/app/Exports/OrdenesExport.php',
@@ -567,6 +568,8 @@ class ComposerStaticInitb1e5642fa1891e1ad706c7e4075eda5c
         'App\\Http\\Controllers\\Controller' => __DIR__ . '/../..' . '/app/Http/Controllers/Controller.php',
         'App\\Http\\Controllers\\EmpresaController' => __DIR__ . '/../..' . '/app/Http/Controllers/EmpresaController.php',
         'App\\Http\\Controllers\\EstratoController' => __DIR__ . '/../..' . '/app/Http/Controllers/EstratoController.php',
+        'App\\Http\\Controllers\\ExportacionController' => __DIR__ . '/../..' . '/app/Http/Controllers/ExportacionController.php',
+        'App\\Http\\Controllers\\ExportacionRutaController' => __DIR__ . '/../..' . '/app/Http/Controllers/ExportacionRutaController.php',
         'App\\Http\\Controllers\\FacturaController' => __DIR__ . '/../..' . '/app/Http/Controllers/FacturaController.php',
         'App\\Http\\Controllers\\FacturacionEspecialController' => __DIR__ . '/../..' . '/app/Http/Controllers/FacturacionEspecialController.php',
         'App\\Http\\Controllers\\FacturacionMasivaController' => __DIR__ . '/../..' . '/app/Http/Controllers/FacturacionMasivaController.php',
@@ -603,6 +606,8 @@ class ComposerStaticInitb1e5642fa1891e1ad706c7e4075eda5c
         'App\\Http\\Requests\\ValidacionUsuario' => __DIR__ . '/../..' . '/app/Http/Requests/ValidacionUsuario.php',
         'App\\Imports\\EntradaImport' => __DIR__ . '/../..' . '/app/Imports/EntradaImport.php',
         'App\\Imports\\LecturaAnteriorImport' => __DIR__ . '/../..' . '/app/Imports/LecturaAnteriorImport.php',
+        'App\\Jobs\\GenerarPdfMasivoJob' => __DIR__ . '/../..' . '/app/Jobs/GenerarPdfMasivoJob.php',
+        'App\\Jobs\\GenerarPdfRutaJob' => __DIR__ . '/../..' . '/app/Jobs/GenerarPdfRutaJob.php',
         'App\\Models\\Admin\\Archivo' => __DIR__ . '/../..' . '/app/Models/Admin/Archivo.php',
         'App\\Models\\Admin\\Bitacora_Orden_ejecutada' => __DIR__ . '/../..' . '/app/Models/Admin/Bitacora_Orden_ejecutada.php',
         'App\\Models\\Admin\\Entrada' => __DIR__ . '/../..' . '/app/Models/Admin/Entrada.php',
@@ -624,6 +629,7 @@ class ComposerStaticInitb1e5642fa1891e1ad706c7e4075eda5c
         'App\\Models\\ClienteSerie' => __DIR__ . '/../..' . '/app/Models/ClienteSerie.php',
         'App\\Models\\Empresa' => __DIR__ . '/../..' . '/app/Models/Empresa.php',
         'App\\Models\\Estrato' => __DIR__ . '/../..' . '/app/Models/Estrato.php',
+        'App\\Models\\Exportacion' => __DIR__ . '/../..' . '/app/Models/Exportacion.php',
         'App\\Models\\Factura' => __DIR__ . '/../..' . '/app/Models/Factura.php',
         'App\\Models\\ListaParametro' => __DIR__ . '/../..' . '/app/Models/ListaParametro.php',
         'App\\Models\\MacroFoto' => __DIR__ . '/../..' . '/app/Models/MacroFoto.php',

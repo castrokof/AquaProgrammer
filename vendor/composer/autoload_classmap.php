@@ -6,6 +6,7 @@ $vendorDir = dirname(__DIR__);
 $baseDir = dirname($vendorDir);
 
 return array(
+    'App\\Console\\Commands\\LimpiarExportaciones' => $baseDir . '/app/Console/Commands/LimpiarExportaciones.php',
     'App\\Console\\Kernel' => $baseDir . '/app/Console/Kernel.php',
     'App\\Exceptions\\Handler' => $baseDir . '/app/Exceptions/Handler.php',
     'App\\Exports\\OrdenesExport' => $baseDir . '/app/Exports/OrdenesExport.php',
@@ -28,6 +29,8 @@ return array(
     'App\\Http\\Controllers\\Controller' => $baseDir . '/app/Http/Controllers/Controller.php',
     'App\\Http\\Controllers\\EmpresaController' => $baseDir . '/app/Http/Controllers/EmpresaController.php',
     'App\\Http\\Controllers\\EstratoController' => $baseDir . '/app/Http/Controllers/EstratoController.php',
+    'App\\Http\\Controllers\\ExportacionController' => $baseDir . '/app/Http/Controllers/ExportacionController.php',
+    'App\\Http\\Controllers\\ExportacionRutaController' => $baseDir . '/app/Http/Controllers/ExportacionRutaController.php',
     'App\\Http\\Controllers\\FacturaController' => $baseDir . '/app/Http/Controllers/FacturaController.php',
     'App\\Http\\Controllers\\FacturacionEspecialController' => $baseDir . '/app/Http/Controllers/FacturacionEspecialController.php',
     'App\\Http\\Controllers\\FacturacionMasivaController' => $baseDir . '/app/Http/Controllers/FacturacionMasivaController.php',
@@ -64,6 +67,8 @@ return array(
     'App\\Http\\Requests\\ValidacionUsuario' => $baseDir . '/app/Http/Requests/ValidacionUsuario.php',
     'App\\Imports\\EntradaImport' => $baseDir . '/app/Imports/EntradaImport.php',
     'App\\Imports\\LecturaAnteriorImport' => $baseDir . '/app/Imports/LecturaAnteriorImport.php',
+    'App\\Jobs\\GenerarPdfMasivoJob' => $baseDir . '/app/Jobs/GenerarPdfMasivoJob.php',
+    'App\\Jobs\\GenerarPdfRutaJob' => $baseDir . '/app/Jobs/GenerarPdfRutaJob.php',
     'App\\Models\\Admin\\Archivo' => $baseDir . '/app/Models/Admin/Archivo.php',
     'App\\Models\\Admin\\Bitacora_Orden_ejecutada' => $baseDir . '/app/Models/Admin/Bitacora_Orden_ejecutada.php',
     'App\\Models\\Admin\\Entrada' => $baseDir . '/app/Models/Admin/Entrada.php',
@@ -85,6 +90,7 @@ return array(
     'App\\Models\\ClienteSerie' => $baseDir . '/app/Models/ClienteSerie.php',
     'App\\Models\\Empresa' => $baseDir . '/app/Models/Empresa.php',
     'App\\Models\\Estrato' => $baseDir . '/app/Models/Estrato.php',
+    'App\\Models\\Exportacion' => $baseDir . '/app/Models/Exportacion.php',
     'App\\Models\\Factura' => $baseDir . '/app/Models/Factura.php',
     'App\\Models\\ListaParametro' => $baseDir . '/app/Models/ListaParametro.php',
     'App\\Models\\MacroFoto' => $baseDir . '/app/Models/MacroFoto.php',

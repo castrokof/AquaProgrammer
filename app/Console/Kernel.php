@@ -27,7 +27,7 @@ class Kernel extends ConsoleKernel
         // Procesa un job por minuto desde la base de datos.
         // Cron configurado en Hostinger cPanel (usar schedule:run):
         // * * * * * /usr/bin/php /home/u359728731/domains/manteliviano.com/AquaProgrammerData/artisan schedule:run >> /dev/null 2>&1
-        $schedule->command('queue:work --queue=default --once --stop-when-empty --timeout=60 --tries=1')
+        $schedule->command('queue:work --queue=default --once --stop-when-empty --timeout=3000 --tries=1')
                  ->everyMinute()
                  ->withoutOverlapping(3);
 
